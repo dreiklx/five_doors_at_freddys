@@ -1,4 +1,4 @@
-package com.fdaf.mvc.views;
+package com.fdaf.mvc.views.multimedia;
 
 import java.awt.Image;
 

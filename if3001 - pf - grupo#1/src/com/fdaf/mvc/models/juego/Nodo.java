@@ -3,13 +3,13 @@ package com.fdaf.mvc.models.juego;
 public class Nodo<Puerta> {
 
 	private Puerta puerta;
-	private Nodo<Puerta> anterior;
-	private Nodo<Puerta> siguiente;
+	private Nodo<Puerta> izquierda;
+	private Nodo<Puerta> derecha;
 
 	public Nodo(Puerta puerta) {
 		this.puerta = puerta;
-		this.anterior = null;
-		this.siguiente = null;
+		this.izquierda = null;
+		this.derecha = null;
 	}
 
 	public Puerta getPuerta() {
@@ -20,19 +20,19 @@ public class Nodo<Puerta> {
 		this.puerta = puerta;
 	}
 
-	public Nodo<Puerta> getAnterior() {
-		return anterior;
+	public Nodo<Puerta> getIzquierda() {
+		return izquierda;
 	}
 
-	public void setAnterior(Nodo<Puerta> anterior) {
-		this.anterior = anterior;
+	public void setIzquierda(Nodo<Puerta> izquierda) {
+		this.izquierda = izquierda;
 	}
 
-	public Nodo<Puerta> getSiguiente() {
-		return siguiente;
+	public Nodo<Puerta> getDerecha() {
+		return derecha;
 	}
 
-	public void setSiguiente(Nodo<Puerta> siguiente) {
-		this.siguiente = siguiente;
+	public void setDerecha(Nodo<Puerta> derecha) {
+		this.derecha = derecha;
 	}
 }

@@ -25,24 +25,36 @@ public class GeneradorArbol {
 
 		Arbol arbol = new Arbol();
 
+		Puerta raiz = new Puerta(500, TipoPuerta.NADA, null, null);
+		arbol.store(raiz);
+
 		while (!cola.isEmpty()) {
 
-			Coleccionable coleccionable = cola.obtener();
+			int tipoPuerta = random.nextInt(3) + 1;
 
-			Puerta puerta = new Puerta(
-					generarNumero(),
-					TipoPuerta.COLECCIONABLE,
-					coleccionable,
-					null);
+			if (tipoPuerta == 2) {
 
-			arbol.store(puerta);
+				Coleccionable coleccionable = cola.obtener();
 
-			int extras = random.nextInt(3);
+				Puerta puerta = new Puerta(
+						generarNumero(),
+						TipoPuerta.COLECCIONABLE,
+						coleccionable,
+						null);
 
-			for(int i = 0; i < extras; i++) {
+				arbol.store(puerta);
+
+			} else if (tipoPuerta == 1) {
 
 				arbol.store(crearPuertaSinColeccionable());
 
+			} else {
+
+				arbol.store(new Puerta(
+						generarNumero(),
+						TipoPuerta.NADA,
+						null,
+						null));
 			}
 		}
 

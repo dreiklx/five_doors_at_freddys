@@ -18,13 +18,8 @@ public class Juego {
 
 	public Juego() {
 
-		this.vidas = 3;
-		this.coleccionablesEncontrados = 0;
-
-		this.inventario = new InventarioColeccionables();
 		this.generador = new GeneradorArbol();
-
-		CargarColeccionables.cargar(inventario);
+		reiniciar();
 
 	}
 	// Método para iniciar el juego y generar el árbol de decisiones
@@ -138,6 +133,21 @@ public class Juego {
 						generador.generar(cola);
 			}
 		}
+	}
+
+	public void reiniciar() {
+
+		Coleccionable.setIdCounter(0);
+		Puerta.setIdCounter(0);
+
+		this.vidas = 3;
+		this.coleccionablesEncontrados = 0;
+		this.ultimaPuerta = null;
+
+		this.inventario = new InventarioColeccionables();
+		CargarColeccionables.cargar(inventario);
+
+		iniciarJuego();
 	}
 
 	public boolean gano() {

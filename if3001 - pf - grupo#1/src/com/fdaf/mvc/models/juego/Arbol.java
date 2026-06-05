@@ -52,17 +52,17 @@ public class Arbol {
 			if (nuevo.getPuerta().getNumero()
 					<= padre.getPuerta().getNumero()) {
 
-				if (padre.getAnterior() == null)
-					padre.setAnterior(nuevo);
+				if (padre.getIzquierda() == null)
+					padre.setIzquierda(nuevo);
 				else
-					store(padre.getAnterior(), nuevo);
+					store(padre.getIzquierda(), nuevo);
 
 			} else {
 
-				if (padre.getSiguiente() == null)
-					padre.setSiguiente(nuevo);
+				if (padre.getDerecha() == null)
+					padre.setDerecha(nuevo);
 				else
-					store(padre.getSiguiente(), nuevo);
+					store(padre.getDerecha(), nuevo);
 
 			}
 
@@ -71,9 +71,9 @@ public class Arbol {
 
 	public boolean moverIzquierda() {
 
-		if (actual != null && actual.getAnterior() != null) {
+		if (actual != null && actual.getIzquierda() != null) {
 
-			actual = actual.getAnterior();
+			actual = actual.getIzquierda();
 			return true;
 		}
 
@@ -82,9 +82,9 @@ public class Arbol {
 
 	public boolean moverDerecha() {
 
-		if (actual != null && actual.getSiguiente() != null) {
+		if (actual != null && actual.getDerecha() != null) {
 
-			actual = actual.getSiguiente();
+			actual = actual.getDerecha();
 			return true;
 		}
 
@@ -104,8 +104,8 @@ public class Arbol {
 		if (actual == null)
 			return false;
 
-		return actual.getAnterior() == null
-				&& actual.getSiguiente() == null;
+		return actual.getIzquierda() == null
+				&& actual.getDerecha() == null;
 	}
 
 	public void reiniciarRecorrido() {
