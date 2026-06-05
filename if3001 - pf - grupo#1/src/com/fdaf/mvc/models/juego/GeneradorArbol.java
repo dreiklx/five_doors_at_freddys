@@ -3,8 +3,8 @@ package com.fdaf.mvc.models.juego;
 import java.util.Random;
 
 import com.fdaf.mvc.models.animatronicos.Animatronico;
-import com.fdaf.mvc.models.artefactos.Artefacto;
-import com.fdaf.mvc.models.artefactos.ColaArtefactos;
+import com.fdaf.mvc.models.coleccionables.ColaColeccionables;
+import com.fdaf.mvc.models.coleccionables.Coleccionable;
 import com.fdaf.mvc.models.puerta.Puerta;
 import com.fdaf.mvc.models.puerta.TipoPuerta;
 
@@ -16,23 +16,23 @@ public class GeneradorArbol {
 		this.random = new Random();
 	}
 	/*
-	 * Este método genera un árbol de puertas utilizando una cola de artefactos. 
-	 * Se crean puertas con artefactos mientras la cola no esté vacía, 
-	 * y luego se agregan puertas adicionales sin artefactos 
+	 * Este método genera un árbol de puertas utilizando una cola de coleccionables. 
+	 * Se crean puertas con coleccionables mientras la cola no esté vacía, 
+	 * y luego se agregan puertas adicionales sin coleccionables 
 	 * para diversificar el contenido del árbol.
 	 */
-	public Arbol generar(ColaArtefactos cola) {
+	public Arbol generar(ColaColeccionables cola) {
 
 		Arbol arbol = new Arbol();
 
 		while (!cola.isEmpty()) {
 
-			Artefacto artefacto = cola.obtener();
+			Coleccionable coleccionable = cola.obtener();
 
 			Puerta puerta = new Puerta(
 					generarNumero(),
-					TipoPuerta.ARTEFACTO,
-					artefacto,
+					TipoPuerta.COLECCIONABLE,
+					coleccionable,
 					null);
 
 			arbol.store(puerta);
@@ -41,7 +41,7 @@ public class GeneradorArbol {
 
 			for(int i = 0; i < extras; i++) {
 
-				arbol.store(crearPuertaSinArtefacto());
+				arbol.store(crearPuertaSinColeccionable());
 
 			}
 		}
@@ -50,7 +50,7 @@ public class GeneradorArbol {
 
 		for (int i = 0; i < cantidadExtra; i++) {
 
-			Puerta puerta = crearPuertaSinArtefacto();
+			Puerta puerta = crearPuertaSinColeccionable();
 
 			arbol.store(puerta);
 		}
@@ -59,15 +59,15 @@ public class GeneradorArbol {
 	}
 	/*
 	 * Este método se utiliza para crear puertas adicionales
-	 *  sin artefactos, asegurando que el árbol tenga una mezcla 
-	 *  de puertas con y sin artefactos.
+	 *  sin Coleccionables, asegurando que el árbol tenga una mezcla 
+	 *  de puertas con y sin Coleccionables.
 	 */
-	private Puerta crearPuertaSinArtefacto() {
+	private Puerta crearPuertaSinColeccionable() {
 
 		int numero = generarNumero();
 
 		int opcion = random.nextInt(2);
-		// Solo se generan puertas de tipo ANIMATRONICO o NADA, sin artefactos
+		// Solo se generan puertas de tipo ANIMATRONICO o NADA, sin Coleccionables
 		if (opcion == 0) {
 
 			return new Puerta(
@@ -76,7 +76,7 @@ public class GeneradorArbol {
 					null,
 					obtenerAnimatronicoAleatorio());
 		}
-		// En caso de que la opción sea 1, se genera una puerta sin artefacto ni animatrónico
+		// En caso de que la opción sea 1, se genera una puerta sin Coleccionable ni animatrónico
 		return new Puerta(
 				numero,
 				TipoPuerta.NADA,

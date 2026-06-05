@@ -1,42 +1,42 @@
 package com.fdaf.mvc.models.juego;
 
-import com.fdaf.mvc.models.artefactos.Artefacto;
-import com.fdaf.mvc.models.artefactos.CargadorArtefactos;
-import com.fdaf.mvc.models.artefactos.ColaArtefactos;
-import com.fdaf.mvc.models.artefactos.InventarioArtefactos;
+import com.fdaf.mvc.models.coleccionables.CargarColeccionables;
+import com.fdaf.mvc.models.coleccionables.ColaColeccionables;
+import com.fdaf.mvc.models.coleccionables.Coleccionable;
+import com.fdaf.mvc.models.coleccionables.InventarioColeccionables;
 import com.fdaf.mvc.models.puerta.Puerta;
 
 public class Juego {
 
 	private Arbol arbol;
-	private InventarioArtefactos inventario;
+	private InventarioColeccionables inventario;
 	private GeneradorArbol generador;
 
 	private int vidas;
-	private int artefactosEncontrados;
+	private int coleccionablesEncontrados;
 	private Puerta ultimaPuerta;
 
 	public Juego() {
 
 		this.vidas = 3;
-		this.artefactosEncontrados = 0;
+		this.coleccionablesEncontrados = 0;
 
-		this.inventario = new InventarioArtefactos();
+		this.inventario = new InventarioColeccionables();
 		this.generador = new GeneradorArbol();
 
-		CargadorArtefactos.cargar(inventario);
+		CargarColeccionables.cargar(inventario);
 
 	}
 	// Método para iniciar el juego y generar el árbol de decisiones
 	public void iniciarJuego() {
 
-		ColaArtefactos cola = inventario.obtenerPendientes();
+		ColaColeccionables cola = inventario.obtenerPendientes();
 
 		arbol = generador.generar(cola);
 	}
 	/*
 	 * Estos siguientes 2 metodos se encargan de procesar la puerta elegida por el jugador, 
-	 * actualizando el estado del juego según el tipo de puerta (artefacto, animatrónico o nada).
+	 * actualizando el estado del juego según el tipo de puerta (coleccionable, animatrónico o nada).
 	 */
 	public Puerta elegirIzquierda() {
 
@@ -78,7 +78,7 @@ public class Juego {
 
 	/*
 	 * Este método se encarga de procesar la puerta elegida por el jugador, 
-	 * actualizando el estado del juego según el tipo de puerta (artefacto, animatrónico o nada).
+	 * actualizando el estado del juego según el tipo de puerta (coleccionable, animatrónico o nada).
 	 */
 	private void procesarPuerta(Puerta puerta) {
 
@@ -89,21 +89,21 @@ public class Juego {
 
 		switch(puerta.getTipo()) {
 
-		case ARTEFACTO:
+		case COLECCIONABLE:
 
-			Artefacto artefacto = puerta.getArtefacto();
+			Coleccionable coleccionable = puerta.getColeccionable();
 
-			if(artefacto != null) {
+			if(coleccionable != null) {
 
-				Artefacto original =
-						inventario.buscar(artefacto.getId());
+				Coleccionable original =
+						inventario.buscar(coleccionable.getId());
 
 				if(original != null &&
 						!original.isEncontrado()) {
 
 					original.setEncontrado(true);
 
-					artefactosEncontrados++;
+					coleccionablesEncontrados++;
 				}
 			}
 
@@ -122,14 +122,14 @@ public class Juego {
 	}
 	/*
 	 * Este método verifica si el jugador ha llegado al final de una rama del árbol. 
-	 * Si es así, se obtiene una nueva cola de artefactos pendientes y se genera un nuevo árbol 
+	 * Si es así, se obtiene una nueva cola de coleccionables pendientes y se genera un nuevo árbol 
 	 * para continuar el juego.
 	 */
 	private void verificarFinDeRama() {
 
 		if(arbol.finDeRama()) {
 
-			ColaArtefactos cola =
+			ColaColeccionables cola =
 					inventario.obtenerPendientes();
 
 			if(!cola.isEmpty()) {
@@ -154,15 +154,15 @@ public class Juego {
 		return vidas;
 	}
 
-	public int getArtefactosEncontrados() {
-		return artefactosEncontrados;
+	public int getColeccionablesEncontrados() {
+		return coleccionablesEncontrados;
 	}
 
 	public Arbol getArbol() {
 		return arbol;
 	}
 
-	public InventarioArtefactos getInventario() {
+	public InventarioColeccionables getInventario() {
 		return inventario;
 	}
 

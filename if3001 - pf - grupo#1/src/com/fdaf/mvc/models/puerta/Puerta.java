@@ -1,7 +1,7 @@
 package com.fdaf.mvc.models.puerta;
 
 import com.fdaf.mvc.models.animatronicos.Animatronico;
-import com.fdaf.mvc.models.artefactos.Artefacto;
+import com.fdaf.mvc.models.coleccionables.Coleccionable;
 
 public class Puerta {
 
@@ -10,16 +10,16 @@ public class Puerta {
 	private int id;
 	private int numero;
 	private TipoPuerta tipo;
-	private Artefacto artefacto;
+	private Coleccionable coleccionable;
 	private Animatronico animatronico;
 
 	public Puerta() {}
 
-	public Puerta(int numero, TipoPuerta tipo, Artefacto artefacto, Animatronico animatronico) {
+	public Puerta(int numero, TipoPuerta tipo, Coleccionable coleccionable, Animatronico animatronico) {
 		this.id = ++idCounter;
 		this.numero = numero;
 		this.tipo = tipo;
-		this.artefacto = artefacto;
+		this.coleccionable = coleccionable;
 		this.animatronico = animatronico;
 	}
 
@@ -55,12 +55,12 @@ public class Puerta {
 		this.tipo = tipo;
 	}
 
-	public Artefacto getArtefacto() {
-		return artefacto;
+	public Coleccionable getColeccionable() {
+		return coleccionable;
 	}
 
-	public void setArtefacto(Artefacto artefacto) {
-		this.artefacto = artefacto;
+	public void setColeccionable(Coleccionable coleccionable) {
+		this.coleccionable = coleccionable;
 	}
 
 	public Animatronico getAnimatronico() {

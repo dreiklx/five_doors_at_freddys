@@ -1,21 +1,21 @@
-package com.fdaf.mvc.models.artefactos;
+package com.fdaf.mvc.models.coleccionables;
 
 import java.util.LinkedList;
 import java.util.Queue;
 
-public class ColaArtefactos {
+public class ColaColeccionables {
 
-	private Queue<Artefacto> cola;
+	private Queue<Coleccionable> cola;
 
-	public ColaArtefactos() {
+	public ColaColeccionables() {
 		cola = new LinkedList<>();
 	}
 
-	public void agregar(Artefacto artefacto) {
+	public void agregar(Coleccionable artefacto) {
 		cola.offer(artefacto);
 	}
 
-	public Artefacto obtener() {
+	public Coleccionable obtener() {
 		return cola.poll();
 	}
 

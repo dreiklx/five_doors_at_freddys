@@ -1,6 +1,6 @@
-package com.fdaf.mvc.models.artefactos;
+package com.fdaf.mvc.models.coleccionables;
 
-public class Artefacto {
+public class Coleccionable {
 
 	private static int idCounter = 0;
 
@@ -8,9 +8,9 @@ public class Artefacto {
 	private String archivoImagen;
 	private boolean encontrado;
 
-	public Artefacto() {}
+	public Coleccionable() {}
 
-	public Artefacto(String archivoImagen) {
+	public Coleccionable(String archivoImagen) {
 		this.id = ++idCounter;
 		this.archivoImagen = archivoImagen;
 		this.encontrado = false;
@@ -21,7 +21,7 @@ public class Artefacto {
 	}
 
 	public static void setIdCounter(int idCounter) {
-		Artefacto.idCounter = idCounter;
+		Coleccionable.idCounter = idCounter;
 	}
 
 	public int getId() {

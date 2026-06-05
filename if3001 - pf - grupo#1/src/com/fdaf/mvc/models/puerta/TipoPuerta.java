@@ -2,8 +2,8 @@ package com.fdaf.mvc.models.puerta;
 
 public enum TipoPuerta {
 
-	ARTEFACTO,
+	COLECCIONABLE,
 	ANIMATRONICO,
-	NADA
+	NADA, 
 
 }
