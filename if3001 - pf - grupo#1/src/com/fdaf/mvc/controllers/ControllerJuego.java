@@ -6,6 +6,7 @@ import com.fdaf.mvc.models.puerta.TipoPuerta;
 import com.fdaf.mvc.views.multimedia.Sonido;
 
 public class ControllerJuego {
+	
 
 	private Juego juego;
 	private Sonido musica;

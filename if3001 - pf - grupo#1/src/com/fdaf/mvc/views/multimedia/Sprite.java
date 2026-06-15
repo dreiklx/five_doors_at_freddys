@@ -21,14 +21,14 @@ public class Sprite {
 		this.label = label;
 	}
 
-	public void setImagen(String archivo) {
+	public void setImagen(ImageIcon archivo) {
 		int w = label.getWidth();
 		int h = label.getHeight();
 		label.setIcon(getImagenEscalada(archivo, w, h));
 	}
 	
 	// ESCALAR EL TAMAÑO DE UNA IMAGEN
-	public ImageIcon getImagenEscalada(String archivo, int ancho, int alto) {
+	public ImageIcon getImagenEscalada(ImageIcon archivo, int ancho, int alto) {
 
 		ImageIcon icon = new ImageIcon(getClass().getResource("/resources/images/" + archivo));
 
