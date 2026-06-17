@@ -32,6 +32,8 @@ public class PnlJuego extends JPanel {
 	private JCheckBox botonDer;
 	private JCheckBox luzDer;
 	private JCheckBox luzIzq;
+	private JPanel panelDer;
+	private JPanel panelIzq;
 	
 
 	/**
@@ -47,33 +49,61 @@ public class PnlJuego extends JPanel {
 		add(pnlOficina);
 		pnlOficina.setLayout(null);
 		
+		lblDerTres = new JLabel("");
+		lblDerTres.setBounds(935, 0, 65, 600);
+		lblDerTres.setIcon(CargarImagenes.zonaTresDer);
+		lblDerTres.setBackground(Color.green);
+		pnlOficina.add(lblDerTres);
+
+		
+		lblIzqTres = new JLabel("");
+		lblIzqTres.setBounds(0, 0, 65, 600);
+		lblIzqTres.setIcon(CargarImagenes.zonaTresIzq);
+		lblIzqTres.setBackground(Color.green);
+		pnlOficina.add(lblIzqTres);
+
+		
+		panelDer=new PnlAplicarImagen(CargarImagenes.panelDer);
+		panelDer.setOpaque(false);
+		panelDer.setBounds(1150, 266,70,210);
+		panelDer.setLayout(null);
+		pnlOficina.add(panelDer);
+		
+		
 		botonDer = new JCheckBox("");
+		botonDer.setBounds(5, 15, 48, 65);
+		botonDer.setIcon(CargarImagenes.btnDer0);
+		panelDer.add(botonDer);
 		botonDer.setOpaque(false);
 		botonDer.setHorizontalAlignment(SwingConstants.CENTER);
-		botonDer.setIcon(CargarImagenes.puertaIzq0);
-		botonDer.setBounds(1150, 266, 60, 88);
-		pnlOficina.add(botonDer);
 		
 		luzDer = new JCheckBox("");
+		luzDer.setBounds(5, 108, 48, 65);
+		luzDer.setIcon(CargarImagenes.luzDer0);
+		panelDer.add(luzDer);
 		luzDer.setOpaque(false);
 		luzDer.setHorizontalAlignment(SwingConstants.CENTER);
-		luzDer.setIcon(CargarImagenes.luzIzq0);
-		luzDer.setBounds(1150, 354, 60, 88);
-		pnlOficina.add(luzDer);
+		
+		
+		panelIzq=new PnlAplicarImagen(CargarImagenes.panelIzq);
+		panelIzq.setOpaque(false);
+		panelIzq.setBounds(-194,266,70,210);
+		panelIzq.setLayout(null);
+		pnlOficina.add(panelIzq);
 		
 		botonIzq = new JCheckBox("");
 		botonIzq.setOpaque(false);
+		botonIzq.setIcon(CargarImagenes.btnIzq0);
 		botonIzq.setHorizontalAlignment(SwingConstants.CENTER);
-		botonIzq.setIcon(CargarImagenes.puertaIzq0);
-		botonIzq.setBounds(-194, 266, 60, 88);
-		pnlOficina.add(botonIzq);
+		botonIzq.setBounds(17, 15, 48, 65);
+		panelIzq.add(botonIzq);
 		
 		luzIzq = new JCheckBox("");
 		luzIzq.setOpaque(false);
-		luzIzq.setHorizontalAlignment(SwingConstants.CENTER);
 		luzIzq.setIcon(CargarImagenes.luzIzq0);
-		luzIzq.setBounds(-194, 354, 60, 88);
-		pnlOficina.add(luzIzq);
+		luzIzq.setHorizontalAlignment(SwingConstants.CENTER);
+		luzIzq.setBounds(17, 108, 48, 65);
+		panelIzq.add(luzIzq);
 		
 		lblTabAbrir = new JLabel("");
 		lblTabAbrir.setBounds(203, 547, 375, 42);
@@ -86,43 +116,18 @@ public class PnlJuego extends JPanel {
 		btnNewButton.setBounds(443, 60, 89, 23);
 		pnlOficina.add(btnNewButton);
 		
-//		btnPuertaDer=new JButton();
-//		btnPuertaDer.setBounds(1150, 266, 50, 60);
-//		btnPuertaDer.setBackground(Color.blue);
-//		pnlOficina.add(btnPuertaDer);
-//		
-//		btnPuertaIzq = new JButton();
-//		btnPuertaIzq.setBackground(Color.BLUE);
-//		btnPuertaIzq.setBounds(-194, 266, 50, 60);
-//		pnlOficina.add(btnPuertaIzq);
 		
 		lblOficina = new JLabel("");
-		lblOficina.setIcon(new ImageIcon(PnlJuego.class.getResource("/images/fondos/FondoJuego.png")));
+		lblOficina.setIcon(CargarImagenes.fondoJuego);
 		lblOficina.setBackground(Color.WHITE);
 		lblOficina.setHorizontalAlignment(SwingConstants.CENTER);
 		lblOficina.setBounds(-292, -59, 1600, 676);
 		pnlOficina.add(lblOficina);
 		
-		lblIzqTres = new JLabel("");
-		lblIzqTres.setOpaque(true);
-		lblIzqTres.setBackground(Color.green);
-		//lblIzqTres.setIcon(new ImageIcon(PnlJuego.class.getResource("/images/fondos/zonaTresIzq.png")));
-		lblIzqTres.setBounds(0, 0, 65, 600);
-		pnlOficina.add(lblIzqTres);
-		
-		lblDerTres = new JLabel("");
-		lblDerTres.setOpaque(true);
-		lblDerTres.setBackground(Color.green);
-		//lblDerTres.setIcon(new ImageIcon(PnlJuego.class.getResource("/images/fondos/zonaTresDer.png")));
-		
-		lblDerTres.setBounds(935, 0, 65, 600);
-		pnlOficina.add(lblDerTres);
-		
 		lblIzqDos = new JLabel("zona dos");
 		lblIzqDos.setMinimumSize(new Dimension(44, 14));
 		lblIzqDos.setMaximumSize(new Dimension(44, 14));
 		lblIzqDos.setPreferredSize(new Dimension(44, 14));
-		lblIzqDos.setOpaque(true);
 		lblIzqDos.setBackground(Color.white);
 		lblIzqDos.setBounds(65, 0, 163, 600);
 		pnlOficina.add(lblIzqDos);
@@ -131,23 +136,36 @@ public class PnlJuego extends JPanel {
 		lblDerDos.setMinimumSize(new Dimension(44, 14));
 		lblDerDos.setMaximumSize(new Dimension(44, 14));
 		lblDerDos.setPreferredSize(new Dimension(44, 14));
-		lblDerDos.setOpaque(true);
 		lblDerDos.setBackground(Color.white);
 		lblDerDos.setBounds(773, 0, 163, 600);
 		pnlOficina.add(lblDerDos);
 		
 		lblIzqUno = new JLabel("zona uno");
-		lblIzqUno.setOpaque(true);
 		lblIzqUno.setBackground(Color.RED);
 		lblIzqUno.setBounds(229, 0, 163, 600);
 		pnlOficina.add(lblIzqUno);
 		
 		lblDerUno = new JLabel("zona uno");
-		lblDerUno.setOpaque(true);
 		lblDerUno.setBackground(Color.RED);
 		lblDerUno.setBounds(610, 0, 163, 600);
 		pnlOficina.add(lblDerUno);
 
+	}
+
+	public JPanel getPanelDer() {
+		return panelDer;
+	}
+
+	public void setPanelDer(JPanel panelDer) {
+		this.panelDer = panelDer;
+	}
+
+	public JPanel getPanelIzq() {
+		return panelIzq;
+	}
+
+	public void setPanelIzq(JPanel panelIzq) {
+		this.panelIzq = panelIzq;
 	}
 
 	public JCheckBox getLuzDer() {

@@ -95,10 +95,10 @@ public class VistaPrincipal extends JFrame {
 		pnlDer.setPreferredSize(new Dimension(183, 132));
 		pnlIzq.setPreferredSize(new Dimension(183, 132));
 	}
-	public void setCompleta() {
-		pnlAba.setPreferredSize(new Dimension(0,0));
-		pnlArr.setPreferredSize(new Dimension(0,0));
-		pnlDer.setPreferredSize(new Dimension(0,0));
-		pnlIzq.setPreferredSize(new Dimension(0,0));
+	public void setColor(Color color) {
+		pnlAba.setBackground(color);
+		pnlArr.setBackground(color);
+		pnlDer.setBackground(color);
+		pnlIzq.setBackground(color);
 	}
 }

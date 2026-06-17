@@ -1,5 +1,6 @@
 package com.fdaf.mvc.controllers;
 
+import java.awt.Color;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.Timer;
@@ -16,10 +17,9 @@ public class ControllerCamara {
 	private Timer izquierda;
 	private Sprite barraTableta;
 	private int xlbl;
-	private int xbtnDer;
-	private int xbtnIzq;
-	private int xluzDer;
-	private int xluzIzq;
+	private int xpnlDer;
+	private int xpnlIzq;
+
 
 	 
 	 
@@ -27,14 +27,14 @@ public class ControllerCamara {
 	public ControllerCamara() {
 		
 		juego=new PnlJuego();
-		 xbtnDer=juego.getBotonDer().getX();
-		 xbtnIzq=juego.getBotonIzq().getX();
-		 xluzDer=juego.getLuzDer().getX();
-		 xluzIzq=juego.getLuzIzq().getX();
+		 xpnlDer=juego.getPanelDer().getX();
+		 xpnlIzq=juego.getPanelIzq().getX();
+
 	}
 	
 	public void init(VistaPrincipal vp) {
 		vp.setContenido(juego);
+		vp.setColor(Color.BLACK);
 		
 		zonaUnoDer();
 		zonaUnoIzq();
@@ -76,24 +76,19 @@ public class ControllerCamara {
 			 xlbl=juego.getLblOficina().getX();
 			 
 			int ylbl=juego.getLblOficina().getY();
-			int yluz=juego.getLuzIzq().getY();
-			int ybtn=juego.getBotonIzq().getY();
+			int ypnl=juego.getPanelIzq().getY();
 			
 			if(xlbl==0) {
 				izquierda.stop();
 			}else {
 				xlbl++;
-				xbtnIzq++;
-				xbtnDer++;
-				xluzIzq++;
-				xluzDer++;
+				xpnlIzq++;
+				xpnlDer++;
 				
 			}
 			
-			juego.getBotonIzq().setLocation(xbtnIzq, ybtn);
-			juego.getBotonDer().setLocation(xbtnDer, ybtn);
-			juego.getLuzIzq().setLocation(xluzIzq, yluz);
-			juego.getLuzDer().setLocation(xluzDer, yluz);
+			juego.getPanelIzq().setLocation(xpnlIzq, ypnl);
+			juego.getPanelDer().setLocation(xpnlDer, ypnl);
 			juego.getLblOficina().setLocation(xlbl, ylbl);
 			
 		});
@@ -105,23 +100,19 @@ public class ControllerCamara {
 			 xlbl=juego.getLblOficina().getX();
 
 			int ylbl=juego.getLblOficina().getY();
-			int yluz=juego.getLuzDer().getY();
-			int ybtn=juego.getBotonDer().getY();
+			int ypnl=juego.getPanelDer().getY();
 			if(xlbl==-594) {
 				derecha.stop();
 
 			}else {
 				xlbl--;
-				xbtnDer--;
-				xbtnIzq--;
-				xluzDer--;
-				xluzIzq--;
+				xpnlIzq--;
+				xpnlDer--;
+				
 			}
 			
-			juego.getBotonDer().setLocation(xbtnDer, ybtn);
-			juego.getBotonIzq().setLocation(xbtnIzq, ybtn);
-			juego.getLuzDer().setLocation(xluzDer, yluz);
-			juego.getLuzIzq().setLocation(xluzIzq, yluz);
+			juego.getPanelIzq().setLocation(xpnlIzq, ypnl);
+			juego.getPanelDer().setLocation(xpnlDer, ypnl);
 			juego.getLblOficina().setLocation(xlbl, ylbl);
 
 		});
