@@ -42,7 +42,7 @@ public class ControllerMenu {
 			opciones();
 			});
 		
-		menu.getBtnEmpezar().addActionListener(e-> camara.init(vp));
+		menu.getBtnEmpezar().addActionListener(e-> camara.init(vp,menu));
 	}
 	public void opciones() {
 		opciones.getBtnAtras().addActionListener(e-> vp.setContenido(menu));

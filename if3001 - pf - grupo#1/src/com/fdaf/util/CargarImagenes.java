@@ -17,6 +17,9 @@ public class CargarImagenes {
 		*/
 	public static final ImageIcon menu=new ImageIcon(CargarImagenes.class.getResource("/gifs/Menu.gif"));
 	public static final ImageIcon estatica=new ImageIcon(CargarImagenes.class.getResource("/gifs/Estatica.gif"));
+	public static final ImageIcon puntoCamara=new ImageIcon(CargarImagenes.class.getResource("/gifs/puntoCamara.gif"));
+	public static final ImageIcon fondoCamara=new ImageIcon(CargarImagenes.class.getResource("/images/fondos/fondoCamara.gif"));
+
 	
 	/*
 	 * Fondos
@@ -31,7 +34,7 @@ public class CargarImagenes {
 	 */
 	
 	/*botones*/
-	public static final ImageIcon barraTableta=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/420.png"));
+	public static final ImageIcon barraTableta=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/barraTablet.fw.png"));
 	public static final ImageIcon panelIzq=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/pnlBotonesIzq.fw.png"));
 	public static final ImageIcon panelDer=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/pnlBotonesDer.fw.png"));
 	

@@ -22,10 +22,11 @@ public class PnlOpciones extends JPanel {
 	 * Create the panel.
 	 */
 	public PnlOpciones() {
-		setLayout(new BorderLayout(0, 0));
+		setLayout(null);
 		
 		JPanel panel = new PnlAplicarImagen(CargarImagenes.menu);
-		add(panel, BorderLayout.CENTER);
+		panel.setBounds(0, 0, 1000, 600);
+		add(panel);
 		panel.setLayout(null);
 		
 		JLabel lblIdioma = new JLabel("Idioma");

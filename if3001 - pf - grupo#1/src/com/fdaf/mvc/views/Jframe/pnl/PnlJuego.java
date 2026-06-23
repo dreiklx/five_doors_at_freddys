@@ -22,7 +22,6 @@ public class PnlJuego extends JPanel {
 	private JLabel lblDerUno;
 	private JLabel lblDerDos;
 	private JLabel lblDerTres;
-	public JButton btnNewButton;
 	private JPanel pnlOficina;
 	private JButton btnPuertaDer;
 	private JButton btnPuertaIzq;
@@ -106,15 +105,10 @@ public class PnlJuego extends JPanel {
 		panelIzq.add(luzIzq);
 		
 		lblTabAbrir = new JLabel("");
-		lblTabAbrir.setBounds(203, 547, 375, 42);
+		lblTabAbrir.setBounds(225, 518, 375, 42);
 		lblTabAbrir.setOpaque(false);
 		lblTabAbrir.setIcon(CargarImagenes.barraTableta);
 		pnlOficina.add(lblTabAbrir);
-		
-		
-		btnNewButton = new JButton("New button");
-		btnNewButton.setBounds(443, 60, 89, 23);
-		pnlOficina.add(btnNewButton);
 		
 		
 		lblOficina = new JLabel("");
@@ -125,6 +119,7 @@ public class PnlJuego extends JPanel {
 		pnlOficina.add(lblOficina);
 		
 		lblIzqDos = new JLabel("zona dos");
+		lblIzqDos.setOpaque(true);
 		lblIzqDos.setMinimumSize(new Dimension(44, 14));
 		lblIzqDos.setMaximumSize(new Dimension(44, 14));
 		lblIzqDos.setPreferredSize(new Dimension(44, 14));
@@ -133,6 +128,7 @@ public class PnlJuego extends JPanel {
 		pnlOficina.add(lblIzqDos);
 		
 		lblDerDos = new JLabel("zona dos");
+		lblDerDos.setOpaque(true);
 		lblDerDos.setMinimumSize(new Dimension(44, 14));
 		lblDerDos.setMaximumSize(new Dimension(44, 14));
 		lblDerDos.setPreferredSize(new Dimension(44, 14));
@@ -141,11 +137,13 @@ public class PnlJuego extends JPanel {
 		pnlOficina.add(lblDerDos);
 		
 		lblIzqUno = new JLabel("zona uno");
+		lblIzqUno.setOpaque(true);
 		lblIzqUno.setBackground(Color.RED);
 		lblIzqUno.setBounds(229, 0, 163, 600);
 		pnlOficina.add(lblIzqUno);
 		
 		lblDerUno = new JLabel("zona uno");
+		lblDerUno.setOpaque(true);
 		lblDerUno.setBackground(Color.RED);
 		lblDerUno.setBounds(610, 0, 163, 600);
 		pnlOficina.add(lblDerUno);
