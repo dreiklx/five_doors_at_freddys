@@ -14,6 +14,11 @@ public class PnlTableta extends JPanel {
 	private JLabel lblTabletCerrar;
 	private JProgressBar pbarRendirse;
 
+	// CAMBIO FDAF - contenedor visual de coleccionables encontrados.
+	// ControllerCamara le agrega un JLabel con el icono del coleccionable
+	// cada vez que el jugador hace clic sobre uno revelado.
+	private JPanel pnlColeccionables;
+
 	/**
 	 * Create the panel.
 	 */
@@ -39,6 +44,23 @@ public class PnlTableta extends JPanel {
 		pbarRendirse.setBounds(741, 50, 223, 23);
 		panel.add(pbarRendirse);
 
+		// CAMBIO FDAF - contenedor de coleccionables encontrados, ubicado
+		// en el espacio libre central del fondo de la tablet.
+		pnlColeccionables = new JPanel();
+		pnlColeccionables.setOpaque(false);
+		pnlColeccionables.setBounds(49, 140, 900, 380);
+		pnlColeccionables.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 15));
+		panel.add(pnlColeccionables);
+
+	}
+
+	// CAMBIO FDAF - getter/setter del contenedor de coleccionables
+	public JPanel getPnlColeccionables() {
+		return pnlColeccionables;
+	}
+
+	public void setPnlColeccionables(JPanel pnlColeccionables) {
+		this.pnlColeccionables = pnlColeccionables;
 	}
 
 	public JLabel getLblTabletCerrar() {

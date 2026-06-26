@@ -140,7 +140,7 @@ public class Juego {
 		Coleccionable.setIdCounter(0);
 		Puerta.setIdCounter(0);
 
-		this.vidas = 3;
+		this.vidas = 5;
 		this.coleccionablesEncontrados = 0;
 		this.ultimaPuerta = null;
 

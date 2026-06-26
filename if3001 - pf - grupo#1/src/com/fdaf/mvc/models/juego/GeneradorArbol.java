@@ -1,5 +1,7 @@
 package com.fdaf.mvc.models.juego;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import com.fdaf.mvc.models.animatronicos.Animatronico;
@@ -16,17 +18,18 @@ public class GeneradorArbol {
 		this.random = new Random();
 	}
 	/*
-	 * Este método genera un árbol de puertas utilizando una cola de coleccionables. 
-	 * Se crean puertas con coleccionables mientras la cola no esté vacía, 
-	 * y luego se agregan puertas adicionales sin coleccionables 
-	 * para diversificar el contenido del árbol.
+	 * Construye la LISTA COMPLETA de puertas (una por cada coleccionable
+	 * pendiente + puertas extra aleatorias) y la pasa a
+	 * arbol.construirCompleto(), que ahora arma un árbol binario COMPLETO
+	 * por niveles. Con tamaño de lista IMPAR (forzado abajo), no se pierde
+	 * ningún nodo y ningún nodo queda con un solo hijo.
 	 */
 	public Arbol generar(ColaColeccionables cola) {
 
-		Arbol arbol = new Arbol();
+		List<Puerta> puertas = new ArrayList<Puerta>();
 
 		Puerta raiz = new Puerta(500, TipoPuerta.NADA, null, null);
-		arbol.store(raiz);
+		puertas.add(raiz);
 
 		while (!cola.isEmpty()) {
 
@@ -42,15 +45,15 @@ public class GeneradorArbol {
 						coleccionable,
 						null);
 
-				arbol.store(puerta);
+				puertas.add(puerta);
 
 			} else if (tipoPuerta == 1) {
 
-				arbol.store(crearPuertaSinColeccionable());
+				puertas.add(crearPuertaSinColeccionable());
 
 			} else {
 
-				arbol.store(new Puerta(
+				puertas.add(new Puerta(
 						generarNumero(),
 						TipoPuerta.NADA,
 						null,
@@ -64,8 +67,22 @@ public class GeneradorArbol {
 
 			Puerta puerta = crearPuertaSinColeccionable();
 
-			arbol.store(puerta);
+			puertas.add(puerta);
 		}
+
+		// Con el algoritmo BFS de Arbol.construirCompleto(),
+		// una lista de tamaño IMPAR garantiza DOS cosas a la vez: árbol
+		// completo (ningún nodo con un solo hijo) y CERO descartes (no se
+		// pierde ningún coleccionable). Si el total es par, se agrega una
+		// puerta sin coleccionable para volverlo impar. Es seguro agregar
+		// puertas sin coleccionable porque nunca contienen un coleccionable
+		// que pudiera perderse.
+		if (puertas.size() % 2 == 0) {
+			puertas.add(crearPuertaSinColeccionable());
+		}
+
+		Arbol arbol = new Arbol();
+		arbol.construirCompleto(puertas);
 
 		return arbol;
 	}
@@ -106,7 +123,6 @@ public class GeneradorArbol {
 	}
 
 	private int generarNumero() {
-		// Genera un número aleatorio entre 1 y 1000 para asignar a la puerta
 		return random.nextInt(1000) + 1;
 	}
 

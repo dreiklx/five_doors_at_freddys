@@ -5,19 +5,19 @@ public class CargarColeccionables {
 	public static void cargar(InventarioColeccionables inventario) {
 
 		inventario.agregar(
-				new Coleccionable("artefactos/peluche_freddy.png"));
+				new Coleccionable("coleccionables/peluche_freddy.png"));
 
 		inventario.agregar(
-				new Coleccionable("artefactos/cupcake.png"));
+				new Coleccionable("coleccionables/cupcake.png"));
 
 		inventario.agregar(
-				new Coleccionable("artefactos/microfono_freddy.png"));
+				new Coleccionable("coleccionables/microfono_freddy.png"));
 
 		inventario.agregar(
-				new Coleccionable("artefactos/guitarra_bonnie.png"));
+				new Coleccionable("coleccionables/guitarra_bonnie.png"));
 
 		inventario.agregar(
-				new Coleccionable("artefactos/garfio_foxy.png"));
+				new Coleccionable("coleccionables/garfio_foxy.png"));
 	}
 
 }

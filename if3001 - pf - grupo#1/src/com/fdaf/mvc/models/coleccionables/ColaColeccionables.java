@@ -11,8 +11,8 @@ public class ColaColeccionables {
 		cola = new LinkedList<>();
 	}
 
-	public void agregar(Coleccionable artefacto) {
-		cola.offer(artefacto);
+	public void agregar(Coleccionable coleccionable) {
+		cola.offer(coleccionable);
 	}
 
 	public Coleccionable obtener() {

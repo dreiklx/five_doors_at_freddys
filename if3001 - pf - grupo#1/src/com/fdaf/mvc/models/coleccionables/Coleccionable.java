@@ -54,7 +54,7 @@ public class Coleccionable {
 
 	@Override
 	public String toString() {
-		return "Artefacto #" + id +
+		return "Coleccionable #" + id +
 				" | Encontrado: " + encontrado +
 				" | Imagen: " + archivoImagen;
 	}

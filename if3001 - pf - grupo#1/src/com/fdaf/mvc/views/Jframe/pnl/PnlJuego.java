@@ -33,7 +33,13 @@ public class PnlJuego extends JPanel {
 	private JCheckBox luzIzq;
 	private JPanel panelDer;
 	private JPanel panelIzq;
+
+	// overlay único, centrado, fijo en pantalla (agregado al
+	// panel raíz, NO a pnlOficina ni a panelIzq/Der). Aquí se muestran los
+	// gifs de animatrónico y las imágenes de coleccionable. panelIzq/Der
+	// vuelven a usarse EXCLUSIVAMENTE para botones y luces.
 	
+	private JLabel lblOverlay;
 
 	/**
 	 * Create the panel.
@@ -148,6 +154,25 @@ public class PnlJuego extends JPanel {
 		lblDerUno.setBounds(610, 0, 163, 600);
 		pnlOficina.add(lblDerUno);
 
+		// overlay único centrado: (1000-500)/2=250, (600-400)/2=100.
+		lblOverlay = new JLabel("");
+		lblOverlay.setBounds(250, 100, 500, 400);
+		lblOverlay.setOpaque(false);
+		lblOverlay.setHorizontalAlignment(SwingConstants.CENTER);
+		lblOverlay.setVerticalAlignment(SwingConstants.CENTER);
+		lblOverlay.setVisible(false);
+		add(lblOverlay);
+
+		setComponentZOrder(lblOverlay, 0);
+
+	}
+
+	public JLabel getLblOverlay() {
+		return lblOverlay;
+	}
+
+	public void setLblOverlay(JLabel lblOverlay) {
+		this.lblOverlay = lblOverlay;
 	}
 
 	public JPanel getPanelDer() {

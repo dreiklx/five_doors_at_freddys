@@ -21,13 +21,13 @@ public class VistaPrincipal extends JFrame {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private JPanel contentPane;
-	private JPanel pnlContenido;
-	private JPanel pnlIzq;
-	private JPanel pnlDer;
-	private JPanel pnlArr;
-	private JPanel pnlAba;
-	private JPanel panel;
+	public JPanel contentPane;
+	public JPanel pnlContenido;
+	public JPanel pnlIzq;
+	public JPanel pnlDer;
+	public JPanel pnlArr;
+	public JPanel pnlAba;
+	public JPanel panel;
 
 	/**
 	 * Create the frame.
@@ -101,4 +101,6 @@ public class VistaPrincipal extends JFrame {
 		pnlDer.setBackground(color);
 		pnlIzq.setBackground(color);
 	}
+	
+	
 }

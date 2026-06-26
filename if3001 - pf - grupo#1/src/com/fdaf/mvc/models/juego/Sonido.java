@@ -31,10 +31,9 @@ public class Sonido {
 	
 
 	public void play() {
+		if (clip == null) return;
 		stop();
 		clip.start();
-		
-		
 	}
 	
 	public void stop() {
