@@ -22,9 +22,8 @@ public class ControllerMenu {
 	}
 
 	public void init() {
-		EscalarVista.adaptarVista(vp);
+		EscalarVista.adaptarInicio(vp,menu, opciones);;
 		vp.setContenido(menu);
-		vp.setColor(new Color(0, 0, 8));
 		botones();
 		encima();
 		vp.init();

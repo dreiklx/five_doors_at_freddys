@@ -5,10 +5,10 @@ import javax.swing.JPanel;
 import com.fdaf.util.CargarImagenes;
 
 import java.awt.FlowLayout;
-import java.awt.BorderLayout;
 import javax.swing.JLabel;
-import javax.swing.ImageIcon;
 import javax.swing.JProgressBar;
+import java.awt.Dimension;
+
 
 public class PnlTableta extends JPanel {
 	private JLabel lblTabletCerrar;
@@ -18,40 +18,61 @@ public class PnlTableta extends JPanel {
 	// ControllerCamara le agrega un JLabel con el icono del coleccionable
 	// cada vez que el jugador hace clic sobre uno revelado.
 	private JPanel pnlColeccionables;
+	private JPanel panel;
+	private JLabel lblNewLabel;
 
 	/**
 	 * Create the panel.
 	 */
 	public PnlTableta() {
+		setPreferredSize(new Dimension(1600, 900));
 		setLayout(null);
 		
-		JPanel panel = new PnlAplicarImagen(CargarImagenes.fondoCamara);
-		panel.setBounds(0, 0, 1000, 600);
+		panel = new PnlAplicarImagen(CargarImagenes.estatica);
+		panel.setOpaque(false);
+		panel.setBounds(0, 0, 1600, 900);
 		add(panel);
-		panel.setLayout(null);
 		
-		JLabel lblNewLabel = new JLabel("");
-		lblNewLabel.setIcon(CargarImagenes.puntoCamara);
-		lblNewLabel.setBounds(49, 50, 60, 61);
-		panel.add(lblNewLabel);
+		lblNewLabel = new JLabel("");
+		lblNewLabel.setBounds(74, 50, 80, 70);
+		//lblNewLabel.setIcon(CargarImagenes.puntoCamara);
 		
 		lblTabletCerrar = new JLabel("");
+		lblTabletCerrar.setBounds(288, 786, 690, 77);
+		lblTabletCerrar.setPreferredSize(new Dimension(690, 77));
 		lblTabletCerrar.setIcon(CargarImagenes.barraTableta);
-		lblTabletCerrar.setBounds(204, 534, 375, 42);
-		panel.add(lblTabletCerrar);
 		
 		pbarRendirse = new JProgressBar();
-		pbarRendirse.setBounds(741, 50, 223, 23);
-		panel.add(pbarRendirse);
+		pbarRendirse.setBounds(1291, 50, 254, 33);
 
 		// CAMBIO FDAF - contenedor de coleccionables encontrados, ubicado
 		// en el espacio libre central del fondo de la tablet.
 		pnlColeccionables = new JPanel();
+		pnlColeccionables.setBounds(43, 132, 1516, 365);
 		pnlColeccionables.setOpaque(false);
-		pnlColeccionables.setBounds(49, 140, 900, 380);
 		pnlColeccionables.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 15));
+		panel.setLayout(null);
+		panel.add(lblNewLabel);
+		panel.add(pbarRendirse);
 		panel.add(pnlColeccionables);
+		panel.add(lblTabletCerrar);
 
+	}
+
+	public JPanel getPanel() {
+		return panel;
+	}
+
+	public void setPanel(JPanel panel) {
+		this.panel = panel;
+	}
+
+	public JLabel getLblNewLabel() {
+		return lblNewLabel;
+	}
+
+	public void setLblNewLabel(JLabel lblNewLabel) {
+		this.lblNewLabel = lblNewLabel;
 	}
 
 	// CAMBIO FDAF - getter/setter del contenedor de coleccionables

@@ -48,28 +48,13 @@ public class VistaPrincipal extends JFrame {
 		contentPane.add(panel, BorderLayout.CENTER);
 		panel.setLayout(new BorderLayout(0, 0));
 		
-		pnlIzq = new JPanel();
-		pnlIzq.setBackground(new Color(0, 0, 8));
-		panel.add(pnlIzq, BorderLayout.WEST);
-		
-		pnlDer = new JPanel();
-		pnlDer.setBackground(new Color(0, 0, 8));
-		panel.add(pnlDer, BorderLayout.EAST);
-		
-		pnlArr = new JPanel();
-		pnlArr.setBackground(new Color(0, 0, 8));
-		panel.add(pnlArr, BorderLayout.NORTH);
-		
-		pnlAba = new JPanel();
-		pnlAba.setBackground(new Color(0, 0, 8));
-		panel.add(pnlAba, BorderLayout.SOUTH);
-		
+
 		pnlContenido = new JPanel();
 		
 		panel.add(pnlContenido, BorderLayout.CENTER);
 		pnlContenido.setLayout(new BorderLayout(0, 0));
 
-		setRecortada();
+
 
 	}
 
@@ -89,18 +74,7 @@ public class VistaPrincipal extends JFrame {
 		
 	}
 	
-	public void setRecortada() {
-		pnlAba.setPreferredSize(new Dimension(10, 84));
-		pnlArr.setPreferredSize(new Dimension(10, 84));
-		pnlDer.setPreferredSize(new Dimension(183, 132));
-		pnlIzq.setPreferredSize(new Dimension(183, 132));
-	}
-	public void setColor(Color color) {
-		pnlAba.setBackground(color);
-		pnlArr.setBackground(color);
-		pnlDer.setBackground(color);
-		pnlIzq.setBackground(color);
-	}
+
 	
 	
 }

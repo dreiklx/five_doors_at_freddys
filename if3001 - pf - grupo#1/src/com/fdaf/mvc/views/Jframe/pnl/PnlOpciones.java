@@ -11,37 +11,40 @@ import javax.swing.SwingConstants;
 import com.fdaf.util.CargarImagenes;
 
 import javax.swing.JButton;
+import java.awt.Dimension;
 
 
 public class PnlOpciones extends JPanel {
 	private JButton btnAtras;
 	private JButton btnSalir;
 	private JLabel lbl;
+	private JPanel pnlOpciones;
 
 	/**
 	 * Create the panel.
 	 */
 	public PnlOpciones() {
+		setPreferredSize(new Dimension(1600, 900));
 		setLayout(null);
 		
-		JPanel panel = new PnlAplicarImagen(CargarImagenes.menu);
-		panel.setBounds(0, 0, 1000, 600);
-		add(panel);
-		panel.setLayout(null);
+		pnlOpciones = new PnlAplicarImagen(CargarImagenes.menu);
+		pnlOpciones.setBounds(0, 0, 1600, 900);
+		add(pnlOpciones);
+		pnlOpciones.setLayout(null);
 		
 		JLabel lblIdioma = new JLabel("Idioma");
 		lblIdioma.setForeground(Color.WHITE);
 		lblIdioma.setHorizontalAlignment(SwingConstants.CENTER);
 		lblIdioma.setFont(new Font("Tahoma", Font.PLAIN, 30));
 		lblIdioma.setBounds(51, 100, 341, 50);
-		panel.add(lblIdioma);
+		pnlOpciones.add(lblIdioma);
 		
 		JLabel label = new JLabel("---");
 		label.setForeground(Color.WHITE);
 		label.setHorizontalAlignment(SwingConstants.CENTER);
 		label.setFont(new Font("Tahoma", Font.PLAIN, 30));
 		label.setBounds(493, 100, 341, 50);
-		panel.add(label);
+		pnlOpciones.add(label);
 		
 		btnAtras = new JButton("Atras");
 		btnAtras.setFocusPainted(false);
@@ -49,8 +52,8 @@ public class PnlOpciones extends JPanel {
 		btnAtras.setBorderPainted(false);
 		btnAtras.setForeground(Color.WHITE);
 		btnAtras.setFont(new Font("Tahoma", Font.PLAIN, 30));
-		btnAtras.setBounds(839, 520, 120, 37);
-		panel.add(btnAtras);
+		btnAtras.setBounds(1447, 832, 120, 37);
+		pnlOpciones.add(btnAtras);
 		
 		btnSalir = new JButton("Salir del Juego");
 		btnSalir.setFocusPainted(false);
@@ -58,16 +61,24 @@ public class PnlOpciones extends JPanel {
 		btnSalir.setBorderPainted(false);
 		btnSalir.setForeground(Color.WHITE);
 		btnSalir.setFont(new Font("Tahoma", Font.PLAIN, 30));
-		btnSalir.setBounds(724, 27, 235, 37);
-		panel.add(btnSalir);
+		btnSalir.setBounds(1332, 27, 235, 37);
+		pnlOpciones.add(btnSalir);
 		
 		lbl = new JLabel(">>");
 		lbl.setForeground(Color.WHITE);
 		lbl.setFont(new Font("Tahoma", Font.PLAIN, 30));
-		lbl.setBounds(812, 522, 46, 37);
+		lbl.setBounds(1418, 832, 46, 37);
 		lbl.setVisible(false);
-		panel.add(lbl);
+		pnlOpciones.add(lbl);
 
+	}
+
+	public JPanel getPnlOpciones() {
+		return pnlOpciones;
+	}
+
+	public void setPnlOpciones(JPanel pnlOpciones) {
+		this.pnlOpciones = pnlOpciones;
 	}
 
 	public JLabel getLbl() {

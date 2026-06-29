@@ -2,6 +2,7 @@ package com.fdaf.util;
 
 
 
+
 import javax.swing.ImageIcon;
 
 
@@ -15,15 +16,19 @@ public class CargarImagenes {
 		/*
 		 * Gifs
 		*/
-	public static final ImageIcon menu=new ImageIcon(CargarImagenes.class.getResource("/gifs/Menu.gif"));
-	public static final ImageIcon estatica=new ImageIcon(CargarImagenes.class.getResource("/gifs/Estatica.gif"));
-	public static final ImageIcon puntoCamara=new ImageIcon(CargarImagenes.class.getResource("/gifs/puntoCamara.gif"));
-	public static final ImageIcon fondoCamara=new ImageIcon(CargarImagenes.class.getResource("/images/fondos/fondoCamara.gif"));
+	
+
+	public static final ImageIcon menu=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/Menu.gif"));
+	public static final ImageIcon estatica=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/Static.gif"));
+	public static final ImageIcon juegoLuzDer=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/OficinaLuzDer.gif"));
+	public static final ImageIcon juegoLuzIzq=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/OficinaLuzIzq.gif"));
+	public static final ImageIcon abanico=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/Abanico.gif"));
 
 	
 	/*
 	 * Fondos
 	 */
+	
 	public static final ImageIcon fondoJuego=new ImageIcon(CargarImagenes.class.getResource("/images/fondos/FondoJuego.png"));
 	public static final ImageIcon zonaTresIzq=new ImageIcon(CargarImagenes.class.getResource("/images/fondos/left.png"));
 	public static final ImageIcon zonaTresDer=new ImageIcon(CargarImagenes.class.getResource("/images/fondos/right.png"));
