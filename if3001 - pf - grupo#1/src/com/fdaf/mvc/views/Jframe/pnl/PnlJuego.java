@@ -372,7 +372,7 @@ public class PnlJuego extends JPanel {
 		///para agregar componentes con la referencia de la imagen
 		//lblImgOficina.setIcon(CargarImagenes.fondoJuego);
 
-		// QUITAMOS el setIcon original de aquí para dejar que el escalador lo asigne con las dimensiones reales del monitor
+	
 		
 		lblNariz = new JLabel("");
 		lblNariz.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -382,11 +382,12 @@ public class PnlJuego extends JPanel {
 		lblAbanico.setBounds(1093, 443, 166, 243);
 		lblAbanico.setOpaque(false); 
 		
-				// Los componentes internos de la oficina se añaden a su contenedor móvil
+			
+		
 				lblImgOficina.add(lblNariz);
 				lblImgOficina.add(lblAbanico);
 				
-				// Añadimos la oficina al contenedor de componentes del juego
+				
 				pnlComponentes.add(lblImgOficina);
 
 		pnlComponentes.add(lblIzqDos);

@@ -2,25 +2,13 @@ package com.fdaf.mvc.controllers;
 
 
 
-import java.awt.Color;
-
 import java.awt.event.MouseAdapter;
-
 import java.awt.event.MouseEvent;
-
-
-
 import javax.swing.Timer;
-
-import com.fdaf.mvc.models.juego.Juego;
 import com.fdaf.mvc.views.Jframe.VistaPrincipal;
-
 import com.fdaf.mvc.views.Jframe.pnl.PnlJuego;
-
 import com.fdaf.mvc.views.Jframe.pnl.PnlMenu;
-
 import com.fdaf.mvc.views.Jframe.pnl.PnlTableta;
-
 import com.fdaf.util.EscalarVista;
 
 
@@ -65,7 +53,9 @@ public class ControllerCamara {
 
 	private int progreso;
 
-	private boolean tablet;
+	private Timer bloquear;
+	private boolean bloqueado;
+	private int tiempoBloqueado;
 
 
 
@@ -76,7 +66,7 @@ public class ControllerCamara {
 
 		this.pnlTableta = pnlTableta;
 
-		this.tablet = false;
+		this.bloqueado = false;
 
 
 	}
@@ -112,10 +102,8 @@ public class ControllerCamara {
 		zonaTresIzq();
 
 
+		eventosTablet(vp);
 
-		abrirTableta(vp);
-
-		cerrarTableta(vp);
 
 		rendirse(vp, menu);
 		javax.swing.Timer loopRepintado = new javax.swing.Timer(33, ev -> {
@@ -134,72 +122,57 @@ public class ControllerCamara {
 
 	 */
 
+	public void eventosTablet(VistaPrincipal vp) {
 
+	    bloquear = new Timer(20, e -> {
+	        tiempoBloqueado++;
+	        
+	        if (tiempoBloqueado >= 10) { 
+	            bloqueado = false;
+	            tiempoBloqueado = 0;
+	            bloquear.stop();
+	        }
+	    });
+	    
 
-	public void abrirTableta(VistaPrincipal vp) {
+	    pnlJuego.getLblTabAbrir().addMouseListener(new MouseAdapter() {
+	        @Override
+	        public void mouseEntered(MouseEvent evt) {
+	            
+	            if (!bloqueado) {
+	                bloqueado = true; 
+	                vp.setContenido(pnlTableta);
+	                
+	                bloquear.stop();
+	                tiempoBloqueado = 0;
+	                bloquear.start();
+	            }
+	        }
+	        
 
-		pnlJuego.getLblTabAbrir().addMouseListener(new MouseAdapter() {
+	    });
+	    
+	    // EVENTO: CERRAR TABLETA
+	    pnlTableta.getLblTabletCerrar().addMouseListener(new MouseAdapter() {
+	        @Override
+	        public void mouseEntered(MouseEvent evt) {
 
-			@Override
-
-			public void mouseEntered(MouseEvent evt) {
-
-				if (!tablet) {
-
-					tablet = true;
-
-					vp.setContenido(pnlTableta);
-
-				}
-
-			}
-
-			@Override
-
-			public void mouseExited(MouseEvent e) {
-
-				tablet = false;
-
-			}
-
-		});
-
+	            if (!bloqueado) {
+	                bloqueado = true;
+	                vp.setContenido(pnlJuego);
+	                
+	                bloquear.stop(); 
+	                tiempoBloqueado = 0; 
+	                bloquear.start();
+	            }
+	        }
+	    });
 	}
+		
+	
 
 
-
-	public void cerrarTableta(VistaPrincipal vp) {
-
-		pnlTableta.getLblTabletCerrar().addMouseListener(new MouseAdapter() {
-
-			@Override
-
-			public void mouseEntered(MouseEvent evt) {
-
-				if (tablet) {
-
-					tablet = false;
-
-					vp.setContenido(pnlJuego);
-
-
-
-				}
-
-			}
-
-			@Override
-
-			public void mouseExited(MouseEvent e) {
-
-				tablet = true;
-
-			}
-
-		});
-
-	}
-
+	
 
 
 	public void rendirse(VistaPrincipal vp, PnlMenu menu) {

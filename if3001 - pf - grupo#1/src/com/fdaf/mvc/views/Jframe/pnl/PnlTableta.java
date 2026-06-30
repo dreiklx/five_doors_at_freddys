@@ -40,7 +40,7 @@ public class PnlTableta extends JPanel {
 		//lblNewLabel.setIcon(CargarImagenes.puntoCamara);
 		
 		lblTabletCerrar = new JLabel("");
-		lblTabletCerrar.setBounds(288, 786, 690, 77);
+		lblTabletCerrar.setBounds(288, 808, 800, 55);
 		lblTabletCerrar.setPreferredSize(new Dimension(690, 77));
 		lblTabletCerrar.setIcon(CargarImagenes.barraTableta);
 		

@@ -149,7 +149,7 @@ public class ControllerInterfaz implements JuegoListener {
 
 		if (c == 1) {
 			overlay.setCursor(Cursor.getDefaultCursor());
-			overlay.setBounds(0, 0, EscalarVista.getEscalaX(1600), EscalarVista.getEscalaY(900));
+			overlay.setBounds(0, 0, EscalarVista.getEscalaX(1610), EscalarVista.getEscalaY(910));
 			overlay.setIcon(new EscalarVista.GifEscalado(
 					new ImageIcon(recurso), 
 					overlay.getWidth(), 
@@ -160,11 +160,13 @@ public class ControllerInterfaz implements JuegoListener {
 			overlay.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			
 			if ("izq".equals(lado)) {
-				overlay.setBounds(-15,800,80,80);
-				overlay.setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso), 80, 80));
+				overlay.setBounds(EscalarVista.getEscalaX(350),EscalarVista.getEscalaY(710),
+						EscalarVista.getEscalaX(80),EscalarVista.getEscalaY(80));
+				overlay.setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso),overlay.getWidth(), overlay.getHeight()));
 			}else {
-				overlay.setBounds(1425,800,80,80);
-				overlay.setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso), 80, 80));
+				overlay.setBounds(EscalarVista.getEscalaX(1200),EscalarVista.getEscalaY(740),
+						EscalarVista.getEscalaX(80),EscalarVista.getEscalaY(80));
+				overlay.setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso),overlay.getWidth(), overlay.getHeight()));
 			}
 		}
 
