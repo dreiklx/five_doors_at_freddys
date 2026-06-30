@@ -2,7 +2,9 @@ package com.fdaf.mvc.views.Jframe.pnl;
 
 import javax.swing.JPanel;
 
+import com.fdaf.mvc.views.Jframe.VistaPrincipal;
 import com.fdaf.util.CargarImagenes;
+import com.fdaf.util.EscalarVista;
 
 import java.awt.FlowLayout;
 import javax.swing.JLabel;
@@ -57,6 +59,11 @@ public class PnlTableta extends JPanel {
 		panel.add(pnlColeccionables);
 		panel.add(lblTabletCerrar);
 
+	}
+	public void init(VistaPrincipal vp,PnlTableta tablet) {
+		EscalarVista.adaptarTablet(vp, tablet);
+		this.revalidate();
+		this.repaint();
 	}
 
 	public JPanel getPanel() {

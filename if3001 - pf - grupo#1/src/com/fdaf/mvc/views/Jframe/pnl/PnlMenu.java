@@ -5,7 +5,9 @@ import java.awt.Color;
 import javax.swing.JLabel;
 import javax.swing.JTextPane;
 
+import com.fdaf.mvc.views.Jframe.VistaPrincipal;
 import com.fdaf.util.CargarImagenes;
+import com.fdaf.util.EscalarVista;
 
 import java.awt.Font;
 import javax.swing.JButton;
@@ -82,6 +84,11 @@ public class PnlMenu extends JPanel {
 
 	}
 
+	public void init(VistaPrincipal vp,PnlMenu menu) {
+		EscalarVista.adaptarMenu(vp, menu);;
+		this.revalidate();
+		this.repaint();
+	}
 
 
 	public JPanel getPnlMenu() {

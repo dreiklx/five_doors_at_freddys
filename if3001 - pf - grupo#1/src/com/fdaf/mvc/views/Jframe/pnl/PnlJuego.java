@@ -8,6 +8,7 @@ import javax.swing.JLabel;
 
 import javax.swing.SwingConstants;
 
+import com.fdaf.mvc.views.Jframe.VistaPrincipal;
 import com.fdaf.util.CargarImagenes;
 
 import com.fdaf.util.EscalarVista;
@@ -28,709 +29,747 @@ import java.awt.Cursor;
 
 public class PnlJuego extends JPanel {
 
-private JLabel lblIzqUno;
+	private JLabel lblIzqUno;
 
-private JLabel lblIzqDos;
+	private JLabel lblIzqDos;
 
-private JLabel lblIzqTres;
+	private JLabel lblIzqTres;
 
-private JLabel lblDerUno;
+	private JLabel lblDerUno;
 
-private JLabel lblDerDos;
+	private JLabel lblDerDos;
 
-private JLabel lblDerTres;
+	private JLabel lblDerTres;
 
-private JPanel pnlComponentes;
+	private JPanel pnlComponentes;
 
-private JButton btnPuertaDer;
+	private JButton btnPuertaDer;
 
-private JButton btnPuertaIzq;
+	private JButton btnPuertaIzq;
 
-private JLabel lblTabAbrir;
+	private JLabel lblTabAbrir;
 
-private JLabel lblTabCerrar;
+	private JLabel lblTabCerrar;
 
-private JCheckBox botonIzq;
+	private JCheckBox botonIzq;
 
-private JCheckBox botonDer;
+	private JCheckBox botonDer;
 
-private JCheckBox luzDer;
+	private JCheckBox luzDer;
 
-private JCheckBox luzIzq;
+	private JCheckBox luzIzq;
 
-private JPanel panelDer;
+	private JPanel panelDer;
 
-private JPanel panelIzq;
+	private JPanel panelIzq;
 
 
 
-// overlay único, centrado, fijo en pantalla (agregado al
+	// overlay único, centrado, fijo en pantalla (agregado al
 
-// panel raíz, NO a pnlOficina ni a panelIzq/Der). Aquí se muestran los
+	// panel raíz, NO a pnlOficina ni a panelIzq/Der). Aquí se muestran los
 
-// gifs de animatrónico y las imágenes de coleccionable. panelIzq/Der
+	// gifs de animatrónico y las imágenes de coleccionable. panelIzq/Der
 
-// vuelven a usarse EXCLUSIVAMENTE para botones y luces.
+	// vuelven a usarse EXCLUSIVAMENTE para botones y luces.
 
 
 
-private PnlAplicarImagen lblOverlay;
+	private JLabel lblOverlay;
 
-private PnlAplicarImagen lblImgOficina;
+	private JLabel lblImgOficina;
 
-private JLabel lblNariz;
+	private JLabel lblNariz;
 
-private JPanel lblAbanico;
+	private JLabel lblAbanico;
+	private JLabel lblPuertaDer;
+	private JLabel lblPuertaIzq;
+	private JLabel lblPowerLeft;
+	private JLabel lblBateria;
 
 
 
 
 
-/**
+	/**
 
-* Create the panel.
+	 * Create the panel.
 
-*/
+	 */
 
-public PnlJuego() {
+	public PnlJuego() {
 
-setPreferredSize(new Dimension(1600, 900));
+		setPreferredSize(new Dimension(1600, 900));
 
-setLayout(null);
+		setLayout(null);
 
 
 
-// overlay único centrado: (1000-500)/2=250, (600-400)/2=100.
+		// overlay único centrado: (1000-500)/2=250, (600-400)/2=100.
 
-lblOverlay = new PnlAplicarImagen(null);
+		lblOverlay = new JLabel("");
 
-lblOverlay.setOpaque(false);
+		lblOverlay.setOpaque(false);
 
-lblOverlay.setBounds(0, 0, 129, 124);
+		lblOverlay.setBounds(0, 0, 129, 124);
 
+		lblOverlay.setVisible(false);
 
 
-lblOverlay.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-lblOverlay.setVisible(false);
 
-//lblIzqTres.setOpaque(false);
 
+		panelDer=new PnlAplicarImagen(CargarImagenes.panelDer);
 
+		panelDer.setOpaque(false);
 
+		panelDer.setBounds(1794, 400,70,210);
 
+		panelDer.setLayout(null);
 
-lblTabAbrir = new JLabel("");
 
-lblTabAbrir.setBounds(288, 786, 690, 77);
 
 
 
-lblTabAbrir.setOpaque(false);
 
-lblTabAbrir.setIcon(EscalarVista.getImagenEscalada(CargarImagenes.barraTableta, lblTabAbrir.getWidth(), lblTabAbrir.getHeight()));
 
+		botonDer = new JCheckBox("");
 
+		botonDer.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+		botonDer.setBounds(5, 15, 48, 65);
 
+		botonDer.setIcon(CargarImagenes.btnDer0);
 
-panelDer=new PnlAplicarImagen(CargarImagenes.panelDer);
 
-panelDer.setOpaque(false);
 
-panelDer.setBounds(1794, 400,70,210);
+		botonDer.setOpaque(false);
 
-panelDer.setLayout(null);
+		botonDer.setHorizontalAlignment(SwingConstants.CENTER);
 
 
 
+		luzDer = new JCheckBox("");
 
+		luzDer.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+		luzDer.setBounds(5, 109, 48, 65);
 
+		luzDer.setIcon(CargarImagenes.luzDer0);
 
-botonDer = new JCheckBox("");
 
-botonDer.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-botonDer.setBounds(5, 15, 48, 65);
+		luzDer.setOpaque(false);
 
-botonDer.setIcon(CargarImagenes.btnDer0);
+		luzDer.setHorizontalAlignment(SwingConstants.CENTER);
 
 
 
-botonDer.setOpaque(false);
 
-botonDer.setHorizontalAlignment(SwingConstants.CENTER);
 
+		panelIzq=new PnlAplicarImagen(CargarImagenes.panelIzq);
 
+		panelIzq.setOpaque(false);
 
-luzDer = new JCheckBox("");
+		panelIzq.setBounds(-194,400,70,210);
 
-luzDer.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		panelIzq.setLayout(null);
 
-luzDer.setBounds(5, 109, 48, 65);
 
-luzDer.setIcon(CargarImagenes.luzDer0);
 
 
 
-luzDer.setOpaque(false);
+		botonIzq = new JCheckBox("");
 
-luzDer.setHorizontalAlignment(SwingConstants.CENTER);
+		botonIzq.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+		botonIzq.setOpaque(false);
 
+		botonIzq.setIcon(CargarImagenes.btnIzq0);
 
+		botonIzq.setHorizontalAlignment(SwingConstants.CENTER);
 
+		botonIzq.setBounds(17, 15, 48, 65);
 
-panelIzq=new PnlAplicarImagen(CargarImagenes.panelIzq);
 
-panelIzq.setOpaque(false);
 
-panelIzq.setBounds(-194,400,70,210);
 
-panelIzq.setLayout(null);
 
+		luzIzq = new JCheckBox("");
 
+		luzIzq.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+		luzIzq.setOpaque(false);
 
+		luzIzq.setIcon(CargarImagenes.luzIzq0);
 
-botonIzq = new JCheckBox("");
+		luzIzq.setHorizontalAlignment(SwingConstants.CENTER);
 
-botonIzq.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		luzIzq.setBounds(17, 108, 48, 65);
+		
 
-botonIzq.setOpaque(false);
+		pnlComponentes = new JPanel();
+		pnlComponentes.setBounds(0,0,1600,900);
+		pnlComponentes.setOpaque(false);
 
-botonIzq.setIcon(CargarImagenes.btnIzq0);
+		pnlComponentes.setLayout(null);
 
-botonIzq.setHorizontalAlignment(SwingConstants.CENTER);
 
-botonIzq.setBounds(17, 15, 48, 65);
 
 
 
+		lblIzqDos = new JLabel("zona dos");
 
+		lblIzqDos.setBackground(Color.white);
 
-luzIzq = new JCheckBox("");
+		lblIzqDos.setBounds(58, 0, 193, 900);
 
-luzIzq.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		lblIzqDos.setOpaque(false);
 
-luzIzq.setOpaque(false);
 
-luzIzq.setIcon(CargarImagenes.luzIzq0);
 
-luzIzq.setHorizontalAlignment(SwingConstants.CENTER);
 
-luzIzq.setBounds(17, 108, 48, 65);
 
+		lblDerDos = new JLabel("zona dos");
 
+		lblDerDos.setBackground(Color.white);
 
+		lblDerDos.setBounds(1349, 0, 193, 900);
 
+		lblDerDos.setOpaque(false);
 
-lblImgOficina = new PnlAplicarImagen(CargarImagenes.fondoJuego);
 
-lblImgOficina.setBounds(-300, -83, 2200, 1020);
 
 
 
-lblImgOficina.setLayout(null);
+		lblIzqUno = new JLabel("zona uno");
 
+		lblIzqUno.setBackground(Color.RED);
 
+		lblIzqUno.setBounds(251, 0, 179, 900);
 
-lblNariz = new JLabel("");
+		lblIzqUno.setOpaque(false);
 
-lblNariz.setBackground(Color.YELLOW);
 
-lblNariz.setBounds(965, 360, 11, 8);
 
 
 
+		lblDerUno = new JLabel("zona uno");
 
+		lblDerUno.setBackground(Color.RED);
 
-lblAbanico = new PnlAplicarImagen(CargarImagenes.abanico);
+		lblDerUno.setBounds(1170, 0, 179, 900);
 
+		lblDerUno.setOpaque(false);
 
 
-lblAbanico.setBounds(1093, 443, 166, 243);
 
-pnlComponentes = new JPanel();
 
-lblImgOficina.setBounds(-300, -83, 2200, 1020);
 
+		/*
 
-pnlComponentes.setOpaque(false);
+		 * Asignar orden añadiendo mannual
 
-pnlComponentes.setLayout(null);
+		 */
 
+		add(lblOverlay);
+		
+		
+		
+		
+		
+		
+		
+				lblIzqTres = new JLabel("");
+				
+						lblIzqTres.setBounds(0, 0, 58, 900);
+						
+								lblIzqTres.setIcon(EscalarVista.getImagenEscalada(CargarImagenes.zonaTresIzq, lblIzqTres.getWidth(), lblIzqTres.getHeight()));
+								
+										lblIzqTres.setBackground(Color.green);
+										
+												lblIzqTres.setOpaque(false);
+												
+														pnlComponentes.add(lblIzqTres);
+		
+		
+		
+		
+		
+		
+		
+		
+		
+				lblDerTres = new JLabel("");
+				
+						lblDerTres.setBounds(1542, 0, 58, 900);
+						
+								lblDerTres.setIcon(EscalarVista.getImagenEscalada(CargarImagenes.zonaTresDer, lblDerTres.getWidth(), lblDerTres.getHeight()));
+								
+										lblDerTres.setBackground(Color.green);
+										
+												lblDerTres.setOpaque(false);
+												
+														pnlComponentes.add(lblDerTres);
+				
+				lblBateria = new JLabel("");
+				pnlComponentes.add(lblBateria);
+				lblBateria.setBounds(67, 854, 89, 30);
+				
+				lblPowerLeft = new JLabel("");
+				pnlComponentes.add(lblPowerLeft);
+				lblPowerLeft.setBounds(57, 808, 194, 35);
+		
+				//lblIzqTres.setOpaque(false);
+		
+		
+		
+		
+		
+				lblTabAbrir = new JLabel("");
+				
+						lblTabAbrir.setBounds(288, 808, 800, 55);
+						
+						
+						
+								lblTabAbrir.setOpaque(false);
+								
+										lblTabAbrir.setIcon(EscalarVista.getImagenEscalada(CargarImagenes.barraTableta, lblTabAbrir.getWidth(), lblTabAbrir.getHeight()));
+										
+										
+										
+												pnlComponentes.add(lblTabAbrir);
+		
+		lblPuertaDer = new JLabel("");
+		lblPuertaDer.setBounds(1435, 0, 203, 900);
+		pnlComponentes.add(lblPuertaDer);
+		
+		lblPuertaIzq = new JLabel("");
+		lblPuertaIzq.setBounds(-39, 0, 203, 900);
+		pnlComponentes.add(lblPuertaIzq);
 
 
 
+		panelIzq.add(botonIzq);
 
+		panelIzq.add(luzIzq);
 
+		pnlComponentes.add(panelIzq);
+		panelDer.add(botonDer);
 
+		panelDer.add(luzDer);
 
+		pnlComponentes.add(panelDer);
+		
+		
+		
+		
+		
+		lblImgOficina = new JLabel("");
+		lblImgOficina.setBounds(-300, -83, 2200, 1020);
+		lblImgOficina.setLayout(null);
+		
+		///para agregar componentes con la referencia de la imagen
+		//lblImgOficina.setIcon(CargarImagenes.fondoJuego);
 
-lblDerTres = new JLabel("");
+		// QUITAMOS el setIcon original de aquí para dejar que el escalador lo asigne con las dimensiones reales del monitor
+		
+		lblNariz = new JLabel("");
+		lblNariz.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		lblNariz.setBounds(965, 360, 11, 8);
+		
+		lblAbanico = new JLabel(""); 
+		lblAbanico.setBounds(1093, 443, 166, 243);
+		lblAbanico.setOpaque(false); 
+		
+				// Los componentes internos de la oficina se añaden a su contenedor móvil
+				lblImgOficina.add(lblNariz);
+				lblImgOficina.add(lblAbanico);
+				
+				// Añadimos la oficina al contenedor de componentes del juego
+				pnlComponentes.add(lblImgOficina);
 
-lblDerTres.setBounds(1542, 0, 58, 900);
+		pnlComponentes.add(lblIzqDos);
+		pnlComponentes.add(lblDerDos);
+		pnlComponentes.add(lblIzqUno);
+		pnlComponentes.add(lblDerUno);
 
-lblDerTres.setIcon(EscalarVista.getImagenEscalada(CargarImagenes.zonaTresDer, lblDerTres.getWidth(), lblDerTres.getHeight()));
+		add(pnlComponentes);
 
-lblDerTres.setBackground(Color.green);
 
-lblDerTres.setOpaque(false);
 
 
+	}
 
+	public JLabel getLblPowerLeft() {
+		return lblPowerLeft;
+	}
 
+	public void setLblPowerLeft(JLabel lblPowerLeft) {
+		this.lblPowerLeft = lblPowerLeft;
+	}
 
+	public JLabel getLblBateria() {
+		return lblBateria;
+	}
 
+	public void setLblBateria(JLabel lblBateria) {
+		this.lblBateria = lblBateria;
+	}
 
-lblIzqTres = new JLabel("");
+	public JLabel getLblPuertaDer() {
+		return lblPuertaDer;
+	}
 
-lblIzqTres.setBounds(0, 0, 58, 900);
+	public void setLblPuertaDer(JLabel lblPuertaDer) {
+		this.lblPuertaDer = lblPuertaDer;
+	}
 
-lblIzqTres.setIcon(EscalarVista.getImagenEscalada(CargarImagenes.zonaTresIzq, lblIzqTres.getWidth(), lblIzqTres.getHeight()));
+	public JLabel getLblPuertaIzq() {
+		return lblPuertaIzq;
+	}
 
-lblIzqTres.setBackground(Color.green);
+	public void setLblPuertaIzq(JLabel lblPuertaIzq) {
+		this.lblPuertaIzq = lblPuertaIzq;
+	}
 
-lblIzqTres.setOpaque(false);
+	public void init(VistaPrincipal vp,PnlJuego juego) {
+		EscalarVista.adaptarJuego(vp, juego);;
+		this.revalidate();
+		this.repaint();
+	}
 
+	public JLabel getLblAbanico() {
 
+		return lblAbanico;
 
+	}
 
 
-lblIzqDos = new JLabel("zona dos");
 
-lblIzqDos.setBackground(Color.white);
+	public void setLblAbanico(JLabel lblAbanico) {
 
-lblIzqDos.setBounds(58, 0, 193, 900);
+		this.lblAbanico = lblAbanico;
 
-lblIzqDos.setOpaque(false);
+	}
 
 
 
+	public JLabel getLblNariz() {
 
+		return lblNariz;
 
-lblDerDos = new JLabel("zona dos");
+	}
 
-lblDerDos.setBackground(Color.white);
 
-lblDerDos.setBounds(1349, 0, 193, 900);
 
-lblDerDos.setOpaque(false);
+	public void setLblNariz(JLabel lblNariz) {
 
+		this.lblNariz = lblNariz;
 
+	}
 
 
 
-lblIzqUno = new JLabel("zona uno");
+	public JLabel getLblOverlay() {
 
-lblIzqUno.setBackground(Color.RED);
+		return lblOverlay;
 
-lblIzqUno.setBounds(251, 0, 179, 900);
+	}
 
-lblIzqUno.setOpaque(false);
 
 
+	public void setLblOverlay(JLabel lblOverlay) {
 
+		this.lblOverlay = lblOverlay;
 
+	}
 
-lblDerUno = new JLabel("zona uno");
 
-lblDerUno.setBackground(Color.RED);
 
-lblDerUno.setBounds(1170, 0, 179, 900);
+	public JPanel getPanelDer() {
 
-lblDerUno.setOpaque(false);
+		return panelDer;
 
+	}
 
 
 
+	public void setPanelDer(JPanel panelDer) {
 
-/*
+		this.panelDer = panelDer;
 
-* Asignar orden añadiendo mannual
+	}
 
-*/
 
-add(lblOverlay);
 
+	public JPanel getPanelIzq() {
 
+		return panelIzq;
 
+	}
 
-panelDer.add(botonDer);
 
-panelDer.add(luzDer);
 
-pnlComponentes.add(panelDer);
+	public void setPanelIzq(JPanel panelIzq) {
 
+		this.panelIzq = panelIzq;
 
+	}
 
-pnlComponentes.add(lblTabAbrir);
 
-pnlComponentes.add(lblDerTres);
 
-pnlComponentes.add(lblIzqTres);
+	public JCheckBox getLuzDer() {
 
-pnlComponentes.add(lblIzqDos);
+		return luzDer;
 
-pnlComponentes.add(lblDerDos);
+	}
 
-pnlComponentes.add(lblIzqUno);
 
-pnlComponentes.add(lblDerUno);
 
-add(pnlComponentes);
+	public void setLuzDer(JCheckBox luzDer) {
 
+		this.luzDer = luzDer;
 
+	}
 
 
-lblImgOficina.add(lblNariz);
 
-lblImgOficina.add(lblAbanico);
+	public JCheckBox getLuzIzq() {
 
-add(lblImgOficina);
+		return luzIzq;
 
+	}
 
 
 
+	public void setLuzIzq(JCheckBox luzIzq) {
 
-}
+		this.luzIzq = luzIzq;
 
+	}
 
 
-public JPanel getLblAbanico() {
 
-return lblAbanico;
+	public JCheckBox getBotonIzq() {
 
-}
+		return botonIzq;
 
+	}
 
 
-public void setLblAbanico(JPanel lblAbanico) {
 
-this.lblAbanico = lblAbanico;
+	public void setBotonIzq(JCheckBox botonIzq) {
 
-}
+		this.botonIzq = botonIzq;
 
+	}
 
 
-public JLabel getLblNariz() {
 
-return lblNariz;
+	public JCheckBox getBotonDer() {
 
-}
+		return botonDer;
 
+	}
 
 
-public void setLblNariz(JLabel lblNariz) {
 
-this.lblNariz = lblNariz;
+	public void setBotonDer(JCheckBox botonDer) {
 
-}
+		this.botonDer = botonDer;
 
+	}
 
 
-public PnlAplicarImagen getLblOverlay() {
 
-return lblOverlay;
+	public JLabel getLblTabAbrir() {
 
-}
+		return lblTabAbrir;
 
+	}
 
 
-public void setLblOverlay(PnlAplicarImagen lblOverlay) {
 
-this.lblOverlay = lblOverlay;
+	public void setLblTabAbrir(JLabel lblTabAbrir) {
 
-}
+		this.lblTabAbrir = lblTabAbrir;
 
+	}
 
 
-public JPanel getPanelDer() {
 
-return panelDer;
+	public JLabel getLblTabCerrar() {
 
-}
+		return lblTabCerrar;
 
+	}
 
 
-public void setPanelDer(JPanel panelDer) {
 
-this.panelDer = panelDer;
+	public void setLblTabCerrar(JLabel lblTabCerrar) {
 
-}
+		this.lblTabCerrar = lblTabCerrar;
 
+	}
 
 
-public JPanel getPanelIzq() {
 
-return panelIzq;
+	public JButton getBtnPuertaIzq() {
 
-}
+		return btnPuertaIzq;
 
+	}
 
 
-public void setPanelIzq(JPanel panelIzq) {
 
-this.panelIzq = panelIzq;
+	public void setBtnPuertaIzq(JButton btnPuertaIzq) {
 
-}
+		this.btnPuertaIzq = btnPuertaIzq;
 
+	}
 
 
-public JCheckBox getLuzDer() {
 
-return luzDer;
+	public JButton getBtnPuertaDer() {
 
-}
+		return btnPuertaDer;
 
+	}
 
 
-public void setLuzDer(JCheckBox luzDer) {
 
-this.luzDer = luzDer;
+	public void setBtnPuertaDer(JButton btnPuertaDer) {
 
-}
+		this.btnPuertaDer = btnPuertaDer;
 
+	}
 
 
-public JCheckBox getLuzIzq() {
 
-return luzIzq;
+	public JLabel getLblIzqUno() {
 
-}
+		return lblIzqUno;
 
+	}
 
 
-public void setLuzIzq(JCheckBox luzIzq) {
 
-this.luzIzq = luzIzq;
+	public void setLblIzqUno(JLabel lblIzqUno) {
 
-}
+		this.lblIzqUno = lblIzqUno;
 
+	}
 
 
-public JCheckBox getBotonIzq() {
 
-return botonIzq;
+	public JLabel getLblIzqDos() {
 
-}
+		return lblIzqDos;
 
+	}
 
 
-public void setBotonIzq(JCheckBox botonIzq) {
 
-this.botonIzq = botonIzq;
+	public void setLblIzqDos(JLabel lblIzqDos) {
 
-}
+		this.lblIzqDos = lblIzqDos;
 
+	}
 
 
-public JCheckBox getBotonDer() {
 
-return botonDer;
+	public JLabel getLblIzqTres() {
 
-}
+		return lblIzqTres;
 
+	}
 
 
-public void setBotonDer(JCheckBox botonDer) {
 
-this.botonDer = botonDer;
+	public void setLblIzqTres(JLabel lblIzqTres) {
 
-}
+		this.lblIzqTres = lblIzqTres;
 
+	}
 
 
-public JLabel getLblTabAbrir() {
 
-return lblTabAbrir;
+	public JLabel getLblDerUno() {
 
-}
+		return lblDerUno;
 
+	}
 
 
-public void setLblTabAbrir(JLabel lblTabAbrir) {
 
-this.lblTabAbrir = lblTabAbrir;
+	public void setLblDerUno(JLabel lblDerUno) {
 
-}
+		this.lblDerUno = lblDerUno;
 
+	}
 
 
-public JLabel getLblTabCerrar() {
 
-return lblTabCerrar;
+	public JLabel getLblDerDos() {
 
-}
+		return lblDerDos;
 
+	}
 
 
-public void setLblTabCerrar(JLabel lblTabCerrar) {
 
-this.lblTabCerrar = lblTabCerrar;
+	public void setLblDerDos(JLabel lblDerDos) {
 
-}
+		this.lblDerDos = lblDerDos;
 
+	}
 
 
-public JButton getBtnPuertaIzq() {
 
-return btnPuertaIzq;
+	public JLabel getLblDerTres() {
 
-}
+		return lblDerTres;
 
+	}
 
 
-public void setBtnPuertaIzq(JButton btnPuertaIzq) {
 
-this.btnPuertaIzq = btnPuertaIzq;
+	public void setLblDerTres(JLabel lblDerTres) {
 
-}
+		this.lblDerTres = lblDerTres;
 
+	}
 
 
-public JButton getBtnPuertaDer() {
 
-return btnPuertaDer;
+	public JPanel getPnlComponentes() {
 
-}
+		return pnlComponentes;
 
+	}
 
 
-public void setBtnPuertaDer(JButton btnPuertaDer) {
 
-this.btnPuertaDer = btnPuertaDer;
+	public void setPnlComponentes(JPanel pnlComponentes) {
 
-}
+		this.pnlComponentes = pnlComponentes;
 
+	}
 
 
-public JLabel getLblIzqUno() {
 
-return lblIzqUno;
+	public JLabel getLblImgOficina() {
 
-}
+		return lblImgOficina;
 
+	}
 
 
-public void setLblIzqUno(JLabel lblIzqUno) {
 
-this.lblIzqUno = lblIzqUno;
+	public void setLblImgOficina(JLabel lblImgOficina) {
 
-}
+		this.lblImgOficina = lblImgOficina;
 
-
-
-public JLabel getLblIzqDos() {
-
-return lblIzqDos;
-
-}
-
-
-
-public void setLblIzqDos(JLabel lblIzqDos) {
-
-this.lblIzqDos = lblIzqDos;
-
-}
-
-
-
-public JLabel getLblIzqTres() {
-
-return lblIzqTres;
-
-}
-
-
-
-public void setLblIzqTres(JLabel lblIzqTres) {
-
-this.lblIzqTres = lblIzqTres;
-
-}
-
-
-
-public JLabel getLblDerUno() {
-
-return lblDerUno;
-
-}
-
-
-
-public void setLblDerUno(JLabel lblDerUno) {
-
-this.lblDerUno = lblDerUno;
-
-}
-
-
-
-public JLabel getLblDerDos() {
-
-return lblDerDos;
-
-}
-
-
-
-public void setLblDerDos(JLabel lblDerDos) {
-
-this.lblDerDos = lblDerDos;
-
-}
-
-
-
-public JLabel getLblDerTres() {
-
-return lblDerTres;
-
-}
-
-
-
-public void setLblDerTres(JLabel lblDerTres) {
-
-this.lblDerTres = lblDerTres;
-
-}
-
-
-
-public JPanel getPnlComponentes() {
-
-return pnlComponentes;
-
-}
-
-
-
-public void setPnlComponentes(JPanel pnlComponentes) {
-
-this.pnlComponentes = pnlComponentes;
-
-}
-
-
-
-public PnlAplicarImagen getLblImgOficina() {
-
-return lblImgOficina;
-
-}
-
-
-
-public void setLblImgOficina(PnlAplicarImagen lblImgOficina) {
-
-this.lblImgOficina = lblImgOficina;
-
-}
-
+	}
 }

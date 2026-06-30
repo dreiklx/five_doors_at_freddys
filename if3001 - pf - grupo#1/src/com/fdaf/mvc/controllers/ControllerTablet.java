@@ -2,7 +2,6 @@ package com.fdaf.mvc.controllers;
 
 import java.awt.event.MouseListener;
 
-import org.w3c.dom.events.MouseEvent;
 
 import com.fdaf.mvc.views.Jframe.VistaPrincipal;
 import com.fdaf.mvc.views.Jframe.pnl.PnlJuego;
@@ -23,6 +22,7 @@ public class ControllerTablet {
 	}
 	
 	public void abrirTablet() {
+		
 		vp.setContenido(tablet);
 		
 	}

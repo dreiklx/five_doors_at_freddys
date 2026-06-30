@@ -30,495 +30,495 @@ public class ControllerJuego {
 
 
 
-private Juego juego;
+	private Juego juego;
 
-private Sonido musica;
+	private Sonido musica;
 
 
 
-private JuegoListener listener;
+	private JuegoListener listener;
 
 
 
-// Buzón de puertas pendientes (estado de juego).
+	// Buzón de puertas pendientes (estado de juego).
 
-private Puerta puertaPendienteIzq;
+	private Puerta puertaPendienteIzq;
 
-private Puerta puertaPendienteDer;
+	private Puerta puertaPendienteDer;
 
 
 
-// Control de revelación: solo un lado puede revelar a la vez.
+	// Control de revelación: solo un lado puede revelar a la vez.
 
-private String ladoRevelandoActual; // null, "izq" o "der"
+	private String ladoRevelandoActual; // null, "izq" o "der"
 
-private Timer timerRevelacion;
+	private Timer timerRevelacion;
 
 
 
-// Duraciones de gameplay (decisiones de diseño del juego, no de UI).
+	// Duraciones de gameplay (decisiones de diseño del juego, no de UI).
 
-private static final int MS_ANIMATRONICO = 1500;
+	private static final int MS_ANIMATRONICO = 1500;
 
-private static final int MS_COLECCIONABLE = 6000;
+	private static final int MS_COLECCIONABLE = 6000;
 
-private static final int MS_NADA = 600;
+	private static final int MS_NADA = 600;
 
 
 
-public ControllerJuego() {
+	public ControllerJuego() {
 
-juego = new Juego();
+		juego = new Juego();
 
-}
+	}
 
 
 
-public void setListener(JuegoListener listener) {
+	public void setListener(JuegoListener listener) {
 
-this.listener = listener;
+		this.listener = listener;
 
-}
+	}
 
 
 
-public void init() {
+	public void init() {
 
-musica = new Sonido("jumpscare.wav");
+		musica = new Sonido("jumpscare.wav");
 
-}
+	}
 
 
 
-/*
+	/*
 
-* ---- APERTURA DE PUERTAS ----
+	 * ---- APERTURA DE PUERTAS ----
 
-*/
+	 */
 
 
 
-public void abrirIzquierda() {
+	public void abrirIzquierda() {
 
 
 
-if (puertaPendienteIzq != null) {
+		if (puertaPendienteIzq != null) {
 
-System.out.println("[BLOQUEADA] IZQUIERDA ya tiene una puerta pendiente");
+			System.out.println("[BLOQUEADA] IZQUIERDA ya tiene una puerta pendiente");
 
-return;
+			return;
 
-}
+		}
 
 
 
-Puerta resultado = elegirIzquierda();
+		Puerta resultado = elegirIzquierda();
 
 
 
-if (resultado == null) {
+		if (resultado == null) {
 
-System.out.println("[SIN CAMINO] IZQUIERDA no tiene rama disponible");
+			System.out.println("[SIN CAMINO] IZQUIERDA no tiene rama disponible");
 
-return;
+			return;
 
-}
+		}
 
 
 
-puertaPendienteIzq = resultado;
+		puertaPendienteIzq = resultado;
 
-System.out.println("IZQUIERDA -> " + resultado + " | vidas=" + getVidas());
+		System.out.println("IZQUIERDA -> " + resultado + " | vidas=" + getVidas());
 
 
 
-if (listener != null) listener.alAbrirPuerta("izq");
+		if (listener != null) listener.alAbrirPuerta("izq");
 
-}
+	}
 
 
 
-public void abrirDerecha() {
+	public void abrirDerecha() {
 
 
 
-if (puertaPendienteDer != null) {
+		if (puertaPendienteDer != null) {
 
-System.out.println("[BLOQUEADA] DERECHA ya tiene una puerta pendiente");
+			System.out.println("[BLOQUEADA] DERECHA ya tiene una puerta pendiente");
 
-return;
+			return;
 
-}
+		}
 
 
 
-Puerta resultado = elegirDerecha();
+		Puerta resultado = elegirDerecha();
 
 
 
-if (resultado == null) {
+		if (resultado == null) {
 
-System.out.println("[SIN CAMINO] DERECHA no tiene rama disponible");
+			System.out.println("[SIN CAMINO] DERECHA no tiene rama disponible");
 
-return;
+			return;
 
-}
+		}
 
 
 
-puertaPendienteDer = resultado;
+		puertaPendienteDer = resultado;
 
-System.out.println("DERECHA -> " + resultado + " | vidas=" + getVidas());
+		System.out.println("DERECHA -> " + resultado + " | vidas=" + getVidas());
 
 
 
-if (listener != null) listener.alAbrirPuerta("der");
+		if (listener != null) listener.alAbrirPuerta("der");
 
-}
+	}
 
 
 
-private Puerta elegirIzquierda() {
+	private Puerta elegirIzquierda() {
 
-Puerta puerta = juego.elegirIzquierda();
+		Puerta puerta = juego.elegirIzquierda();
 
-procesarSonido(puerta);
+		procesarSonido(puerta);
 
-return puerta;
+		return puerta;
 
-}
+	}
 
 
 
-private Puerta elegirDerecha() {
+	private Puerta elegirDerecha() {
 
-Puerta puerta = juego.elegirDerecha();
+		Puerta puerta = juego.elegirDerecha();
 
-procesarSonido(puerta);
+		procesarSonido(puerta);
 
-return puerta;
+		return puerta;
 
-}
+	}
 
 
 
-private void procesarSonido(Puerta puerta) {
+	private void procesarSonido(Puerta puerta) {
 
-if (puerta == null) return;
+		if (puerta == null) return;
 
-if (puerta.getTipo() == TipoPuerta.ANIMATRONICO) {
+		if (puerta.getTipo() == TipoPuerta.ANIMATRONICO) {
 
-musica = new Sonido("jumpscare.wav");
+			musica = new Sonido("jumpscare.wav");
 
-musica.play();
+			musica.play();
 
-}
+		}
 
-}
+	}
 
 
 
-/*
+	/*
 
-* ---- REVELACIÓN (LUCES) ----
+	 * ---- REVELACIÓN (LUCES) ----
 
-*/
+	 */
 
 
 
-public void revelarIzquierda() {
+	public void revelarIzquierda() {
 
-revelar("izq", puertaPendienteIzq);
+		revelar("izq", puertaPendienteIzq);
 
-}
+	}
 
 
 
-public void revelarDerecha() {
+	public void revelarDerecha() {
 
-revelar("der", puertaPendienteDer);
+		revelar("der", puertaPendienteDer);
 
-}
+	}
 
 
 
-private void revelar(String lado, Puerta puerta) {
+	private void revelar(String lado, Puerta puerta) {
 
 
 
-if (puerta == null) {
+		if (puerta == null) {
 
-return; // nada pendiente en ese lado
+			return; // nada pendiente en ese lado
 
-}
+		}
 
 
 
-if (ladoRevelandoActual != null) {
+		if (ladoRevelandoActual != null) {
 
-System.out.println("[OVERLAY OCUPADO] espera a que termine la revelación actual");
+			System.out.println("[OVERLAY OCUPADO] espera a que termine la revelación actual");
 
-return;
+			return;
 
-}
+		}
 
 
 
-ladoRevelandoActual = lado;
+		ladoRevelandoActual = lado;
 
 
 
-if (listener != null) listener.alEncenderLuz(lado);
+		if (listener != null) listener.alEncenderLuz(lado);
 
 
 
-if (timerRevelacion != null && timerRevelacion.isRunning()) {
+		if (timerRevelacion != null && timerRevelacion.isRunning()) {
 
-timerRevelacion.stop();
+			timerRevelacion.stop();
 
-}
+		}
 
 
 
-switch (puerta.getTipo()) {
+		switch (puerta.getTipo()) {
 
 
 
-case ANIMATRONICO:
+		case ANIMATRONICO:
 
-if (listener != null) listener.alRevelarAnimatronico(lado, puerta.getAnimatronico());
+			if (listener != null) listener.alRevelarAnimatronico(lado, puerta.getAnimatronico());
 
-programarLiberacion(MS_ANIMATRONICO);
+			programarLiberacion(MS_ANIMATRONICO);
 
-break;
+			break;
 
 
 
-case COLECCIONABLE:
+		case COLECCIONABLE:
 
-if (listener != null) listener.alRevelarColeccionable(lado, puerta.getColeccionable());
+			if (listener != null) listener.alRevelarColeccionable(lado, puerta.getColeccionable());
 
-// red de seguridad: si el jugador no recoge a tiempo, libera igual
+			// red de seguridad: si el jugador no recoge a tiempo, libera igual
 
-programarLiberacion(MS_COLECCIONABLE);
+			programarLiberacion(MS_COLECCIONABLE);
 
-break;
+			break;
 
 
 
-case NADA:
+		case NADA:
 
-if (listener != null) listener.alRevelarNada(lado);
+			if (listener != null) listener.alRevelarNada(lado);
 
-programarLiberacion(MS_NADA);
+			programarLiberacion(MS_NADA);
 
-break;
+			break;
 
-}
+		}
 
-}
+	}
 
 
 
-private void programarLiberacion(int ms) {
+	private void programarLiberacion(int ms) {
 
-timerRevelacion = new Timer(ms, ev -> {
+		timerRevelacion = new Timer(ms, ev -> {
 
-timerRevelacion.stop();
+			timerRevelacion.stop();
 
-liberar();
+			liberar();
 
-});
+		});
 
-timerRevelacion.setRepeats(false);
+		timerRevelacion.setRepeats(false);
 
-timerRevelacion.start();
+		timerRevelacion.start();
 
-}
+	}
 
 
 
-/*
+	/*
 
-* ---- RECOGER COLECCIONABLE (clic del jugador en el overlay) ----
+	 * ---- RECOGER COLECCIONABLE (clic del jugador en el overlay) ----
 
-*/
+	 */
 
 
 
-public void recogerColeccionable() {
+	public void recogerColeccionable() {
 
 
 
-if (ladoRevelandoActual == null) return;
+		if (ladoRevelandoActual == null) return;
 
 
 
-Puerta puerta = "izq".equals(ladoRevelandoActual)
+		Puerta puerta = "izq".equals(ladoRevelandoActual)
 
-? puertaPendienteIzq : puertaPendienteDer;
+				? puertaPendienteIzq : puertaPendienteDer;
 
 
 
-if (puerta == null) return;
+		if (puerta == null) return;
 
-if (puerta.getTipo() != TipoPuerta.COLECCIONABLE) return;
+		if (puerta.getTipo() != TipoPuerta.COLECCIONABLE) return;
 
 
 
-if (listener != null) listener.alRecogerColeccionable(puerta.getColeccionable());
+		if (listener != null) listener.alRecogerColeccionable(puerta.getColeccionable());
 
 
 
-if (timerRevelacion != null && timerRevelacion.isRunning()) {
+		if (timerRevelacion != null && timerRevelacion.isRunning()) {
 
-timerRevelacion.stop();
+			timerRevelacion.stop();
 
-}
+		}
 
 
 
-liberar();
+		liberar();
 
-}
+	}
 
 
 
-/*
+	/*
 
-* ---- LIBERACIÓN Y FIN DE JUEGO ----
+	 * ---- LIBERACIÓN Y FIN DE JUEGO ----
 
-*/
+	 */
 
 
 
-private void liberar() {
+	private void liberar() {
 
 
 
-String lado = ladoRevelandoActual;
+		String lado = ladoRevelandoActual;
 
 
 
-if ("izq".equals(lado)) {
+		if ("izq".equals(lado)) {
 
-puertaPendienteIzq = null;
+			puertaPendienteIzq = null;
 
-System.out.println("[LIBERADA] IZQUIERDA");
+			System.out.println("[LIBERADA] IZQUIERDA");
 
-} else if ("der".equals(lado)) {
+		} else if ("der".equals(lado)) {
 
-puertaPendienteDer = null;
+			puertaPendienteDer = null;
 
-System.out.println("[LIBERADA] DERECHA");
+			System.out.println("[LIBERADA] DERECHA");
 
-}
+		}
 
 
 
-ladoRevelandoActual = null;
+		ladoRevelandoActual = null;
 
 
 
-if (lado != null && listener != null) {
+		if (lado != null && listener != null) {
 
-listener.alLiberar(lado);
+			listener.alLiberar(lado);
 
-}
+		}
 
 
 
-verificarFinDeJuego();
+		verificarFinDeJuego();
 
-}
+	}
 
 
 
-private void verificarFinDeJuego() {
+	private void verificarFinDeJuego() {
 
-if (perdio()) {
+		if (perdio()) {
 
-System.out.println("[GAME OVER] vidas=" + getVidas());
+			System.out.println("[GAME OVER] vidas=" + getVidas());
 
-if (listener != null) listener.alPerder();
+			if (listener != null) listener.alPerder();
 
-} else if (gano()) {
+		} else if (gano()) {
 
-System.out.println("[VICTORIA] coleccionables=" + getColeccionablesEncontrados());
+			System.out.println("[VICTORIA] coleccionables=" + getColeccionablesEncontrados());
 
-if (listener != null) listener.alGanar();
+			if (listener != null) listener.alGanar();
 
-}
+		}
 
-}
+	}
 
 
 
-/*
+	/*
 
-* ---- CONSULTAS DE ESTADO ----
+	 * ---- CONSULTAS DE ESTADO ----
 
-*/
+	 */
 
 
 
-public void reiniciar() {
+	public void reiniciar() {
 
-juego.reiniciar();
+		juego.reiniciar();
 
-puertaPendienteIzq = null;
+		puertaPendienteIzq = null;
 
-puertaPendienteDer = null;
+		puertaPendienteDer = null;
 
-ladoRevelandoActual = null;
+		ladoRevelandoActual = null;
 
-if (timerRevelacion != null && timerRevelacion.isRunning()) {
+		if (timerRevelacion != null && timerRevelacion.isRunning()) {
 
-timerRevelacion.stop();
+			timerRevelacion.stop();
 
-}
+		}
 
-}
+	}
 
 
 
-public boolean gano() {
+	public boolean gano() {
 
-return juego.gano();
+		return juego.gano();
 
-}
+	}
 
 
 
-public boolean perdio() {
+	public boolean perdio() {
 
-return juego.perdio();
+		return juego.perdio();
 
-}
+	}
 
 
 
-public int getVidas() {
+	public int getVidas() {
 
-return juego.getVidas();
+		return juego.getVidas();
 
-}
+	}
 
 
 
-public int getColeccionablesEncontrados() {
+	public int getColeccionablesEncontrados() {
 
-return juego.getColeccionablesEncontrados();
+		return juego.getColeccionablesEncontrados();
 
-}
+	}
 
 
 
-public Juego getJuego() {
+	public Juego getJuego() {
 
-return juego;
+		return juego;
 
-}
+	}
 
 
 

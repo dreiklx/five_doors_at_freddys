@@ -50,6 +50,7 @@ public class VistaPrincipal extends JFrame {
 		
 
 		pnlContenido = new JPanel();
+		pnlContenido.setBackground(Color.PINK);
 		
 		panel.add(pnlContenido, BorderLayout.CENTER);
 		pnlContenido.setLayout(new BorderLayout(0, 0));

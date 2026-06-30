@@ -8,7 +8,9 @@ import javax.swing.JLabel;
 import java.awt.Font;
 import javax.swing.SwingConstants;
 
+import com.fdaf.mvc.views.Jframe.VistaPrincipal;
 import com.fdaf.util.CargarImagenes;
+import com.fdaf.util.EscalarVista;
 
 import javax.swing.JButton;
 import java.awt.Dimension;
@@ -72,7 +74,13 @@ public class PnlOpciones extends JPanel {
 		pnlOpciones.add(lbl);
 
 	}
-
+	
+	public void init(VistaPrincipal vp,PnlOpciones opciones) {
+		EscalarVista.adaptarOpciones(vp, opciones);;
+		this.revalidate();
+		this.repaint();
+	}
+	
 	public JPanel getPnlOpciones() {
 		return pnlOpciones;
 	}

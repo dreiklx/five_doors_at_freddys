@@ -16,13 +16,15 @@ public class ControllerMenu {
 	private VistaPrincipal vp;
 
 	public ControllerMenu() {
+		
 		menu = new PnlMenu();
 		opciones = new PnlOpciones();
 		vp = new VistaPrincipal();
+		EscalarVista.adaptarMenu(vp, menu);
+		EscalarVista.adaptarOpciones(vp, opciones);
 	}
 
 	public void init() {
-		EscalarVista.adaptarInicio(vp,menu, opciones);;
 		vp.setContenido(menu);
 		botones();
 		encima();

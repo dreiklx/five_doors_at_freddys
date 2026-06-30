@@ -12,8 +12,7 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.Timer;
 
-
-
+import com.fdaf.mvc.models.juego.Juego;
 import com.fdaf.mvc.views.Jframe.VistaPrincipal;
 
 import com.fdaf.mvc.views.Jframe.pnl.PnlJuego;
@@ -53,12 +52,16 @@ public class ControllerCamara {
 	private Timer izquierda;
 
 	private Timer tiempo;
+	private Timer soltar;
 
 	private int xlbl;
 
 	private int xpnlDer;
-
 	private int xpnlIzq;
+	
+	private int xPDer;
+	private int xPIzq;
+		
 
 	private int progreso;
 
@@ -69,7 +72,6 @@ public class ControllerCamara {
 	// CAMBIO FDAF - Refactor: paneles inyectados desde ControllerInterfaz.
 
 	public ControllerCamara(PnlJuego pnlJuego, PnlTableta pnlTableta) {
-
 		this.pnlJuego = pnlJuego;
 
 		this.pnlTableta = pnlTableta;
@@ -82,11 +84,14 @@ public class ControllerCamara {
 
 
 	public void init(VistaPrincipal vp, PnlMenu menu) {
-
-		EscalarVista.adaptarJuego(vp, pnlJuego, pnlTableta);
+		
+		EscalarVista.adaptarTablet(vp, pnlTableta);
+		EscalarVista.adaptarJuego(vp, pnlJuego);
+		
 		this.xpnlDer = pnlJuego.getPanelDer().getX();
 	    this.xpnlIzq = pnlJuego.getPanelIzq().getX();
-		
+		this.xPDer=pnlJuego.getLblPuertaDer().getX();
+		this.xPIzq=pnlJuego.getLblPuertaIzq().getX();
 		
 		vp.setContenido(pnlJuego);
 
@@ -113,7 +118,12 @@ public class ControllerCamara {
 		cerrarTableta(vp);
 
 		rendirse(vp, menu);
-
+		javax.swing.Timer loopRepintado = new javax.swing.Timer(33, ev -> {
+	        if (pnlJuego != null && pnlJuego.isShowing()) {
+	            pnlJuego.repaint();
+	        }
+	    });
+	    loopRepintado.start();
 	}
 
 
@@ -217,15 +227,24 @@ public class ControllerCamara {
 			}
 
 		});
-
+		
+		soltar=new Timer(50, e -> {
+			progreso--;
+			pnlTableta.getPbarRendirse().setValue(progreso);
+			if(progreso==0) {
+				soltar.stop();
+			}
+		});
 
 
 		pnlTableta.getPbarRendirse().addMouseListener(new MouseAdapter() {
 
+	
+
 			@Override
 
 			public void mousePressed(MouseEvent e) {
-
+				soltar.stop();
 				tiempo.start();
 
 			}
@@ -233,19 +252,22 @@ public class ControllerCamara {
 			@Override
 
 			public void mouseReleased(MouseEvent e) {
-
 				tiempo.stop();
+				soltar.start();
+				
 
-				progreso = 0;
-
-				pnlTableta.getPbarRendirse().setValue(0);
+				
 
 			}
 
 		});
 
 	}
-
+	
+	/*
+	 * 
+	 */
+	
 
 
 	/*
@@ -265,6 +287,8 @@ public class ControllerCamara {
 			int ylbl = pnlJuego.getLblImgOficina().getY();
 
 			int ypnl = pnlJuego.getPanelIzq().getY();
+			int yPuerta=pnlJuego.getLblPuertaDer().getY();
+
 
 
 
@@ -279,7 +303,9 @@ public class ControllerCamara {
 				xpnlIzq++;
 
 				xpnlDer++;
-
+				
+				xPDer++;
+				xPIzq++;
 			}
 
 
@@ -287,7 +313,8 @@ public class ControllerCamara {
 			pnlJuego.getPanelIzq().setLocation(xpnlIzq, ypnl);
 
 			pnlJuego.getPanelDer().setLocation(xpnlDer, ypnl);
-
+			pnlJuego.getLblPuertaIzq().setLocation(xPIzq, yPuerta);
+			pnlJuego.getLblPuertaDer().setLocation(xPDer, yPuerta);
 			pnlJuego.getLblImgOficina().setLocation(xlbl, ylbl);
 
 		});
@@ -307,6 +334,7 @@ public class ControllerCamara {
 			int ylbl = pnlJuego.getLblImgOficina().getY();
 
 			int ypnl = pnlJuego.getPanelDer().getY();
+			int yPuerta=pnlJuego.getLblPuertaDer().getY();
 
 
 
@@ -321,6 +349,9 @@ public class ControllerCamara {
 				xpnlIzq--;
 
 				xpnlDer--;
+				
+				xPDer--;
+				xPIzq--;
 
 			}
 
@@ -329,7 +360,8 @@ public class ControllerCamara {
 			pnlJuego.getPanelIzq().setLocation(xpnlIzq, ypnl);
 
 			pnlJuego.getPanelDer().setLocation(xpnlDer, ypnl);
-
+			pnlJuego.getLblPuertaIzq().setLocation(xPIzq, yPuerta);
+			pnlJuego.getLblPuertaDer().setLocation(xPDer, yPuerta);
 			pnlJuego.getLblImgOficina().setLocation(xlbl, ylbl);
 
 		});
@@ -476,7 +508,7 @@ public class ControllerCamara {
 
 			public void mouseEntered(MouseEvent evt) {
 
-				derecha(-100);
+				derecha(0);
 
 			}
 
