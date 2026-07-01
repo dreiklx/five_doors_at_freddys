@@ -2,10 +2,9 @@ package com.fdaf.mvc.controllers;
 
 import java.awt.event.MouseListener;
 
-
-import com.fdaf.mvc.views.Jframe.VistaPrincipal;
-import com.fdaf.mvc.views.Jframe.pnl.PnlJuego;
-import com.fdaf.mvc.views.Jframe.pnl.PnlTableta;
+import com.fdaf.mvc.views.frames.VistaPrincipal;
+import com.fdaf.mvc.views.frames.pnl.PnlJuego;
+import com.fdaf.mvc.views.frames.pnl.PnlTableta;
 
 public class ControllerTablet {
 	private VistaPrincipal vp;

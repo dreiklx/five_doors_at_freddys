@@ -1,4 +1,4 @@
-package com.fdaf.mvc.views.Jframe;
+package com.fdaf.mvc.views.frames;
 
 import java.awt.BorderLayout;
 import javax.swing.JComponent;

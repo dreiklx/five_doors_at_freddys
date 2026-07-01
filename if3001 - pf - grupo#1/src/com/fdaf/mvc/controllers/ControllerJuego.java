@@ -1,525 +1,363 @@
 package com.fdaf.mvc.controllers;
 
-
-
 import javax.swing.Timer;
 
-
-
 import com.fdaf.mvc.models.juego.Juego;
-
 import com.fdaf.mvc.models.puerta.Puerta;
-
 import com.fdaf.mvc.models.puerta.TipoPuerta;
-
 import com.fdaf.mvc.views.multimedia.Sonido;
-
-
-
-// ControllerJuego concentra TODA la lógica del
-
-// juego (árbol, puertas pendientes, revelaciones, timers de gameplay,
-
-// victoria/derrota). No toca Swing salvo javax.swing.Timer, que aquí se
-
-// usa como mecanismo de planificación de plazos de juego, no como UI.
-
-// Comunica todos sus efectos visuales a través de un JuegoListener.
 
 public class ControllerJuego {
 
-
-
 	private Juego juego;
 
-	private Sonido musica;
-
-
+	private boolean puertaIzqAbierta = false;
+	private boolean puertaDerAbierta = false;
+	private boolean luzIzqEncendida = false;
+	private boolean luzDerEncendida = false;
 
 	private JuegoListener listener;
 
-
-
-	// Buzón de puertas pendientes (estado de juego).
-
 	private Puerta puertaPendienteIzq;
-
 	private Puerta puertaPendienteDer;
 
-
-
-	// Control de revelación: solo un lado puede revelar a la vez.
-
-	private String ladoRevelandoActual; // null, "izq" o "der"
-
+	private String ladoRevelandoActual;
 	private Timer timerRevelacion;
 
-
-
-	// Duraciones de gameplay (decisiones de diseño del juego, no de UI).
+	private Sonido sonidoLuzIzq;
+	private Sonido sonidoLuzDer;
 
 	private static final int MS_ANIMATRONICO = 1500;
-
 	private static final int MS_COLECCIONABLE = 6000;
-
 	private static final int MS_NADA = 600;
 
-
-
 	public ControllerJuego() {
-
 		juego = new Juego();
-
 	}
-
-
 
 	public void setListener(JuegoListener listener) {
-
 		this.listener = listener;
-
 	}
-
-
 
 	public void init() {
-
-		musica = new Sonido("jumpscare.wav");
-
 	}
 
-
-
 	/*
-
-	 * ---- APERTURA DE PUERTAS ----
-
+	 * ---- PUERTAS (toggle: abrir/cerrar) ----
+	 * CAMBIO: abrir la puerta ya NO afecta las vidas. Solo consume el
+	 * árbol y determina el contenido; la vida se pierde exclusivamente
+	 * en evaluarRevelacion() cuando el tipo resulta ser ANIMATRONICO.
 	 */
-
-
 
 	public void abrirIzquierda() {
 
-
-
-		if (puertaPendienteIzq != null) {
-
-			System.out.println("[BLOQUEADA] IZQUIERDA ya tiene una puerta pendiente");
-
+		if ("izq".equals(ladoRevelandoActual)) {
+			new Sonido("botones/error_al_presionar_boton.wav").play();
 			return;
-
 		}
 
+		new Sonido("puertas/puerta.wav").play();
 
+		if (!puertaIzqAbierta) {
 
-		Puerta resultado = elegirIzquierda();
+			puertaIzqAbierta = true;
 
+			if (puertaPendienteIzq == null) {
+				puertaPendienteIzq = elegirIzquierda();
+			}
 
+			if (listener != null) listener.alAbrirPuerta("izq");
 
-		if (resultado == null) {
+			if (luzIzqEncendida && puertaPendienteIzq != null) {
+				evaluarRevelacionIzq();
+			}
 
-			System.out.println("[SIN CAMINO] IZQUIERDA no tiene rama disponible");
+		} else {
 
-			return;
+			puertaIzqAbierta = false;
 
+			if (listener != null) listener.alCerrarPuerta("izq");
 		}
-
-
-
-		puertaPendienteIzq = resultado;
-
-		System.out.println("IZQUIERDA -> " + resultado + " | vidas=" + getVidas());
-
-
-
-		if (listener != null) listener.alAbrirPuerta("izq");
-
 	}
-
-
 
 	public void abrirDerecha() {
 
-
-
-		if (puertaPendienteDer != null) {
-
-			System.out.println("[BLOQUEADA] DERECHA ya tiene una puerta pendiente");
-
+		if ("der".equals(ladoRevelandoActual)) {
+			new Sonido("botones/error_al_presionar_boton.wav").play();
 			return;
-
 		}
 
+		new Sonido("puertas/puerta.wav").play();
 
+		if (!puertaDerAbierta) {
 
-		Puerta resultado = elegirDerecha();
+			puertaDerAbierta = true;
 
+			if (puertaPendienteDer == null) {
+				puertaPendienteDer = elegirDerecha();
+			}
 
+			if (listener != null) listener.alAbrirPuerta("der");
 
-		if (resultado == null) {
+			if (luzDerEncendida && puertaPendienteDer != null) {
+				evaluarRevelacionDer();
+			}
 
-			System.out.println("[SIN CAMINO] DERECHA no tiene rama disponible");
+		} else {
 
-			return;
+			puertaDerAbierta = false;
 
+			if (listener != null) listener.alCerrarPuerta("der");
 		}
-
-
-
-		puertaPendienteDer = resultado;
-
-		System.out.println("DERECHA -> " + resultado + " | vidas=" + getVidas());
-
-
-
-		if (listener != null) listener.alAbrirPuerta("der");
-
 	}
-
-
 
 	private Puerta elegirIzquierda() {
-
 		Puerta puerta = juego.elegirIzquierda();
-
 		procesarSonido(puerta);
-
 		return puerta;
-
 	}
-
-
 
 	private Puerta elegirDerecha() {
-
 		Puerta puerta = juego.elegirDerecha();
-
 		procesarSonido(puerta);
-
 		return puerta;
-
 	}
-
-
 
 	private void procesarSonido(Puerta puerta) {
-
 		if (puerta == null) return;
-
 		if (puerta.getTipo() == TipoPuerta.ANIMATRONICO) {
 
-			musica = new Sonido("jumpscare.wav");
-
-			musica.play();
-
 		}
-
 	}
 
-
-
 	/*
-
-	 * ---- REVELACIÓN (LUCES) ----
-
+	 * ---- LUCES (toggle: encender/apagar, con loop mientras esté encendida) ----
 	 */
-
-
 
 	public void revelarIzquierda() {
 
-		revelar("izq", puertaPendienteIzq);
+		if ("izq".equals(ladoRevelandoActual)) {
+			new Sonido("botones/error_al_presionar_boton.wav").play();
+			return;
+		}
 
+		if (luzIzqEncendida) {
+
+			luzIzqEncendida = false;
+			detenerSonidoLuzIzq();
+
+			if (listener != null) listener.alApagarLuz("izq");
+
+			return;
+		}
+
+		luzIzqEncendida = true;
+		sonidoLuzIzq = new Sonido("botones/luces_encendidas.wav");
+		sonidoLuzIzq.loop();
+
+		if (listener != null) listener.alEncenderLuz("izq");
+
+		if (puertaIzqAbierta && puertaPendienteIzq != null) {
+			evaluarRevelacionIzq();
+		}
 	}
-
-
 
 	public void revelarDerecha() {
 
-		revelar("der", puertaPendienteDer);
-
-	}
-
-
-
-	private void revelar(String lado, Puerta puerta) {
-
-
-
-		if (puerta == null) {
-
-			return; // nada pendiente en ese lado
-
+		if ("der".equals(ladoRevelandoActual)) {
+			new Sonido("botones/error_al_presionar_boton.wav").play();
+			return;
 		}
 
+		if (luzDerEncendida) {
 
+			luzDerEncendida = false;
+			detenerSonidoLuzDer();
 
-		if (ladoRevelandoActual != null) {
-
-			System.out.println("[OVERLAY OCUPADO] espera a que termine la revelación actual");
+			if (listener != null) listener.alApagarLuz("der");
 
 			return;
-
 		}
 
+		luzDerEncendida = true;
+		sonidoLuzDer = new Sonido("botones/luces_encendidas.wav");
+		sonidoLuzDer.loop();
 
+		if (listener != null) listener.alEncenderLuz("der");
+
+		if (puertaDerAbierta && puertaPendienteDer != null) {
+			evaluarRevelacionDer();
+		}
+	}
+
+	private void detenerSonidoLuzIzq() {
+		if (sonidoLuzIzq != null) {
+			sonidoLuzIzq.stop();
+			sonidoLuzIzq = null;
+		}
+	}
+
+	private void detenerSonidoLuzDer() {
+		if (sonidoLuzDer != null) {
+			sonidoLuzDer.stop();
+			sonidoLuzDer = null;
+		}
+	}
+
+	/*
+	 * ---- REVELACIÓN: solo cuando puerta abierta + luz encendida ----
+	 */
+
+	private void evaluarRevelacionIzq() {
+		evaluarRevelacion("izq", puertaPendienteIzq);
+	}
+
+	private void evaluarRevelacionDer() {
+		evaluarRevelacion("der", puertaPendienteDer);
+	}
+
+	private void evaluarRevelacion(String lado, Puerta puerta) {
+
+		if (ladoRevelandoActual != null) {
+			return;
+		}
 
 		ladoRevelandoActual = lado;
 
-
-
-		if (listener != null) listener.alEncenderLuz(lado);
-
-
-
-		if (timerRevelacion != null && timerRevelacion.isRunning()) {
-
-			timerRevelacion.stop();
-
-		}
-
-
-
 		switch (puerta.getTipo()) {
 
-
-
 		case ANIMATRONICO:
+			// aquí, y solo aquí, se pierde la vida  en el momento
+			// real de la revelación, no al abrir la puerta.
+			juego.perderVidaPorAnimatronico();
+			if (listener != null) listener.alActualizarVidas(getVidas());
 
+			if ("izq".equals(lado)) detenerSonidoLuzIzq(); else detenerSonidoLuzDer();
 			if (listener != null) listener.alRevelarAnimatronico(lado, puerta.getAnimatronico());
-
 			programarLiberacion(MS_ANIMATRONICO);
-
 			break;
-
-
 
 		case COLECCIONABLE:
-
 			if (listener != null) listener.alRevelarColeccionable(lado, puerta.getColeccionable());
-
-			// red de seguridad: si el jugador no recoge a tiempo, libera igual
-
 			programarLiberacion(MS_COLECCIONABLE);
-
 			break;
-
-
 
 		case NADA:
-
 			if (listener != null) listener.alRevelarNada(lado);
-
 			programarLiberacion(MS_NADA);
-
 			break;
-
 		}
-
 	}
-
-
 
 	private void programarLiberacion(int ms) {
-
 		timerRevelacion = new Timer(ms, ev -> {
-
 			timerRevelacion.stop();
-
 			liberar();
-
 		});
-
 		timerRevelacion.setRepeats(false);
-
 		timerRevelacion.start();
-
 	}
 
-
-
 	/*
-
 	 * ---- RECOGER COLECCIONABLE (clic del jugador en el overlay) ----
-
 	 */
-
-
 
 	public void recogerColeccionable() {
 
-
-
 		if (ladoRevelandoActual == null) return;
 
-
-
 		Puerta puerta = "izq".equals(ladoRevelandoActual)
-
 				? puertaPendienteIzq : puertaPendienteDer;
 
-
-
 		if (puerta == null) return;
-
 		if (puerta.getTipo() != TipoPuerta.COLECCIONABLE) return;
-
-
 
 		if (listener != null) listener.alRecogerColeccionable(puerta.getColeccionable());
 
-
-
 		if (timerRevelacion != null && timerRevelacion.isRunning()) {
-
 			timerRevelacion.stop();
-
 		}
 
-
-
 		liberar();
-
 	}
 
-
-
 	/*
-
 	 * ---- LIBERACIÓN Y FIN DE JUEGO ----
-
 	 */
-
-
 
 	private void liberar() {
 
-
-
 		String lado = ladoRevelandoActual;
 
-
-
 		if ("izq".equals(lado)) {
-
 			puertaPendienteIzq = null;
-
-			System.out.println("[LIBERADA] IZQUIERDA");
-
+			puertaIzqAbierta = false;
+			luzIzqEncendida = false;
+			detenerSonidoLuzIzq();
+			new Sonido("puertas/puerta.wav").play();
 		} else if ("der".equals(lado)) {
-
 			puertaPendienteDer = null;
-
-			System.out.println("[LIBERADA] DERECHA");
-
+			puertaDerAbierta = false;
+			luzDerEncendida = false;
+			detenerSonidoLuzDer();
+			new Sonido("puertas/puerta.wav").play();
 		}
 
-
-
 		ladoRevelandoActual = null;
-
-
 
 		if (lado != null && listener != null) {
-
 			listener.alLiberar(lado);
-
 		}
-
-
 
 		verificarFinDeJuego();
-
 	}
-
-
 
 	private void verificarFinDeJuego() {
-
 		if (perdio()) {
-
-			System.out.println("[GAME OVER] vidas=" + getVidas());
-
 			if (listener != null) listener.alPerder();
-
 		} else if (gano()) {
-
-			System.out.println("[VICTORIA] coleccionables=" + getColeccionablesEncontrados());
-
 			if (listener != null) listener.alGanar();
-
 		}
-
 	}
-
-
 
 	/*
-
 	 * ---- CONSULTAS DE ESTADO ----
-
 	 */
 
-
-
 	public void reiniciar() {
-
 		juego.reiniciar();
-
 		puertaPendienteIzq = null;
-
 		puertaPendienteDer = null;
-
+		puertaIzqAbierta = false;
+		puertaDerAbierta = false;
+		luzIzqEncendida = false;
+		luzDerEncendida = false;
+		detenerSonidoLuzIzq();
+		detenerSonidoLuzDer();
 		ladoRevelandoActual = null;
-
 		if (timerRevelacion != null && timerRevelacion.isRunning()) {
-
 			timerRevelacion.stop();
-
 		}
-
 	}
-
-
 
 	public boolean gano() {
-
 		return juego.gano();
-
 	}
-
-
 
 	public boolean perdio() {
-
 		return juego.perdio();
-
 	}
-
-
 
 	public int getVidas() {
-
 		return juego.getVidas();
-
 	}
-
-
 
 	public int getColeccionablesEncontrados() {
-
 		return juego.getColeccionablesEncontrados();
-
 	}
-
-
 
 	public Juego getJuego() {
-
 		return juego;
-
 	}
-
-
 
 }

@@ -50,6 +50,7 @@ public class CargarImagenes {
 	public static ImageIcon bateria3;
 	public static ImageIcon bateria4;
 	public static ImageIcon powerLeft;
+	public static ImageIcon mutecall;
 
 
 	static {
@@ -112,6 +113,8 @@ bateria1=new ImageIcon(CargarImagenes.class.getResource("/images/hud/bateria1.pn
 bateria2=new ImageIcon(CargarImagenes.class.getResource("/images/hud/bateria2.png"));
 bateria3=new ImageIcon(CargarImagenes.class.getResource("/images/hud/bateria3.png"));
 bateria4=new ImageIcon(CargarImagenes.class.getResource("/images/hud/bateria4.png"));
+
+mutecall=new ImageIcon(CargarImagenes.class.getResource("/images/hud/mutecall.png"));
 
 	}
 

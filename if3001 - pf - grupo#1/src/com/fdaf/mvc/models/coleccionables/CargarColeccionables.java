@@ -2,22 +2,19 @@ package com.fdaf.mvc.models.coleccionables;
 
 public class CargarColeccionables {
 
-	public static void cargar(InventarioColeccionables inventario) {
+	// activa los primeros
+	// "cantidad" elementos del catálogo canónico TipoColeccionable, en
+	// orden. Progresión acumulativa: Noche 1 = primeros 5, Noche 5 = los
+	// 10 — nunca subconjuntos distintos.
+	public static void cargar(InventarioColeccionables inventario, int cantidad) {
 
-		inventario.agregar(
-				new Coleccionable("coleccionables/peluche_freddy.png"));
+		TipoColeccionable[] catalogo = TipoColeccionable.values();
 
-		inventario.agregar(
-				new Coleccionable("coleccionables/cupcake.png"));
+		int limite = Math.min(cantidad, catalogo.length);
 
-		inventario.agregar(
-				new Coleccionable("coleccionables/microfono_freddy.png"));
-
-		inventario.agregar(
-				new Coleccionable("coleccionables/guitarra_bonnie.png"));
-
-		inventario.agregar(
-				new Coleccionable("coleccionables/garfio_foxy.png"));
+		for (int i = 0; i < limite; i++) {
+			inventario.agregar(new Coleccionable(catalogo[i]));
+		}
 	}
 
 }

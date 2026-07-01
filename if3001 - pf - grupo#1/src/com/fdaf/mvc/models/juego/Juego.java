@@ -5,6 +5,7 @@ import com.fdaf.mvc.models.coleccionables.ColaColeccionables;
 import com.fdaf.mvc.models.coleccionables.Coleccionable;
 import com.fdaf.mvc.models.coleccionables.InventarioColeccionables;
 import com.fdaf.mvc.models.puerta.Puerta;
+import com.fdaf.util.PreferenciasJuego;
 
 public class Juego {
 
@@ -22,17 +23,12 @@ public class Juego {
 		reiniciar();
 
 	}
-	// Método para iniciar el juego y generar el árbol de decisiones
 	public void iniciarJuego() {
 
 		ColaColeccionables cola = inventario.obtenerPendientes();
 
 		arbol = generador.generar(cola);
 	}
-	/*
-	 * Estos siguientes 2 metodos se encargan de procesar la puerta elegida por el jugador, 
-	 * actualizando el estado del juego según el tipo de puerta (coleccionable, animatrónico o nada).
-	 */
 	public Puerta elegirIzquierda() {
 
 		if(arbol == null)
@@ -71,10 +67,6 @@ public class Juego {
 		return null;
 	}
 
-	/*
-	 * Este método se encarga de procesar la puerta elegida por el jugador, 
-	 * actualizando el estado del juego según el tipo de puerta (coleccionable, animatrónico o nada).
-	 */
 	private void procesarPuerta(Puerta puerta) {
 
 		if(puerta == null)
@@ -106,8 +98,6 @@ public class Juego {
 
 		case ANIMATRONICO:
 
-			vidas--;
-
 			break;
 
 		case NADA:
@@ -115,11 +105,11 @@ public class Juego {
 			break;
 		}
 	}
-	/*
-	 * Este método verifica si el jugador ha llegado al final de una rama del árbol. 
-	 * Si es así, se obtiene una nueva cola de coleccionables pendientes y se genera un nuevo árbol 
-	 * para continuar el juego.
-	 */
+
+	public void perderVidaPorAnimatronico() {
+		vidas--;
+	}
+
 	private void verificarFinDeRama() {
 
 		if(arbol.finDeRama()) {
@@ -140,12 +130,15 @@ public class Juego {
 		Coleccionable.setIdCounter(0);
 		Puerta.setIdCounter(0);
 
-		this.vidas = 4;
+		// vidas y cantidad de coleccionables ya no son fijos.
+		// Se leen de la noche/dificultad seleccionada por el jugador.
+		this.vidas = PreferenciasJuego.nocheSeleccionada.getVidas();
 		this.coleccionablesEncontrados = 0;
 		this.ultimaPuerta = null;
 
 		this.inventario = new InventarioColeccionables();
-		CargarColeccionables.cargar(inventario);
+		CargarColeccionables.cargar(inventario,
+				PreferenciasJuego.nocheSeleccionada.getCantidadColeccionables());
 
 		iniciarJuego();
 	}

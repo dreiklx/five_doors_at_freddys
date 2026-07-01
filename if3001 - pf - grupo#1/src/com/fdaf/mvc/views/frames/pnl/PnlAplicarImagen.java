@@ -1,4 +1,4 @@
-package com.fdaf.mvc.views.Jframe.pnl;
+package com.fdaf.mvc.views.frames.pnl;
 import java.awt.Graphics;
 
 import javax.swing.ImageIcon;

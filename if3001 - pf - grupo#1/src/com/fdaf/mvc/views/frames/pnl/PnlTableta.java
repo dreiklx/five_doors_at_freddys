@@ -1,12 +1,13 @@
-package com.fdaf.mvc.views.Jframe.pnl;
+package com.fdaf.mvc.views.frames.pnl;
 
 import javax.swing.JPanel;
 
-import com.fdaf.mvc.views.Jframe.VistaPrincipal;
+import com.fdaf.mvc.models.coleccionables.TipoColeccionable;
+import com.fdaf.mvc.views.frames.VistaPrincipal;
 import com.fdaf.util.CargarImagenes;
 import com.fdaf.util.EscalarVista;
 
-import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import java.awt.Dimension;
@@ -16,10 +17,14 @@ public class PnlTableta extends JPanel {
 	private JLabel lblTabletCerrar;
 	private JProgressBar pbarRendirse;
 
-	// CAMBIO FDAF - contenedor visual de coleccionables encontrados.
-	// ControllerCamara le agrega un JLabel con el icono del coleccionable
-	// cada vez que el jugador hace clic sobre uno revelado.
+	// pnlColeccionables ahora contiene 10 slots FIJOS, creados una
+	// sola vez, en el orden canónico de TipoColeccionable. Empiezan todos
+	// bloqueados (el ícono real se asigna en EscalarVista.adaptarTablet,
+	// igual que bateria/powerLeft en PnlJuego). ControllerInterfaz solo
+	// intercambia el ícono del slot correspondiente al encontrar uno; ya
+	// no se agrega nada al final.
 	private JPanel pnlColeccionables;
+	private JLabel[] lblColeccionables;
 	private JPanel panel;
 	private JLabel lblNewLabel;
 
@@ -37,7 +42,6 @@ public class PnlTableta extends JPanel {
 		
 		lblNewLabel = new JLabel("");
 		lblNewLabel.setBounds(74, 50, 80, 70);
-		//lblNewLabel.setIcon(CargarImagenes.puntoCamara);
 		
 		lblTabletCerrar = new JLabel("");
 		lblTabletCerrar.setBounds(288, 808, 800, 55);
@@ -47,12 +51,21 @@ public class PnlTableta extends JPanel {
 		pbarRendirse = new JProgressBar();
 		pbarRendirse.setBounds(1291, 50, 254, 33);
 
-		// CAMBIO FDAF - contenedor de coleccionables encontrados, ubicado
-		// en el espacio libre central del fondo de la tablet.
 		pnlColeccionables = new JPanel();
 		pnlColeccionables.setBounds(43, 132, 1516, 365);
 		pnlColeccionables.setOpaque(false);
-		pnlColeccionables.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 15));
+		pnlColeccionables.setLayout(new GridLayout(2, 5, 15, 15));
+
+		TipoColeccionable[] catalogo = TipoColeccionable.values();
+		lblColeccionables = new JLabel[catalogo.length];
+
+		for (int i = 0; i < catalogo.length; i++) {
+			JLabel slot = new JLabel("");
+			slot.setOpaque(false);
+			lblColeccionables[i] = slot;
+			pnlColeccionables.add(slot);
+		}
+
 		panel.setLayout(null);
 		panel.add(lblNewLabel);
 		panel.add(pbarRendirse);
@@ -82,13 +95,21 @@ public class PnlTableta extends JPanel {
 		this.lblNewLabel = lblNewLabel;
 	}
 
-	// CAMBIO FDAF - getter/setter del contenedor de coleccionables
 	public JPanel getPnlColeccionables() {
 		return pnlColeccionables;
 	}
 
 	public void setPnlColeccionables(JPanel pnlColeccionables) {
 		this.pnlColeccionables = pnlColeccionables;
+	}
+
+	// CAMBIO: acceso a los 10 slots fijos, en orden canónico.
+	public JLabel[] getLblColeccionables() {
+		return lblColeccionables;
+	}
+
+	public void setLblColeccionables(JLabel[] lblColeccionables) {
+		this.lblColeccionables = lblColeccionables;
 	}
 
 	public JLabel getLblTabletCerrar() {

@@ -1,11 +1,11 @@
-package com.fdaf.mvc.views.Jframe.pnl;
+package com.fdaf.mvc.views.frames.pnl;
 
 import javax.swing.JPanel;
 import java.awt.Color;
 import javax.swing.JLabel;
 import javax.swing.JTextPane;
 
-import com.fdaf.mvc.views.Jframe.VistaPrincipal;
+import com.fdaf.mvc.views.frames.VistaPrincipal;
 import com.fdaf.util.CargarImagenes;
 import com.fdaf.util.EscalarVista;
 

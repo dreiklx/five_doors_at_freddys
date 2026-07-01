@@ -5,10 +5,11 @@ package com.fdaf.mvc.controllers;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.Timer;
-import com.fdaf.mvc.views.Jframe.VistaPrincipal;
-import com.fdaf.mvc.views.Jframe.pnl.PnlJuego;
-import com.fdaf.mvc.views.Jframe.pnl.PnlMenu;
-import com.fdaf.mvc.views.Jframe.pnl.PnlTableta;
+
+import com.fdaf.mvc.views.frames.VistaPrincipal;
+import com.fdaf.mvc.views.frames.pnl.PnlJuego;
+import com.fdaf.mvc.views.frames.pnl.PnlMenu;
+import com.fdaf.mvc.views.frames.pnl.PnlTableta;
 import com.fdaf.util.EscalarVista;
 
 
@@ -28,12 +29,11 @@ import com.fdaf.util.EscalarVista;
 public class ControllerCamara {
 
 
-
+	private ControllerInterfaz interfaz;
+	
 	private PnlJuego pnlJuego;
 
 	private PnlTableta pnlTableta;
-
-
 
 	private Timer derecha;
 
@@ -59,16 +59,14 @@ public class ControllerCamara {
 
 
 
-	// CAMBIO FDAF - Refactor: paneles inyectados desde ControllerInterfaz.
+	// paneles inyectados desde ControllerInterfaz.
 
-	public ControllerCamara(PnlJuego pnlJuego, PnlTableta pnlTableta) {
-		this.pnlJuego = pnlJuego;
+	public ControllerCamara(PnlJuego pnlJuego, PnlTableta pnlTableta, ControllerInterfaz interfaz) {
 
-		this.pnlTableta = pnlTableta;
-
-		this.bloqueado = false;
-
-
+	    this.pnlJuego = pnlJuego;
+	    this.pnlTableta = pnlTableta;
+	    this.bloqueado = false;
+	    this.interfaz = interfaz;
 	}
 
 
@@ -106,7 +104,7 @@ public class ControllerCamara {
 
 
 		rendirse(vp, menu);
-		javax.swing.Timer loopRepintado = new javax.swing.Timer(33, ev -> {
+		Timer loopRepintado = new Timer(33, ev -> {
 	        if (pnlJuego != null && pnlJuego.isShowing()) {
 	            pnlJuego.repaint();
 	        }
@@ -181,7 +179,7 @@ public class ControllerCamara {
 
 		tiempo = new Timer(50, e -> {
 
-			progreso++;
+			progreso+=2;
 
 			pnlTableta.getPbarRendirse().setValue(progreso);
 
@@ -190,12 +188,15 @@ public class ControllerCamara {
 			if (progreso >= 100) {
 
 				tiempo.stop();
+				
+			    interfaz.detenerSonidosJuego();
 
 				progreso = 0;
 
 				pnlTableta.getPbarRendirse().setValue(progreso);
 
 				vp.setContenido(menu);
+				
 
 			}
 
@@ -522,6 +523,7 @@ public class ControllerCamara {
 		});
 
 	}
+	
 
 
 
