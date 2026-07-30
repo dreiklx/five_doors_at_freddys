@@ -49,10 +49,10 @@ La lógica de cada noche se modela como un **árbol binario** construido dinámi
 Requiere JDK 8 o superior.
 
 1. Clona el repositorio.
-2. Importa la carpeta `if3001 - pf - grupo#1` como proyecto existente en Eclipse (`File → Import → Existing Projects into Workspace`).
+2. Importa la carpeta `FiveDoorsAtFreddys` como proyecto existente en Eclipse (`File → Import → Existing Projects into Workspace`).
 3. Ejecuta la clase `com.fdaf.init.Main`.
 
-También puede compilarse y ejecutarse por línea de comandos desde `if3001 - pf - grupo#1/src`:
+También puede compilarse y ejecutarse por línea de comandos desde `FiveDoorsAtFreddys/src`:
 
 ```bash
 javac -d ../bin $(find com -name "*.java")
