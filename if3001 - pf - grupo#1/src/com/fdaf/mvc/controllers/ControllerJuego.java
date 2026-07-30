@@ -27,7 +27,10 @@ public class ControllerJuego {
 	private Sonido sonidoLuzIzq;
 	private Sonido sonidoLuzDer;
 
-	private static final int MS_ANIMATRONICO = 1500;
+	private boolean llamadaActiva = false;
+	private boolean juegoTerminado = false;
+
+	private static final int MS_ANIMATRONICO = 1000;
 	private static final int MS_COLECCIONABLE = 6000;
 	private static final int MS_NADA = 600;
 
@@ -35,21 +38,24 @@ public class ControllerJuego {
 		juego = new Juego();
 	}
 
-	public void setListener(JuegoListener listener) {
-		this.listener = listener;
-	}
-
 	public void init() {
 	}
 
 	/*
 	 * ---- PUERTAS (toggle: abrir/cerrar) ----
-	 * CAMBIO: abrir la puerta ya NO afecta las vidas. Solo consume el
-	 * árbol y determina el contenido; la vida se pierde exclusivamente
-	 * en evaluarRevelacion() cuando el tipo resulta ser ANIMATRONICO.
 	 */
 
 	public void abrirIzquierda() {
+
+		if (juegoTerminado) {
+			new Sonido("botones/error_al_presionar_boton.wav").play();
+			return;
+		}
+
+		if (llamadaActiva) {
+			new Sonido("botones/error_al_presionar_boton.wav").play();
+			return;
+		}
 
 		if ("izq".equals(ladoRevelandoActual)) {
 			new Sonido("botones/error_al_presionar_boton.wav").play();
@@ -82,6 +88,16 @@ public class ControllerJuego {
 
 	public void abrirDerecha() {
 
+		if (juegoTerminado) {
+			new Sonido("botones/error_al_presionar_boton.wav").play();
+			return;
+		}
+
+		if (llamadaActiva) {
+			new Sonido("botones/error_al_presionar_boton.wav").play();
+			return;
+		}
+
 		if ("der".equals(ladoRevelandoActual)) {
 			new Sonido("botones/error_al_presionar_boton.wav").play();
 			return;
@@ -112,22 +128,11 @@ public class ControllerJuego {
 	}
 
 	private Puerta elegirIzquierda() {
-		Puerta puerta = juego.elegirIzquierda();
-		procesarSonido(puerta);
-		return puerta;
+		return juego.elegirIzquierda();
 	}
 
 	private Puerta elegirDerecha() {
-		Puerta puerta = juego.elegirDerecha();
-		procesarSonido(puerta);
-		return puerta;
-	}
-
-	private void procesarSonido(Puerta puerta) {
-		if (puerta == null) return;
-		if (puerta.getTipo() == TipoPuerta.ANIMATRONICO) {
-
-		}
+		return juego.elegirDerecha();
 	}
 
 	/*
@@ -135,6 +140,16 @@ public class ControllerJuego {
 	 */
 
 	public void revelarIzquierda() {
+
+		if (juegoTerminado) {
+			new Sonido("botones/error_al_presionar_boton.wav").play();
+			return;
+		}
+
+		if (llamadaActiva) {
+			new Sonido("botones/error_al_presionar_boton.wav").play();
+			return;
+		}
 
 		if ("izq".equals(ladoRevelandoActual)) {
 			new Sonido("botones/error_al_presionar_boton.wav").play();
@@ -163,6 +178,16 @@ public class ControllerJuego {
 	}
 
 	public void revelarDerecha() {
+
+		if (juegoTerminado) {
+			new Sonido("botones/error_al_presionar_boton.wav").play();
+			return;
+		}
+
+		if (llamadaActiva) {
+			new Sonido("botones/error_al_presionar_boton.wav").play();
+			return;
+		}
 
 		if ("der".equals(ladoRevelandoActual)) {
 			new Sonido("botones/error_al_presionar_boton.wav").play();
@@ -204,6 +229,11 @@ public class ControllerJuego {
 		}
 	}
 
+	public void detenerTodosLosSonidos() {
+		detenerSonidoLuzIzq();
+		detenerSonidoLuzDer();
+	}
+
 	/*
 	 * ---- REVELACIÓN: solo cuando puerta abierta + luz encendida ----
 	 */
@@ -216,6 +246,8 @@ public class ControllerJuego {
 		evaluarRevelacion("der", puertaPendienteDer);
 	}
 
+	// CORREGIDO: el switch completo vuelve a estar aquí -- ya no está
+	// separado en un método sin llamador. Este era el bug bloqueante.
 	private void evaluarRevelacion(String lado, Puerta puerta) {
 
 		if (ladoRevelandoActual != null) {
@@ -227,8 +259,6 @@ public class ControllerJuego {
 		switch (puerta.getTipo()) {
 
 		case ANIMATRONICO:
-			// aquí, y solo aquí, se pierde la vida  en el momento
-			// real de la revelación, no al abrir la puerta.
 			juego.perderVidaPorAnimatronico();
 			if (listener != null) listener.alActualizarVidas(getVidas());
 
@@ -240,6 +270,11 @@ public class ControllerJuego {
 		case COLECCIONABLE:
 			if (listener != null) listener.alRevelarColeccionable(lado, puerta.getColeccionable());
 			programarLiberacion(MS_COLECCIONABLE);
+			break;
+
+		case BATERIA:
+			if (listener != null) listener.alRevelarBateria(lado);
+			programarLiberacion(MS_COLECCIONABLE); // mismo tiempo/patrón visual que un coleccionable
 			break;
 
 		case NADA:
@@ -270,9 +305,18 @@ public class ControllerJuego {
 				? puertaPendienteIzq : puertaPendienteDer;
 
 		if (puerta == null) return;
-		if (puerta.getTipo() != TipoPuerta.COLECCIONABLE) return;
 
-		if (listener != null) listener.alRecogerColeccionable(puerta.getColeccionable());
+		if (puerta.getTipo() == TipoPuerta.COLECCIONABLE) {
+			juego.marcarColeccionableEncontrado(puerta.getColeccionable());
+			if (listener != null) listener.alRecogerColeccionable(puerta.getColeccionable());
+
+		} else if (puerta.getTipo() == TipoPuerta.BATERIA) {
+			juego.ganarVidaExtra();
+			if (listener != null) listener.alActualizarVidas(getVidas());
+
+		} else {
+			return;
+		}
 
 		if (timerRevelacion != null && timerRevelacion.isRunning()) {
 			timerRevelacion.stop();
@@ -324,22 +368,6 @@ public class ControllerJuego {
 	 * ---- CONSULTAS DE ESTADO ----
 	 */
 
-	public void reiniciar() {
-		juego.reiniciar();
-		puertaPendienteIzq = null;
-		puertaPendienteDer = null;
-		puertaIzqAbierta = false;
-		puertaDerAbierta = false;
-		luzIzqEncendida = false;
-		luzDerEncendida = false;
-		detenerSonidoLuzIzq();
-		detenerSonidoLuzDer();
-		ladoRevelandoActual = null;
-		if (timerRevelacion != null && timerRevelacion.isRunning()) {
-			timerRevelacion.stop();
-		}
-	}
-
 	public boolean gano() {
 		return juego.gano();
 	}
@@ -358,6 +386,22 @@ public class ControllerJuego {
 
 	public Juego getJuego() {
 		return juego;
+	}
+
+	public void setListener(JuegoListener listener) {
+		this.listener = listener;
+	}
+
+	public void setLlamadaActiva(boolean llamadaActiva) {
+		this.llamadaActiva = llamadaActiva;
+	}
+
+	public void setJuegoTerminado(boolean juegoTerminado) {
+		this.juegoTerminado = juegoTerminado;
+	}
+
+	public boolean isJuegoTerminado() {
+		return juegoTerminado;
 	}
 
 }

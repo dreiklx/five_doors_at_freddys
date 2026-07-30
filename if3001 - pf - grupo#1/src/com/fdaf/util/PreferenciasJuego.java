@@ -2,12 +2,16 @@ package com.fdaf.util;
 
 import com.fdaf.mvc.models.juego.Noche;
 
-// Guarda en memoria las preferencias seleccionadas por el jugador
-// (idioma, dificultad). Viven mientras la aplicación esté corriendo; no
-// se pidió persistirlas en disco entre ejecuciones distintas del juego.
+// Estado global del jugador: idioma, volumen general (0-10), y la noche
+// activa. nocheActual cumple un único rol -- es lo que "Continuar"
+// muestra y juega, Y lo que se elige desde Noche Personalizada. Es
+// deliberadamente una sola variable: cambiar la noche desde Custom
+// Night ES cambiar el punto desde el que se continúa, no un estado
+// aparte que haya que sincronizar.
 public class PreferenciasJuego {
 
 	public static Idioma idiomaSeleccionado = Idioma.ESPANOL;
-	public static Noche nocheSeleccionada = Noche.NOCHE_1;
+	public static Noche nocheActual = Noche.NOCHE_1;
+	public static int volumenGeneral = 10;
 
 }

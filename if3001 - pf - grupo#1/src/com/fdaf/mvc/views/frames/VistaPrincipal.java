@@ -6,6 +6,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.Color;
 import java.awt.Frame;
+import java.awt.Toolkit;
 
 
 
@@ -27,6 +28,8 @@ public class VistaPrincipal extends JFrame {
 	 * Create the frame.
 	 */
 	public VistaPrincipal() {
+		setTitle("Five Doors At Freddy's");
+		setIconImage(Toolkit.getDefaultToolkit().getImage(VistaPrincipal.class.getResource("/images/hud/fdaf_icon.png")));
 		setUndecorated(true);
 		setExtendedState(Frame.MAXIMIZED_BOTH);
 		setResizable(false);

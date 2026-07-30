@@ -23,10 +23,7 @@ public class PnlJuego extends JPanel {
 	private JLabel lblDerDos;
 	private JLabel lblDerTres;
 	private JPanel pnlComponentes;
-	private JButton btnPuertaDer;
-	private JButton btnPuertaIzq;
 	private JLabel lblTabAbrir;
-	private JLabel lblTabCerrar;
 	private JCheckBox botonIzq;
 	private JCheckBox botonDer;
 	private JCheckBox luzDer;
@@ -35,6 +32,7 @@ public class PnlJuego extends JPanel {
 	private JPanel panelIzq;
 
 	private JLabel lblOverlay;
+	private JLabel lblTabletTransicion;
 	private JLabel lblImgOficina;
 	private JLabel lblNariz;
 	private JLabel lblAbanico;
@@ -128,6 +126,12 @@ public class PnlJuego extends JPanel {
 		 */
 		add(lblOverlay);
 
+		lblTabletTransicion = new JLabel("");
+		lblTabletTransicion.setOpaque(false);
+		lblTabletTransicion.setBounds(0, 0, 1600, 900);
+		lblTabletTransicion.setVisible(false);
+		add(lblTabletTransicion);
+		
 		lblIzqTres = new JLabel("");
 		lblIzqTres.setBounds(0, 0, 58, 900);
 		lblIzqTres.setIcon(EscalarVista.getImagenEscalada(CargarImagenes.zonaTresIzq, lblIzqTres.getWidth(), lblIzqTres.getHeight()));
@@ -154,7 +158,7 @@ public class PnlJuego extends JPanel {
 		lblMuteCall = new JLabel("");
 		lblMuteCall.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		lblMuteCall.setOpaque(false);
-		lblMuteCall.setBounds(1500, 24, 60, 60);
+		lblMuteCall.setBounds(64, 28, 140, 45);
 		lblMuteCall.setVisible(false); // solo visible mientras hay llamada activa
 		pnlComponentes.add(lblMuteCall);
 
@@ -277,6 +281,13 @@ public class PnlJuego extends JPanel {
 	public void setLblOverlay(JLabel lblOverlay) {
 		this.lblOverlay = lblOverlay;
 	}
+	public JLabel getLblTabletTransicion() {
+		return lblTabletTransicion;
+	}
+
+	public void setLblTabletTransicion(JLabel lblTabletTransicion) {
+		this.lblTabletTransicion = lblTabletTransicion;
+	}
 
 	public JPanel getPanelDer() {
 		return panelDer;
@@ -332,30 +343,6 @@ public class PnlJuego extends JPanel {
 
 	public void setLblTabAbrir(JLabel lblTabAbrir) {
 		this.lblTabAbrir = lblTabAbrir;
-	}
-
-	public JLabel getLblTabCerrar() {
-		return lblTabCerrar;
-	}
-
-	public void setLblTabCerrar(JLabel lblTabCerrar) {
-		this.lblTabCerrar = lblTabCerrar;
-	}
-
-	public JButton getBtnPuertaIzq() {
-		return btnPuertaIzq;
-	}
-
-	public void setBtnPuertaIzq(JButton btnPuertaIzq) {
-		this.btnPuertaIzq = btnPuertaIzq;
-	}
-
-	public JButton getBtnPuertaDer() {
-		return btnPuertaDer;
-	}
-
-	public void setBtnPuertaDer(JButton btnPuertaDer) {
-		this.btnPuertaDer = btnPuertaDer;
 	}
 
 	public JLabel getLblIzqUno() {

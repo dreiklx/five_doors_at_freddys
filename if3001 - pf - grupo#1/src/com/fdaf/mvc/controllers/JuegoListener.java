@@ -19,4 +19,5 @@ public interface JuegoListener {
 	void alActualizarVidas(int vidas);  // sincroniza el HUD de batería
 	void alGanar();
 	void alPerder();
+	void alRevelarBateria(String lado);
 }

@@ -17,10 +17,18 @@ import javax.swing.JProgressBar;
 
 import com.fdaf.mvc.models.coleccionables.TipoColeccionable;
 import com.fdaf.mvc.views.frames.VistaPrincipal;
+import com.fdaf.mvc.views.frames.pnl.PnlConfirmacion;
+import com.fdaf.mvc.views.frames.pnl.PnlGameOver;
+import com.fdaf.mvc.views.frames.pnl.PnlIdioma;
+import com.fdaf.mvc.views.frames.pnl.PnlWarning;
+import com.fdaf.mvc.views.frames.pnl.PnlWin;
+import javafx.embed.swing.JFXPanel;
 import com.fdaf.mvc.views.frames.pnl.PnlJuego;
 import com.fdaf.mvc.views.frames.pnl.PnlMenu;
+import com.fdaf.mvc.views.frames.pnl.PnlNochePersonalizada;
 import com.fdaf.mvc.views.frames.pnl.PnlOpciones;
 import com.fdaf.mvc.views.frames.pnl.PnlTableta;
+import com.fdaf.mvc.views.frames.pnl.PnlVolumen;
 
 
 
@@ -65,17 +73,33 @@ public class EscalarVista {
 		Dimension pantalla = Toolkit.getDefaultToolkit().getScreenSize();
 		int alto = pantalla.height; 
 		int ancho = pantalla.width;
-		
+
+		JLabel lblTitulo = opciones.getLblTitulo();
+		JButton btnIdioma = opciones.getBtnIdioma();
+		JButton btnCustomNight = opciones.getBtnCustomNight();
+		JButton btnVolumen = opciones.getBtnVolumen();
 		JButton btnAtras = opciones.getBtnAtras();
 		JButton btnSalir = opciones.getBtnSalir();
-		JButton btnEspanol = opciones.getBtnEspanol();
-		JButton btnIngles = opciones.getBtnIngles();
-		JLabel lblIdiomaSeleccionado = opciones.getLblIdiomaSeleccionado();
-		JButton[] btnsNoche = opciones.getBtnsNoche();
-		JLabel lblNocheSeleccionada = opciones.getLblNocheSeleccionada();
-		
+		JLabel lblFlecha = opciones.getLbl();
+
 		opciones.setBounds(0, 0, ancho, alto);
 		opciones.getPnlOpciones().setBounds(0, 0, ancho, alto);
+
+		opciones.getLblTitulo().setBounds(
+				getEscalaX(lblTitulo.getX()), getEscalaY(lblTitulo.getY()),
+				getEscalaX(lblTitulo.getWidth()), getEscalaY(lblTitulo.getHeight()));
+
+		opciones.getBtnIdioma().setBounds(
+				getEscalaX(btnIdioma.getX()), getEscalaY(btnIdioma.getY()),
+				getEscalaX(btnIdioma.getWidth()), getEscalaY(btnIdioma.getHeight()));
+
+		opciones.getBtnCustomNight().setBounds(
+				getEscalaX(btnCustomNight.getX()), getEscalaY(btnCustomNight.getY()),
+				getEscalaX(btnCustomNight.getWidth()), getEscalaY(btnCustomNight.getHeight()));
+
+		opciones.getBtnVolumen().setBounds(
+				getEscalaX(btnVolumen.getX()), getEscalaY(btnVolumen.getY()),
+				getEscalaX(btnVolumen.getWidth()), getEscalaY(btnVolumen.getHeight()));
 
 		opciones.getBtnAtras().setBounds(
 				getEscalaX(btnAtras.getX()), getEscalaY(btnAtras.getY()),
@@ -85,52 +109,189 @@ public class EscalarVista {
 				getEscalaX(btnSalir.getX()), getEscalaY(btnSalir.getY()),
 				getEscalaX(btnSalir.getWidth()), getEscalaY(btnSalir.getHeight()));
 
-		opciones.getBtnEspanol().setBounds(
-				getEscalaX(btnEspanol.getX()), getEscalaY(btnEspanol.getY()),
-				getEscalaX(btnEspanol.getWidth()), getEscalaY(btnEspanol.getHeight()));
+		opciones.getLbl().setSize(getEscalaX(lblFlecha.getWidth()), getEscalaY(lblFlecha.getHeight()));
+	}
 
-		opciones.getBtnIngles().setBounds(
-				getEscalaX(btnIngles.getX()), getEscalaY(btnIngles.getY()),
-				getEscalaX(btnIngles.getWidth()), getEscalaY(btnIngles.getHeight()));
+	public static void adaptarVolumen(VistaPrincipal vp, PnlVolumen pantalla) {
+		Dimension pantallaFisica = Toolkit.getDefaultToolkit().getScreenSize();
+		int alto = pantallaFisica.height;
+		int ancho = pantallaFisica.width;
 
-		opciones.getLblIdiomaSeleccionado().setBounds(
-				getEscalaX(lblIdiomaSeleccionado.getX()), getEscalaY(lblIdiomaSeleccionado.getY()),
-				getEscalaX(lblIdiomaSeleccionado.getWidth()), getEscalaY(lblIdiomaSeleccionado.getHeight()));
+		JLabel lblTitulo = pantalla.getLblTitulo();
+		JLabel lblNivel = pantalla.getLblNivel();
+		JButton btnSubir = pantalla.getBtnSubir();
+		JButton btnBajar = pantalla.getBtnBajar();
+		JButton btnAtras = pantalla.getBtnAtras();
+		JLabel lblFlecha = pantalla.getLbl();
 
-		// CAMBIO: selector de dificultad, mismo patrón exacto.
-		for (JButton btnNoche : btnsNoche) {
-			opciones.getBtnsNoche()[indexOf(btnsNoche, btnNoche)].setBounds(
+		pantalla.setBounds(0, 0, ancho, alto);
+		pantalla.getPnlVolumen().setBounds(0, 0, ancho, alto);
+
+		pantalla.getLblTitulo().setBounds(
+				getEscalaX(lblTitulo.getX()), getEscalaY(lblTitulo.getY()),
+				getEscalaX(lblTitulo.getWidth()), getEscalaY(lblTitulo.getHeight()));
+
+		pantalla.getLblNivel().setBounds(
+				getEscalaX(lblNivel.getX()), getEscalaY(lblNivel.getY()),
+				getEscalaX(lblNivel.getWidth()), getEscalaY(lblNivel.getHeight()));
+
+		pantalla.getBtnSubir().setBounds(
+				getEscalaX(btnSubir.getX()), getEscalaY(btnSubir.getY()),
+				getEscalaX(btnSubir.getWidth()), getEscalaY(btnSubir.getHeight()));
+
+		pantalla.getBtnBajar().setBounds(
+				getEscalaX(btnBajar.getX()), getEscalaY(btnBajar.getY()),
+				getEscalaX(btnBajar.getWidth()), getEscalaY(btnBajar.getHeight()));
+
+		pantalla.getBtnAtras().setBounds(
+				getEscalaX(btnAtras.getX()), getEscalaY(btnAtras.getY()),
+				getEscalaX(btnAtras.getWidth()), getEscalaY(btnAtras.getHeight()));
+
+		pantalla.getLbl().setSize(getEscalaX(lblFlecha.getWidth()), getEscalaY(lblFlecha.getHeight()));
+	}
+	
+	public static void adaptarNochePersonalizada(VistaPrincipal vp, PnlNochePersonalizada pantalla) {
+		Dimension pantallaFisica = Toolkit.getDefaultToolkit().getScreenSize();
+		int alto = pantallaFisica.height;
+		int ancho = pantallaFisica.width;
+
+		JLabel lblTitulo = pantalla.getLblTitulo();
+		JLabel lblNocheSeleccionada = pantalla.getLblNocheSeleccionada();
+		JButton btnAtras = pantalla.getBtnAtras();
+		JLabel lblFlecha = pantalla.getLbl();
+
+		pantalla.setBounds(0, 0, ancho, alto);
+		pantalla.getPnlNochePersonalizada().setBounds(0, 0, ancho, alto);
+
+		pantalla.getLblTitulo().setBounds(
+				getEscalaX(lblTitulo.getX()), getEscalaY(lblTitulo.getY()),
+				getEscalaX(lblTitulo.getWidth()), getEscalaY(lblTitulo.getHeight()));
+
+		pantalla.getLblNocheSeleccionada().setBounds(
+				getEscalaX(lblNocheSeleccionada.getX()), getEscalaY(lblNocheSeleccionada.getY()),
+				getEscalaX(lblNocheSeleccionada.getWidth()), getEscalaY(lblNocheSeleccionada.getHeight()));
+
+		for (JButton btnNoche : pantalla.getBtnsNoche()) {
+			btnNoche.setBounds(
 					getEscalaX(btnNoche.getX()), getEscalaY(btnNoche.getY()),
 					getEscalaX(btnNoche.getWidth()), getEscalaY(btnNoche.getHeight()));
 		}
 
-		opciones.getLblNocheSeleccionada().setBounds(
-				getEscalaX(lblNocheSeleccionada.getX()), getEscalaY(lblNocheSeleccionada.getY()),
-				getEscalaX(lblNocheSeleccionada.getWidth()), getEscalaY(lblNocheSeleccionada.getHeight()));
-	}
+		pantalla.getBtnAtras().setBounds(
+				getEscalaX(btnAtras.getX()), getEscalaY(btnAtras.getY()),
+				getEscalaX(btnAtras.getWidth()), getEscalaY(btnAtras.getHeight()));
 
-	private static int indexOf(JButton[] arreglo, JButton buscado) {
-		for (int i = 0; i < arreglo.length; i++) {
-			if (arreglo[i] == buscado) return i;
-		}
-		return -1;
+		pantalla.getLbl().setSize(getEscalaX(lblFlecha.getWidth()), getEscalaY(lblFlecha.getHeight()));
 	}
+	
+	public static void adaptarIdioma(VistaPrincipal vp, PnlIdioma pantalla) {
+		Dimension pantallaFisica = Toolkit.getDefaultToolkit().getScreenSize();
+		int alto = pantallaFisica.height;
+		int ancho = pantallaFisica.width;
 
+		JLabel lblTitulo = pantalla.getLblTitulo();
+		JLabel lblIdiomaActual = pantalla.getLblIdiomaActual();
+		JButton btnEspanol = pantalla.getBtnEspanol();
+		JButton btnIngles = pantalla.getBtnIngles();
+		JButton btnAtras = pantalla.getBtnAtras();
+		JLabel lblFlecha = pantalla.getLbl();
+
+		pantalla.setBounds(0, 0, ancho, alto);
+		pantalla.getPnlIdioma().setBounds(0, 0, ancho, alto);
+
+		pantalla.getLblTitulo().setBounds(
+				getEscalaX(lblTitulo.getX()), getEscalaY(lblTitulo.getY()),
+				getEscalaX(lblTitulo.getWidth()), getEscalaY(lblTitulo.getHeight()));
+
+		pantalla.getLblIdiomaActual().setBounds(
+				getEscalaX(lblIdiomaActual.getX()), getEscalaY(lblIdiomaActual.getY()),
+				getEscalaX(lblIdiomaActual.getWidth()), getEscalaY(lblIdiomaActual.getHeight()));
+
+		pantalla.getBtnEspanol().setBounds(
+				getEscalaX(btnEspanol.getX()), getEscalaY(btnEspanol.getY()),
+				getEscalaX(btnEspanol.getWidth()), getEscalaY(btnEspanol.getHeight()));
+
+		pantalla.getBtnIngles().setBounds(
+				getEscalaX(btnIngles.getX()), getEscalaY(btnIngles.getY()),
+				getEscalaX(btnIngles.getWidth()), getEscalaY(btnIngles.getHeight()));
+
+		pantalla.getBtnAtras().setBounds(
+				getEscalaX(btnAtras.getX()), getEscalaY(btnAtras.getY()),
+				getEscalaX(btnAtras.getWidth()), getEscalaY(btnAtras.getHeight()));
+
+		pantalla.getLbl().setSize(getEscalaX(lblFlecha.getWidth()), getEscalaY(lblFlecha.getHeight()));
+	}
 	public static void adaptarMenu(VistaPrincipal vp, PnlMenu menu) {
 		Dimension pantalla = Toolkit.getDefaultToolkit().getScreenSize();
 		int alto = pantalla.height; 
 		int ancho = pantalla.width;
-		
+
+		JButton btnContinuar = menu.getBtnContinuar();
+		JLabel lblNocheActual = menu.getLblNocheActual();
+		JButton btnNuevaPartida = menu.getBtnNuevaPartida();
 		JButton btnOpciones = menu.getBtnOpciones();
+
+		PnlConfirmacion confirmacion = menu.getPnlConfirmacion();
+		JLabel lblMensaje = confirmacion.getLblMensaje();
+		JButton btnConfirmar = confirmacion.getBtnConfirmar();
+		JButton btnCancelar = confirmacion.getBtnCancelar();
 
 		vp.setBounds(0, 0, ancho, alto);
 		menu.setBounds(0, 0, ancho, alto);
 		menu.getPnlMenu().setBounds(0, 0, ancho, alto);
 		menu.getLblMenu().setBounds(0, 0, ancho, alto);
 
+		menu.getBtnContinuar().setBounds(
+				getEscalaX(btnContinuar.getX()), getEscalaY(btnContinuar.getY()),
+				getEscalaX(btnContinuar.getWidth()), getEscalaY(btnContinuar.getHeight()));
+
+		menu.getLblNocheActual().setBounds(
+				getEscalaX(lblNocheActual.getX()), getEscalaY(lblNocheActual.getY()),
+				getEscalaX(lblNocheActual.getWidth()), getEscalaY(lblNocheActual.getHeight()));
+
+		menu.getBtnNuevaPartida().setBounds(
+				getEscalaX(btnNuevaPartida.getX()), getEscalaY(btnNuevaPartida.getY()),
+				getEscalaX(btnNuevaPartida.getWidth()), getEscalaY(btnNuevaPartida.getHeight()));
+
 		menu.getBtnOpciones().setBounds(
 				getEscalaX(btnOpciones.getX()), getEscalaY(btnOpciones.getY()), 
 				getEscalaX(btnOpciones.getWidth()), getEscalaY(btnOpciones.getHeight()));
+
+		confirmacion.setBounds(0, 0, ancho, alto);
+
+		confirmacion.getLblMensaje().setBounds(
+				getEscalaX(lblMensaje.getX()), getEscalaY(lblMensaje.getY()),
+				getEscalaX(lblMensaje.getWidth()), getEscalaY(lblMensaje.getHeight()));
+
+		confirmacion.getBtnConfirmar().setBounds(
+				getEscalaX(btnConfirmar.getX()), getEscalaY(btnConfirmar.getY()),
+				getEscalaX(btnConfirmar.getWidth()), getEscalaY(btnConfirmar.getHeight()));
+
+		confirmacion.getBtnCancelar().setBounds(
+				getEscalaX(btnCancelar.getX()), getEscalaY(btnCancelar.getY()),
+				getEscalaX(btnCancelar.getWidth()), getEscalaY(btnCancelar.getHeight()));
+
+		// La flecha se reposiciona dinámicamente en cada hover, pero su
+		// TAMAÑO nunca pasaba por el sistema de escalado -- se captura el
+		// tamaño base real (el que PnlMenu calculó con FontMetrics) antes
+		// de mutarlo, mismo patrón que el resto de este método.
+		JLabel lblFlechaMenu = menu.getLbl();
+		menu.getLbl().setSize(getEscalaX(lblFlechaMenu.getWidth()), getEscalaY(lblFlechaMenu.getHeight()));
+
+		JLabel lblFlechaConfirmacion = confirmacion.getLblFlecha();
+		confirmacion.getLblFlecha().setSize(
+				getEscalaX(lblFlechaConfirmacion.getWidth()), getEscalaY(lblFlechaConfirmacion.getHeight()));
+
+		JLabel lblVersion = menu.getLblVersion();
+		JLabel lblCreditos = menu.getLblCreditos();
+
+		menu.getLblVersion().setBounds(
+				getEscalaX(lblVersion.getX()), getEscalaY(lblVersion.getY()),
+				getEscalaX(lblVersion.getWidth()), getEscalaY(lblVersion.getHeight()));
+
+		menu.getLblCreditos().setBounds(
+				getEscalaX(lblCreditos.getX()), getEscalaY(lblCreditos.getY()),
+				getEscalaX(lblCreditos.getWidth()), getEscalaY(lblCreditos.getHeight()));
 	}
 	
 	public static void adaptarTablet(VistaPrincipal vp, PnlTableta tablet) {
@@ -144,6 +305,22 @@ public class EscalarVista {
 		
 		tablet.setBounds(0, 0, ancho, alto);
 		tablet.getPanel().setBounds(0, 0, ancho, alto);
+		
+		tablet.getLblCopyBateria().setBounds(
+				getEscalaX(1142), getEscalaY(91),
+				getEscalaX(83), getEscalaY(40));
+		
+		tablet.getLblCopyBateria().setIcon(getImagenEscalada(CargarImagenes.bateria4,
+				tablet.getLblCopyBateria().getWidth(), tablet.getLblCopyBateria().getHeight()));
+		
+		
+		tablet.getLblCopyPowerLeft().setBounds(
+				getEscalaX(1132), getEscalaY(52),
+				getEscalaX(182), getEscalaY(32));
+		tablet.getLblCopyPowerLeft().setIcon(getImagenEscalada(CargarImagenes.powerLeft,
+				tablet.getLblCopyPowerLeft().getWidth(), tablet.getLblCopyPowerLeft().getHeight()));
+
+		
 
 		tablet.getPbarRendirse().setBounds(
 				getEscalaX(barra.getX()), getEscalaY(barra.getY()),
@@ -156,36 +333,60 @@ public class EscalarVista {
 		tablet.getLblTabletCerrar().setIcon(getImagenEscalada(CargarImagenes.barraTableta,
 				tablet.getLblTabletCerrar().getWidth(), tablet.getLblTabletCerrar().getHeight()));
 
-		// pnlColeccionables NUNCA se escalaba antes de ahora. Se
-		// escala como contenedor único; el GridLayout interno reparte el
-		// espacio entre los 10 slots automáticamente.
 		tablet.getPnlColeccionables().setBounds(
 				getEscalaX(pnlColeccionables.getX()), getEscalaY(pnlColeccionables.getY()),
 				getEscalaX(pnlColeccionables.getWidth()), getEscalaY(pnlColeccionables.getHeight()));
+		////////////////////////////////ESCALAR TODOS LOS JLABEL DEL INVENTARIO///////////////////////////////////////////////////
+		JLabel pChica=tablet.getPELUCHE_CHICA();
+		tablet.getPELUCHE_CHICA().setBounds(getEscalaX(pChica.getX()),getEscalaY(pChica.getY()), getEscalaX(pChica.getWidth()), getEscalaY(pChica.getHeight()));
+		
+		JLabel pFreddy=tablet.getPELUCHE_FREDDY();
+		tablet.getPELUCHE_FREDDY().setBounds(getEscalaX(pFreddy.getX()),getEscalaY(pFreddy.getY()), getEscalaX(pFreddy.getWidth()), getEscalaY(pFreddy.getHeight()));
+		
+		JLabel pBonnie=tablet.getPELUCHE_BONNIE();
+		tablet.getPELUCHE_BONNIE().setBounds(getEscalaX(pBonnie.getX()),getEscalaY(pBonnie.getY()), getEscalaX(pBonnie.getWidth()), getEscalaY(pBonnie.getHeight()));
+		
+		JLabel pFoxy=tablet.getPELUCHE_FOXY();
+		tablet.getPELUCHE_FOXY().setBounds(getEscalaX(pFoxy.getX()),getEscalaY(pFoxy.getY()), getEscalaX(pFoxy.getWidth()), getEscalaY(pFoxy.getHeight()));
+		
+		JLabel pGolden=tablet.getPELUCHE_GOLDEN_FREDDY();
+		tablet.getPELUCHE_GOLDEN_FREDDY().setBounds(getEscalaX(pGolden.getX()),getEscalaY(pGolden.getY()), getEscalaX(pGolden.getWidth()), getEscalaY(pGolden.getHeight()));
+		
+		JLabel cupcake=tablet.getCUPCAKE();
+		tablet.getCUPCAKE().setBounds(getEscalaX(cupcake.getX()),getEscalaY(cupcake.getY()), getEscalaX(cupcake.getWidth()), getEscalaY(cupcake.getHeight()));
+		
+		JLabel garfio=tablet.getGARFIO_FOXY();
+		tablet.getGARFIO_FOXY().setBounds(getEscalaX(garfio.getX()),getEscalaY(garfio.getY()), getEscalaX(garfio.getWidth()), getEscalaY(garfio.getHeight()));
+		
+		JLabel guitar=tablet.getGUITARRA_BONNIE();
+		tablet.getGUITARRA_BONNIE().setBounds(getEscalaX(guitar.getX()),getEscalaY(guitar.getY()), getEscalaX(guitar.getWidth()), getEscalaY(guitar.getHeight()));
+		
+		JLabel boy=tablet.getBALLOONBOY();
+		tablet.getBALLOONBOY().setBounds(getEscalaX(boy.getX()),getEscalaY(boy.getY()), getEscalaX(boy.getWidth()), getEscalaY(boy.getHeight()));
+//		
+		JLabel microfono=tablet.getMICROFONO_FREDDY();
+		tablet.getMICROFONO_FREDDY().setBounds(getEscalaX(microfono.getX()),getEscalaY(microfono.getY()), getEscalaX(microfono.getWidth()), getEscalaY(microfono.getHeight()));
 
-		// Forzamos que el GridLayout calcule YA los tamaños reales de cada
-		// slot (igual que se lee getWidth()/getHeight() de bateria/power
-		// después de fijar sus bounds), para poder escalar cada ícono
-		// bloqueado al tamaño de celda correcto.
-		tablet.getPnlColeccionables().doLayout();
+		JLabel mostrar = tablet.getLblMostrar();
+		tablet.getLblMostrar().setBounds(getEscalaX(mostrar.getX()), getEscalaY(mostrar.getY()),
+				getEscalaX(mostrar.getWidth()), getEscalaY(mostrar.getHeight()));
 
-		TipoColeccionable[] catalogo = TipoColeccionable.values();
-		JLabel[] slots = tablet.getLblColeccionables();
+		JLabel descripcion = tablet.getLblDescripcion();
+		tablet.getLblDescripcion().setBounds(getEscalaX(descripcion.getX()), getEscalaY(descripcion.getY()),
+				getEscalaX(descripcion.getWidth()), getEscalaY(descripcion.getHeight()));
+//		
+//		
+//		
+//		
+//		
+		
+		
+		
+		
+		
+		
+		
 
-		for (int i = 0; i < catalogo.length; i++) {
-
-			JLabel slot = slots[i];
-			String ruta = "/images/" + catalogo[i].getArchivoBloqueado();
-			URL recurso = EscalarVista.class.getResource(ruta);
-
-			if (recurso == null) {
-				System.out.println("[RECURSO NO ENCONTRADO] " + ruta);
-				continue;
-			}
-
-			slot.setIcon(getImagenEscalada(new ImageIcon(recurso),
-					slot.getWidth(), slot.getHeight()));
-		}
 	}
 	
 	public static void adaptarJuego(VistaPrincipal vp, PnlJuego juego) {
@@ -297,8 +498,67 @@ public class EscalarVista {
 		juego.getLblDerDos().setBounds(getEscalaX(zonaDosDer.getX()), getEscalaY(zonaDosDer.getY()), getEscalaX(zonaDosDer.getWidth()), getEscalaY(zonaDosDer.getHeight()));
 		juego.getLblDerTres().setBounds(getEscalaX(zonaTresDer.getX()), getEscalaY(zonaTresDer.getY()), getEscalaX(zonaTresDer.getWidth()), getEscalaY(zonaTresDer.getHeight()));
 		juego.getLblDerTres().setIcon(getImagenEscalada(CargarImagenes.zonaTresDer, juego.getLblDerTres().getWidth(), juego.getLblDerTres().getHeight()));
-	}
 
+		// Transición de tablet (abrir/cerrar): pantalla completa, mismo
+		// lienzo base 1600x900 que el resto de la oficina.
+		juego.getLblTabletTransicion().setBounds(getEscalaX(0), getEscalaY(0), getEscalaX(1600), getEscalaY(900));
+		}
+
+	public static void adaptarWarning(VistaPrincipal vp, PnlWarning pantalla) {
+		Dimension pantallaFisica = Toolkit.getDefaultToolkit().getScreenSize();
+		int alto = pantallaFisica.height;
+		int ancho = pantallaFisica.width;
+		pantalla.setBounds(0, 0, ancho, alto);
+	}
+	
+	public static void adaptarGameOver(VistaPrincipal vp, PnlGameOver pantalla) {
+		Dimension pantallaFisica = Toolkit.getDefaultToolkit().getScreenSize();
+		int alto = pantallaFisica.height;
+		int ancho = pantallaFisica.width;
+
+		JLabel titulo = pantalla.getLblTitulo();
+		JButton reintentar = pantalla.getBtnReintentar();
+		JButton salir = pantalla.getBtnSalir();
+
+		pantalla.setBounds(0, 0, ancho, alto);
+
+		pantalla.getLblTitulo().setBounds(
+				getEscalaX(titulo.getX()), getEscalaY(titulo.getY()),
+				getEscalaX(titulo.getWidth()), getEscalaY(titulo.getHeight()));
+
+		pantalla.getBtnReintentar().setBounds(
+				getEscalaX(reintentar.getX()), getEscalaY(reintentar.getY()),
+				getEscalaX(reintentar.getWidth()), getEscalaY(reintentar.getHeight()));
+
+		pantalla.getBtnSalir().setBounds(
+				getEscalaX(salir.getX()), getEscalaY(salir.getY()),
+				getEscalaX(salir.getWidth()), getEscalaY(salir.getHeight()));
+	}
+	
+	public static void adaptarWin(VistaPrincipal vp, PnlWin pantalla) {
+		Dimension pantallaFisica = Toolkit.getDefaultToolkit().getScreenSize();
+		int alto = pantallaFisica.height;
+		int ancho = pantallaFisica.width;
+
+		JFXPanel video = pantalla.getPanelVideo();
+		JButton jugar = pantalla.getBtnJugarDeNuevo();
+		JButton salir = pantalla.getBtnSalir();
+
+		pantalla.setBounds(0, 0, ancho, alto);
+
+		pantalla.getPanelVideo().setBounds(
+				getEscalaX(video.getX()), getEscalaY(video.getY()),
+				getEscalaX(video.getWidth()), getEscalaY(video.getHeight()));
+
+		pantalla.getBtnJugarDeNuevo().setBounds(
+				getEscalaX(jugar.getX()), getEscalaY(jugar.getY()),
+				getEscalaX(jugar.getWidth()), getEscalaY(jugar.getHeight()));
+
+		pantalla.getBtnSalir().setBounds(
+				getEscalaX(salir.getX()), getEscalaY(salir.getY()),
+				getEscalaX(salir.getWidth()), getEscalaY(salir.getHeight()));
+	}
+	
 	public static class GifEscalado implements Icon {
         private final ImageIcon gifOriginal;
         private final int ancho;
@@ -306,7 +566,7 @@ public class EscalarVista {
 
         public GifEscalado(ImageIcon gifOriginal, int ancho, int alto) {
             this.gifOriginal = gifOriginal;
-            this.ancho = ancho;
+            this.ancho = ancho;//
             this.alto = alto;
         }
 

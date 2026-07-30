@@ -18,6 +18,19 @@ public class InventarioColeccionables {
 		return coleccionables.get(id);
 	}
 
+	// Mismo criterio que obtenerPendientes()/todosEncontrados(): recorre
+	// los coleccionables reales (máximo 10) buscando el que coincide en
+	// tipo. Devuelve null si ese tipo no tiene objeto en el inventario --
+	// eso significa que no existe esta noche, no que esté "sin encontrar".
+	public Coleccionable buscarPorTipo(TipoColeccionable tipo) {
+		for (Coleccionable c : coleccionables.values()) {
+			if (c.getTipo() == tipo) {
+				return c;
+			}
+		}
+		return null;
+	}
+
 	public HashMap<Integer, Coleccionable> getColeccionables() {
 		return coleccionables;
 	}

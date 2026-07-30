@@ -37,15 +37,8 @@ public class Arbol {
 		return raiz == null;
 	}
 
-	// Solución definitiva "SIN CAMINO": construcción por
-	// niveles (BFS). Garantiza un árbol binario COMPLETO para CUALQUIER
-	// tamaño de lista: cada nodo recibe sus dos hijos SOLO si quedan al
-	// menos 2 nodos disponibles; si queda 1 o 0, es hoja. Así nunca existe
-	// un nodo con un solo hijo. El método anterior (partición por mitades)
-	// fallaba para todo tamaño que no fuera 2^k-1; este funciona siempre.
-	//
-	// Requisito de GeneradorArbol: pasar una lista de tamaño IMPAR. Con
-	// tamaño impar, este algoritmo no descarta ningún nodo (cero pérdida
+	//  pasar una lista de tamaño IMPAR. 
+	// Con tamaño impar, este algoritmo no descarta ningún nodo (cero pérdida
 	// de coleccionables). Con tamaño par descartaría exactamente 1 nodo
 	// (el último sin pareja), por eso GeneradorArbol fuerza tamaño impar.
 	public void construirCompleto(List<Puerta> puertas) {
@@ -68,7 +61,7 @@ public class Arbol {
 
 			int idx = cola.poll();
 
-			// Regla "ambos o ninguno": solo se asignan hijos si quedan al
+			// solo se asignan hijos si quedan al
 			// menos 2 nodos disponibles. Si queda exactamente 1, no se
 			// asigna a nadie (ese nodo sobrante se descarta del árbol).
 			if (siguiente + 1 < n) {
@@ -82,7 +75,7 @@ public class Arbol {
 				siguiente += 2;
 
 			} else {
-				// Queda 1 solo nodo disponible: no se usa como hijo único.
+				// Queda 1 solo nodo disponible no se usa como hijo único.
 				break;
 			}
 		}
@@ -91,7 +84,6 @@ public class Arbol {
 		actual = raiz;
 	}
 
-	@SuppressWarnings("unchecked")
 	private Nodo<Puerta>[] crearNodos(List<Puerta> puertas) {
 
 		Nodo<Puerta>[] nodos = new Nodo[puertas.size()];
