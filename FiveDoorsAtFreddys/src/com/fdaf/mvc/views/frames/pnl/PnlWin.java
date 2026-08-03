@@ -35,6 +35,7 @@ public class PnlWin extends JPanel {
 	private JButton btnJugarDeNuevo;
 	private JButton btnSalir;
 	private JLabel lblFlecha;
+	private JLabel lblCargando;
 
 	private MediaPlayer mediaPlayer;
 
@@ -74,6 +75,17 @@ public class PnlWin extends JPanel {
 		lblFlecha.setBounds(0, 0, anchoFlecha, altoFlecha);
 		lblFlecha.setVisible(false);
 		add(lblFlecha);
+
+		// Mensaje mostrado solo en la transicion Noche 5 -> Five Doors
+		// Escape, mientras el proceso LibGDX arranca en segundo plano
+		// (placeholder honesto hasta que exista el efecto de "glitch"
+		// real -- ver memoria de Claude "project-libgdx-office-spawn-exit-design").
+		lblCargando = new JLabel("", SwingConstants.CENTER);
+		lblCargando.setForeground(Color.WHITE);
+		lblCargando.setFont(Fuentes.obtener(36));
+		lblCargando.setBounds(0, 650, 1600, 80);
+		lblCargando.setVisible(false);
+		add(lblCargando);
 	}
 
 	private void estilizarBoton(JButton boton, Font fuente) {
@@ -162,4 +174,6 @@ public class PnlWin extends JPanel {
 	public void setBtnSalir(JButton btnSalir) { this.btnSalir = btnSalir; }
 	public JLabel getLblFlecha() { return lblFlecha; }
 	public void setLblFlecha(JLabel lblFlecha) { this.lblFlecha = lblFlecha; }
+	public JLabel getLblCargando() { return lblCargando; }
+	public void setLblCargando(JLabel lblCargando) { this.lblCargando = lblCargando; }
 }

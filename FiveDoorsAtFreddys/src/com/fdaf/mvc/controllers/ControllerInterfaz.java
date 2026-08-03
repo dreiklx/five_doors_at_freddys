@@ -1204,6 +1204,14 @@ public class ControllerInterfaz implements JuegoListener {
 	@Override
 	public void alGanar() {
 
+		// Capturado ANTES de avanzar el progreso: alGanar() se llama al
+		// ganar CUALQUIER noche, no solo la 5 -- sólo si la noche recién
+		// completada era la última se dispara la transición a Five
+		// Doors Escape en vez de la pantalla de victoria normal (ver
+		// memoria de Claude "project-libgdx-office-spawn-exit-design").
+		boolean eraNoche5 = PreferenciasJuego.nocheActual == com.fdaf.mvc.models.juego.Noche.NOCHE_5;
+		int vidasFinales = controllerJuego.getVidas();
+
 		// Avance automático de progreso: NOCHE_1->2->3->4->5, y NOCHE_5
 		// se queda en NOCHE_5. Al inicio del método, antes de cualquier
 		// efecto visual o de audio, para que quede persistido sin
@@ -1229,6 +1237,11 @@ public class ControllerInterfaz implements JuegoListener {
 
 		// Etapa 1: video con sonido (~9s, termina solo cuando el video acaba)
 		pantalla.reproducirVideo("/videos/ganar_fdaf.mp4", () -> {
+
+			if (eraNoche5) {
+				iniciarTransicionAEscape(pantalla, vidasFinales);
+				return;
+			}
 
 			// Etapa 2: fondo win.png + circus.wav en loop + botones abajo
 			pantalla.mostrarFondo(CargarImagenes.WIN);
@@ -1259,6 +1272,35 @@ public class ControllerInterfaz implements JuegoListener {
 		});
 		pantalla.getBtnSalir().addActionListener(e -> System.exit(0));
 
+	}
+
+	// Dispara tras ganar la Noche 5 (Architecture.md #7): escribe el
+	// archivo de traspaso y lanza Five Doors Escape en un proceso
+	// aparte, sin bloquear el EDT. El efecto de "glitch" que debe
+	// acompañar esta transición todavía no está diseñado (ver memoria
+	// de Claude) -- por ahora se muestra un mensaje de carga simple,
+	// honesto sobre ser un placeholder. Esta ventana se deja visible
+	// debajo (Escape la tapa al abrir su propia ventana) y solo vuelve
+	// al frente cuando el proceso de Escape termina -- por Game Over,
+	// el botón manual o la victoria del Escape, todos comparten el
+	// mismo mecanismo real de salida (cierre del proceso).
+	private void iniciarTransicionAEscape(PnlWin pantalla, int vidasFinales) {
+		pantalla.mostrarFondo(CargarImagenes.WIN);
+		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
+		pantalla.getLblCargando().setText(ingles ? "Loading Five Doors Escape..." : "Cargando Five Doors Escape...");
+		pantalla.getLblCargando().setVisible(true);
+		pantalla.revalidate();
+		pantalla.repaint();
+
+		com.fdaf.util.LanzadorEscape.lanzar(PreferenciasJuego.idiomaSeleccionado, vidasFinales, () -> {
+			vistaPrincipal.setContenido(menu);
+			vistaPrincipal.toFront();
+			vistaPrincipal.requestFocus();
+			if (controllerMenuPadre != null) {
+				controllerMenuPadre.reanudarMusicaMenu();
+				controllerMenuPadre.limpiarPartidaActiva();
+			}
+		});
 	}
 
 	private void deshabilitarControles() {
