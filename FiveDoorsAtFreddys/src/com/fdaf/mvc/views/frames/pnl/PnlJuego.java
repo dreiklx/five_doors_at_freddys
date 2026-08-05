@@ -48,6 +48,7 @@ public class PnlJuego extends JPanel {
 	 * Create the panel.
 	 */
 	public PnlJuego() {
+		setBackground(Color.BLACK);
 
 		setPreferredSize(new Dimension(1600, 900));
 		setLayout(null);
@@ -60,7 +61,7 @@ public class PnlJuego extends JPanel {
 
 		panelDer=new PnlAplicarImagen(CargarImagenes.panelDer);
 		panelDer.setOpaque(false);
-		panelDer.setBounds(1794, 400,70,210);
+		panelDer.setBounds(1739, 400,70,210);
 		panelDer.setLayout(null);
 
 		botonDer = new JCheckBox("");
@@ -103,23 +104,18 @@ public class PnlJuego extends JPanel {
 
 		lblIzqDos = new JLabel("zona dos");
 		lblIzqDos.setBackground(Color.white);
-		lblIzqDos.setBounds(58, 0, 193, 900);
+		lblIzqDos.setBounds(88, 0, 253, 900);
 		lblIzqDos.setOpaque(false);
 
 		lblDerDos = new JLabel("zona dos");
 		lblDerDos.setBackground(Color.white);
-		lblDerDos.setBounds(1349, 0, 193, 900);
+		lblDerDos.setBounds(1256, 0, 253, 900);
 		lblDerDos.setOpaque(false);
 
 		lblIzqUno = new JLabel("zona uno");
 		lblIzqUno.setBackground(Color.RED);
-		lblIzqUno.setBounds(251, 0, 179, 900);
-		lblIzqUno.setOpaque(false);
-
-		lblDerUno = new JLabel("zona uno");
-		lblDerUno.setBackground(Color.RED);
-		lblDerUno.setBounds(1170, 0, 179, 900);
-		lblDerUno.setOpaque(false);
+		lblIzqUno.setBounds(335, 0, 273, 900);
+		lblIzqUno.setOpaque(true);
 
 		/*
 		 * Asignar orden añadiendo mannual
@@ -133,14 +129,14 @@ public class PnlJuego extends JPanel {
 		add(lblTabletTransicion);
 		
 		lblIzqTres = new JLabel("");
-		lblIzqTres.setBounds(0, 0, 58, 900);
+		lblIzqTres.setBounds(0, 0, 89, 900);
 		lblIzqTres.setIcon(EscalarVista.getImagenEscalada(CargarImagenes.zonaTresIzq, lblIzqTres.getWidth(), lblIzqTres.getHeight()));
 		lblIzqTres.setBackground(Color.green);
 		lblIzqTres.setOpaque(false);
 		pnlComponentes.add(lblIzqTres);
 
 		lblDerTres = new JLabel("");
-		lblDerTres.setBounds(1542, 0, 58, 900);
+		lblDerTres.setBounds(1511, 0, 89, 900);
 		lblDerTres.setIcon(EscalarVista.getImagenEscalada(CargarImagenes.zonaTresDer, lblDerTres.getWidth(), lblDerTres.getHeight()));
 		lblDerTres.setBackground(Color.green);
 		lblDerTres.setOpaque(false);
@@ -205,8 +201,13 @@ public class PnlJuego extends JPanel {
 
 		pnlComponentes.add(lblIzqDos);
 		pnlComponentes.add(lblDerDos);
+		
+				lblDerUno = new JLabel("zona uno");
+				lblDerUno.setBackground(Color.RED);
+				lblDerUno.setBounds(983, 0, 273, 900);
+				lblDerUno.setOpaque(true);
+				pnlComponentes.add(lblDerUno);
 		pnlComponentes.add(lblIzqUno);
-		pnlComponentes.add(lblDerUno);
 
 		add(pnlComponentes);
 

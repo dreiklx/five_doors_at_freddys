@@ -306,17 +306,26 @@ public class EscalarVista {
 		tablet.setBounds(0, 0, ancho, alto);
 		tablet.getPanel().setBounds(0, 0, ancho, alto);
 		
+		tablet.getlblPuntoCam().setBounds(
+				getEscalaX(80), getEscalaY(72),
+				getEscalaX(55), getEscalaY(55));
+		
+		tablet.getlblPuntoCam().setIcon(new EscalarVista.GifEscalado(
+				CargarImagenes.puntoCamara, 
+				tablet.getlblPuntoCam().getWidth(), 
+				tablet.getlblPuntoCam().getHeight()));
+		
 		tablet.getLblCopyBateria().setBounds(
-				getEscalaX(1142), getEscalaY(91),
-				getEscalaX(83), getEscalaY(40));
+				getEscalaX(1340), getEscalaY(393),
+				getEscalaX(100), getEscalaY(40));
 		
 		tablet.getLblCopyBateria().setIcon(getImagenEscalada(CargarImagenes.bateria4,
 				tablet.getLblCopyBateria().getWidth(), tablet.getLblCopyBateria().getHeight()));
 		
 		
 		tablet.getLblCopyPowerLeft().setBounds(
-				getEscalaX(1132), getEscalaY(52),
-				getEscalaX(182), getEscalaY(32));
+				getEscalaX(1326), getEscalaY(314),
+				getEscalaX(200), getEscalaY(55));
 		tablet.getLblCopyPowerLeft().setIcon(getImagenEscalada(CargarImagenes.powerLeft,
 				tablet.getLblCopyPowerLeft().getWidth(), tablet.getLblCopyPowerLeft().getHeight()));
 
@@ -434,7 +443,7 @@ public class EscalarVista {
 				juego.getLblPuertaDer().setBounds(
 						getEscalaX(1435), getEscalaY(0), 
 						getEscalaX(203), getEscalaY(900));
-				juego.getLblPuertaDer().setIcon(new EscalarVista.GifEscalado(
+				juego.getLblPuertaDer().setIcon(EscalarVista.getImagenEscalada(
 						CargarImagenes.puertaDer0,
 						juego.getLblPuertaDer().getWidth(),
 						juego.getLblPuertaDer().getHeight()
@@ -443,7 +452,7 @@ public class EscalarVista {
 				juego.getLblPuertaIzq().setBounds(
 						getEscalaX(-39), getEscalaY(0), 
 						getEscalaX(203), getEscalaY(900));
-				juego.getLblPuertaIzq().setIcon(new EscalarVista.GifEscalado(
+				juego.getLblPuertaIzq().setIcon(EscalarVista.getImagenEscalada(
 						CargarImagenes.puertaIzq0,
 						juego.getLblPuertaIzq().getWidth(),
 						juego.getLblPuertaIzq().getHeight()

@@ -27,7 +27,7 @@ public class PnlTableta extends JPanel {
 	// no se agrega nada al final.
 	private JPanel pnlColeccionables;
 	private JPanel panel;
-	private JLabel lblNewLabel;
+	private JLabel lblPuntoCam;
 	private JLabel CUPCAKE;
 	private JLabel GUITARRA_BONNIE;
 	private JLabel MICROFONO_FREDDY;
@@ -49,92 +49,113 @@ public class PnlTableta extends JPanel {
 		setPreferredSize(new Dimension(1600, 900));
 		setLayout(null);
 		
-		panel = new PnlAplicarImagen(CargarImagenes.estatica);
+		panel = new PnlAplicarImagen(CargarImagenes.camara);
 		panel.setOpaque(false);
 		panel.setBounds(0, 0, 1600, 900);
 		add(panel);
 		
-		lblNewLabel = new JLabel("");
-		lblNewLabel.setBounds(74, 50, 80, 70);
+		lblPuntoCam = new JLabel("");
+		lblPuntoCam.setBounds(80,72,55,55);
 		
 		lblTabletCerrar = new JLabel("");
-		lblTabletCerrar.setBounds(288, 808, 800, 55);
+		lblTabletCerrar.setBounds(465, 808, 800, 55);
 		lblTabletCerrar.setPreferredSize(new Dimension(690, 77));
 		lblTabletCerrar.setIcon(CargarImagenes.barraTableta);
 		
 		pbarRendirse = new JProgressBar();
-		pbarRendirse.setBounds(1291, 50, 254, 33);
+		pbarRendirse.setOpaque(false);
+	
+		pbarRendirse.setBounds(1319,824,236,31);
 
 		pnlColeccionables = new PnlAplicarImagen(CargarImagenes.inventario);
-		pnlColeccionables.setBounds(84, 164, 1357, 444);
+		pnlColeccionables.setBounds(0, 0, 1600, 900);
 		pnlColeccionables.setOpaque(false);
 
 
 		panel.setLayout(null);
-		panel.add(lblNewLabel);
+		panel.add(lblPuntoCam);
 		panel.add(pbarRendirse);
 		panel.add(pnlColeccionables);
 		pnlColeccionables.setLayout(null);
+	
+		/*
+		 * INVENTARIO
+		 */
 		
+		//PRIMERA LINEA 
 		CUPCAKE = new JLabel("");
-		CUPCAKE.setBounds(92, 52, 100, 92);
+		CUPCAKE.setBounds(69, 504, 74, 68);
 		pnlColeccionables.add(CUPCAKE);
 		
 		GUITARRA_BONNIE = new JLabel("");
-		GUITARRA_BONNIE.setBounds(221, 52, 100, 92);
+		GUITARRA_BONNIE.setBounds(143, 504, 74, 68);
 		pnlColeccionables.add(GUITARRA_BONNIE);
 		
 		MICROFONO_FREDDY = new JLabel("");
-		MICROFONO_FREDDY.setBounds(351, 52, 100, 92);
+		MICROFONO_FREDDY.setBounds(217, 504, 74, 68);
 		pnlColeccionables.add(MICROFONO_FREDDY);
 		
+		GARFIO_FOXY = new JLabel("");
+		GARFIO_FOXY.setBounds(291, 504, 74, 68);
+		pnlColeccionables.add(GARFIO_FOXY);
+		
+		
+		//SEGUNDA LINEA
 		PELUCHE_FREDDY = new JLabel("");
-		PELUCHE_FREDDY.setBounds(480, 52, 100, 92);
+		PELUCHE_FREDDY.setBounds(69, 590, 74, 68);
 		pnlColeccionables.add(PELUCHE_FREDDY);
 		
 		PELUCHE_FOXY = new JLabel("");
-		PELUCHE_FOXY.setBounds(480, 167, 100, 92);
+		PELUCHE_FOXY.setBounds(143, 590,  74, 68);
 		pnlColeccionables.add(PELUCHE_FOXY);
 		
 		PELUCHE_CHICA = new JLabel("");
-		PELUCHE_CHICA.setBounds(351, 167, 100, 92);
+		PELUCHE_CHICA.setBounds(217, 590, 74, 68);
 		pnlColeccionables.add(PELUCHE_CHICA);
 		
 		PELUCHE_BONNIE = new JLabel("");
-		PELUCHE_BONNIE.setBounds(221, 167, 100, 92);
+		PELUCHE_BONNIE.setBounds(291, 590, 74, 68);
 		pnlColeccionables.add(PELUCHE_BONNIE);
 		
-		GARFIO_FOXY = new JLabel("");
-		GARFIO_FOXY.setBounds(92, 167, 100, 92);
-		pnlColeccionables.add(GARFIO_FOXY);
 		
+		//TERCERA LINEA
 		PELUCHE_GOLDEN_FREDDY = new JLabel("");
-		PELUCHE_GOLDEN_FREDDY.setBounds(92, 285, 100, 92);
+		PELUCHE_GOLDEN_FREDDY.setBounds(69, 676, 74, 68);
 		pnlColeccionables.add(PELUCHE_GOLDEN_FREDDY);
 		
 		BALLOONBOY = new JLabel("");
-		BALLOONBOY.setBounds(221, 285, 100, 92);
+		BALLOONBOY.setBounds(143, 676, 74, 68);
 		pnlColeccionables.add(BALLOONBOY);
 		
+		
+		//examinar
 		lblMostrar = new JLabel("");
-		lblMostrar.setBounds(695, 52, 412, 257);
+		lblMostrar.setBounds(101, 227, 232, 136);
 		pnlColeccionables.add(lblMostrar);
-		
-		lblCopyPowerLeft = new JLabel("");
-		lblCopyPowerLeft.setBounds(1132, 52, 182, 32);
-		pnlColeccionables.add(lblCopyPowerLeft);
-		
-		lblCopyBateria = new JLabel("");
-		lblCopyBateria.setBounds(1142, 91, 83, 44);
-		pnlColeccionables.add(lblCopyBateria);
-		
+
 		lblDescripcion = new JLabel("");
-		lblDescripcion.setBounds(695, 322, 412, 56);
+		lblDescripcion.setBounds(69,398,296,68);
 		lblDescripcion.setHorizontalAlignment(SwingConstants.CENTER);
 		lblDescripcion.setForeground(java.awt.Color.WHITE);
 		lblDescripcion.setFont(com.fdaf.util.Fuentes.obtener(22));
 		pnlColeccionables.add(lblDescripcion);
 		panel.add(lblTabletCerrar);
+		
+		
+		
+		/*
+		 * Informacion
+		 */
+		
+		lblCopyPowerLeft = new JLabel("");
+		lblCopyPowerLeft.setBounds(1326, 314, 200, 55);
+		pnlColeccionables.add(lblCopyPowerLeft);
+		
+		lblCopyBateria = new JLabel("");
+		lblCopyBateria.setBounds(1340, 393, 100, 48);
+		pnlColeccionables.add(lblCopyBateria);
+		
+
 
 	}
 	public JLabel getCUPCAKE() {
@@ -229,12 +250,12 @@ public class PnlTableta extends JPanel {
 		this.panel = panel;
 	}
 
-	public JLabel getLblNewLabel() {
-		return lblNewLabel;
+	public JLabel getlblPuntoCam() {
+		return lblPuntoCam;
 	}
 
-	public void setLblNewLabel(JLabel lblNewLabel) {
-		this.lblNewLabel = lblNewLabel;
+	public void setlblPuntoCam(JLabel lblPuntoCam) {
+		this.lblPuntoCam = lblPuntoCam;
 	}
 
 	public JPanel getPnlColeccionables() {

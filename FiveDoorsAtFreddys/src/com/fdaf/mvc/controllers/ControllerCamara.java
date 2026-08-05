@@ -1,4 +1,4 @@
-package com.fdaf.mvc.controllers;
+ package com.fdaf.mvc.controllers;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -26,6 +26,7 @@ public class ControllerCamara {
 	private int xpnlIzq;
 	private int xPDer;
 	private int xPIzq;
+	private int xOverlay;
 
 	private int progreso;
 
@@ -50,6 +51,7 @@ public class ControllerCamara {
 	    this.xpnlIzq = pnlJuego.getPanelIzq().getX();
 		this.xPDer=pnlJuego.getLblPuertaDer().getX();
 		this.xPIzq=pnlJuego.getLblPuertaIzq().getX();
+		this.xOverlay=pnlJuego.getLblOverlay().getX();
 		
 		vp.setContenido(pnlJuego);
 
@@ -227,21 +229,27 @@ public class ControllerCamara {
 			return;
 		}
 
-		izquierda = new Timer(v, e -> {
+		izquierda = new Timer(10, e -> {
 
 			xlbl = pnlJuego.getLblImgOficina().getX();
 			int ylbl = pnlJuego.getLblImgOficina().getY();
+			xOverlay=pnlJuego.getLblOverlay().getX();
+			int yOverlay=pnlJuego.getLblOverlay().getY();
 			int ypnl = pnlJuego.getPanelIzq().getY();
 			int yPuerta=pnlJuego.getLblPuertaDer().getY();
 
-			if (xlbl == 0) {
+			if (xlbl >= 0) {
 				izquierda.stop();
 			} else {
-				xlbl++;
-				xpnlIzq++;
-				xpnlDer++;
-				xPDer++;
-				xPIzq++;
+				xlbl+=v;
+				xpnlIzq+=v;
+				xpnlDer+=v;
+				xPDer+=v;
+				xPIzq+=v;
+				
+				if(xOverlay!=0) {
+					xOverlay+=v;
+				}
 			}
 
 			pnlJuego.getPanelIzq().setLocation(xpnlIzq, ypnl);
@@ -250,6 +258,8 @@ public class ControllerCamara {
 			pnlJuego.getLblPuertaIzq().setLocation(xPIzq, yPuerta);
 			pnlJuego.getLblPuertaDer().setLocation(xPDer, yPuerta);
 			pnlJuego.getLblImgOficina().setLocation(xlbl, ylbl);
+			pnlJuego.getLblOverlay().setLocation(xOverlay, yOverlay);
+
 
 		});
 
@@ -262,21 +272,27 @@ public class ControllerCamara {
 			return;
 		}
 
-		derecha = new Timer(v, e -> {
+		derecha = new Timer(10, e -> {
 
 			xlbl = pnlJuego.getLblImgOficina().getX();
+			xOverlay=pnlJuego.getLblOverlay().getX();
+			int yOverlay=pnlJuego.getLblOverlay().getY();
 			int ylbl = pnlJuego.getLblImgOficina().getY();
 			int ypnl = pnlJuego.getPanelDer().getY();
 			int yPuerta=pnlJuego.getLblPuertaDer().getY();
 
-			if (xlbl == EscalarVista.getEscalaX(-602)) {
+			if (xlbl <= EscalarVista.getEscalaX(-602)) {
 				derecha.stop();
 			} else {
-				xlbl--;
-				xpnlIzq--;
-				xpnlDer--;
-				xPDer--;
-				xPIzq--;
+				xlbl-=v;
+				xpnlIzq-=v;
+				xpnlDer-=v;
+				xPDer-=v;
+				xPIzq-=v;
+				
+				if(xOverlay!=0) {
+					xOverlay-=v;
+				}
 			}
 
 			pnlJuego.getPanelIzq().setLocation(xpnlIzq, ypnl);
@@ -285,6 +301,7 @@ public class ControllerCamara {
 			pnlJuego.getLblPuertaIzq().setLocation(xPIzq, yPuerta);
 			pnlJuego.getLblPuertaDer().setLocation(xPDer, yPuerta);
 			pnlJuego.getLblImgOficina().setLocation(xlbl, ylbl);
+			pnlJuego.getLblOverlay().setLocation(xOverlay, yOverlay);
 
 		});
 
@@ -294,7 +311,7 @@ public class ControllerCamara {
 	public void zonaUnoDer() {
 		pnlJuego.getLblDerUno().addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseEntered(MouseEvent evt) { derecha(10); }
+			public void mouseEntered(MouseEvent evt) { derecha(5); }
 			@Override
 			public void mouseExited(MouseEvent evt) { if (derecha != null) derecha.stop(); }
 			
@@ -304,7 +321,7 @@ public class ControllerCamara {
 	public void zonaUnoIzq() {
 		pnlJuego.getLblIzqUno().addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseEntered(MouseEvent evt) { izquierda(10); }
+			public void mouseEntered(MouseEvent evt) { izquierda(5); }
 			@Override
 			public void mouseExited(MouseEvent evt) { if (izquierda != null) izquierda.stop(); }
 
@@ -314,7 +331,7 @@ public class ControllerCamara {
 	public void zonaDosDer() {
 		pnlJuego.getLblDerDos().addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseEntered(MouseEvent evt) { derecha(0); }
+			public void mouseEntered(MouseEvent evt) { derecha(13); }
 			@Override
 			public void mouseExited(MouseEvent evt) { if (derecha != null) derecha.stop(); }
 			
@@ -324,7 +341,7 @@ public class ControllerCamara {
 	public void zonaDosIzq() {
 		pnlJuego.getLblIzqDos().addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseEntered(MouseEvent evt) { izquierda(0); }
+			public void mouseEntered(MouseEvent evt) { izquierda(13); }
 			@Override
 			public void mouseExited(MouseEvent evt) { if (izquierda != null) izquierda.stop(); }
 			
@@ -334,7 +351,7 @@ public class ControllerCamara {
 	public void zonaTresDer() {
 		pnlJuego.getLblDerTres().addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseEntered(MouseEvent evt) { derecha(0); }
+			public void mouseEntered(MouseEvent evt) { derecha(20); }
 			@Override
 			public void mouseExited(MouseEvent evt) { if (derecha != null) derecha.stop(); }
 			
@@ -344,7 +361,7 @@ public class ControllerCamara {
 	public void zonaTresIzq() {
 		pnlJuego.getLblIzqTres().addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseEntered(MouseEvent evt) { izquierda(0); }
+			public void mouseEntered(MouseEvent evt) { izquierda(20); }
 			@Override
 			public void mouseExited(MouseEvent evt) { if (izquierda != null) izquierda.stop(); }
 			
