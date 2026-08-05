@@ -25,6 +25,9 @@ public class CargarImagenes {
 	public static ImageIcon abanico;
 	public static ImageIcon menu;
 	public static ImageIcon estatica;
+	public static ImageIcon camara;
+	public static ImageIcon puntoCamara;
+	
 	public static ImageIcon fondoJuego;
 	public static ImageIcon zonaTresIzq;
 	public static ImageIcon zonaTresDer;
@@ -83,7 +86,9 @@ public class CargarImagenes {
 
 	    menu=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/Menu.gif"));
  		estatica=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/Static.gif"));
-
+ 		camara=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/camara.gif"));
+ 		puntoCamara=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/puntorojo.gif"));
+ 		
 	
 		/*
 	 	* Fondos
@@ -120,8 +125,8 @@ public class CargarImagenes {
 		/*puertas*/
 		puertaDer0=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/puertaDer.png"));
 		puertaIzq0=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/puertaIzq.png"));
-		puertaDer1=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/103.png"));
-		puertaIzq1=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/104.png"));
+		puertaDer1=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/104.png"));
+		puertaIzq1=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/103.png"));
 
 		powerLeft=new ImageIcon(CargarImagenes.class.getResource("/images/hud/powerLeft.png"));
 		bateria0=new ImageIcon(CargarImagenes.class.getResource("/images/hud/bateria0.png"));

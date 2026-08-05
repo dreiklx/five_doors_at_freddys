@@ -33,6 +33,7 @@ public class VistaPrincipal extends JFrame {
 		setUndecorated(true);
 		setExtendedState(Frame.MAXIMIZED_BOTH);
 		setResizable(false);
+		setBackground(Color.BLACK);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 1000, 600);
 		contentPane = new JPanel();
