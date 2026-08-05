@@ -8,6 +8,7 @@ import java.awt.Graphics2D;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
+import java.util.Random;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -125,7 +126,13 @@ public class ControllerInterfaz implements JuegoListener {
 		sonidoJuego1 = new Sonido("fondo/sonido_ambiente_oficina.wav");
 		sonidoJuego1.loop();
 
-		sonidosAmbientales.iniciar();
+		// sonidosAmbientales (los sonidos ALEATORIOS de ambiente -- golpes, susurros, risas
+		// lejanas) ya NO arrancan aqui (pedido explicito del usuario 2026-08-05: la llamada debe
+		// escucharse completamente limpia). Arrancan recien cuando la llamada termina, sea de
+		// forma natural o porque el jugador la muteo -- ver iniciarLlamada()/colgarLlamada().
+		// El ambiente continuo de fondo (sonidoJuego1/sonidoJuego2, debajo) SI sigue sonando
+		// durante la llamada -- no es lo que el usuario pidio silenciar, son el hum/ambiente base
+		// de la oficina, no "sonidos aleatorios" que puedan competir con la llamada.
 
 		timerSonido = new Timer(3000, e -> {
 			sonidoJuego2 = new Sonido("fondo/sonido_fondo_oficina.wav");
@@ -189,6 +196,18 @@ public class ControllerInterfaz implements JuegoListener {
 	 * ==== Llamada telefónica ====
 	 */
 
+	// Unico punto de resolucion noche+idioma -> archivo (pedido explicito del usuario
+	// 2026-08-05: "no quiero logica duplicada... quiero que el sistema quede escalable por
+	// noche e idioma"). PreferenciasJuego.nocheActual.ordinal() ya es la fuente de verdad de
+	// "noche actual" en todo el proyecto (ver alGanar()) -- una 6ta noche solo necesitaria
+	// agregar el archivo "noche6_es.wav"/"noche6_en.wav" bajo resources/sounds/phoneguy/, sin
+	// tocar ninguna linea de codigo aqui.
+	private String rutaLlamadaNocheActual() {
+		int numeroNoche = PreferenciasJuego.nocheActual.ordinal() + 1;
+		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
+		return "phoneguy/noche" + numeroNoche + (ingles ? "_en" : "_es") + ".wav";
+	}
+
 	private void iniciarLlamada() {
 
 		llamadaColgada = false;
@@ -210,22 +229,29 @@ public class ControllerInterfaz implements JuegoListener {
 			if (llamadaColgada)
 				return;
 
-			String archivo = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES) ? "phoneguy/phoneguy_ingles.wav"
-					: "phoneguy/phoneguy_espanol.wav";
+			// Llamada real de la noche actual, en el idioma actual (antes: el mismo audio
+			// generico las 5 noches, solo variaba por idioma -- ver rutaLlamadaNocheActual).
+			String archivo = rutaLlamadaNocheActual();
 
 			sonidoLlamada = new Sonido(archivo);
 			sonidoLlamada.play();
 
+			// Duracion real leida del propio archivo (Sonido.getDuracionMs() -> Clip.
+			// getMicrosecondLength()) -- nunca hardcodeada, asi que el timer se adapta solo
+			// sin importar cuanto dure cada llamada real de cada noche.
 			long duracionLlamadaMs = sonidoLlamada.getDuracionMs();
 			if (duracionLlamadaMs <= 0)
 				duracionLlamadaMs = 3000;
 
-			// 2. si termina sola (nadie colgó), se oculta el botón.
+			// 2. si termina sola (nadie colgó), se oculta el botón y recien ahi se reanudan
+			// los sonidos ambientales aleatorios (pedido explicito del usuario 2026-08-05: la
+			// llamada debe escucharse completamente limpia, sin ambiente superpuesto).
 			timerLlamada = new Timer((int) duracionLlamadaMs, ev -> {
 				timerLlamada.stop();
 				if (!llamadaColgada) {
 					pnlJuego.getLblMuteCall().setVisible(false);
 					controllerJuego.setLlamadaActiva(false);
+					sonidosAmbientales.iniciar();
 				}
 			});
 			timerLlamada.setRepeats(false);
@@ -236,6 +262,16 @@ public class ControllerInterfaz implements JuegoListener {
 	}
 
 	private void colgarLlamada() {
+		// Colgado real (boton Mute Call): SI reanuda el ambiente, la llamada realmente termino
+		// para el jugador. Ver la sobrecarga de abajo para el otro caso (fin de partida).
+		colgarLlamada(true);
+	}
+
+	// reanudarAmbiente=false: usado unicamente desde detenerSonidosJuego() (fin de partida por
+	// victoria/derrota) -- ese metodo ya detiene sonidosAmbientales explicitamente porque el
+	// juego esta terminando, asi que reanudarlo aqui justo despues seria un bug real (sonidos
+	// de ambiente arrancando en medio de la secuencia de Game Over/Win).
+	private void colgarLlamada(boolean reanudarAmbiente) {
 
 		llamadaColgada = true;
 
@@ -250,6 +286,10 @@ public class ControllerInterfaz implements JuegoListener {
 		// 1. colgado manual, se oculta
 		pnlJuego.getLblMuteCall().setVisible(false);
 		controllerJuego.setLlamadaActiva(false);
+
+		if (reanudarAmbiente) {
+			sonidosAmbientales.iniciar();
+		}
 	}
 
 	private void mutecall() {
@@ -622,7 +662,12 @@ public class ControllerInterfaz implements JuegoListener {
 				URL recursoBloqueado = getClass().getResource("/images/" + tipo.getArchivoBloqueado());
 				if (recursoBloqueado != null) {
 					destino.setText("");
-					destino.setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recursoBloqueado), 100, 92));
+					// Lee el tamano real del slot (destino.getWidth()/getHeight()) en vez de un
+					// 100x92 hardcodeado -- bug real: el commit que redujo los slots del
+					// inventario a 74x68 (ver PnlTableta) nunca actualizo este valor, asi que
+					// cada icono se escalaba a un tamano mayor que su propio contenedor.
+					destino.setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recursoBloqueado),
+							destino.getWidth(), destino.getHeight()));
 				}
 			} else {
 				destino.setIcon(null);
@@ -757,46 +802,49 @@ public class ControllerInterfaz implements JuegoListener {
 	
 	public void agregarAlInventario(Coleccionable coleccionable, URL recurso) {
 		switch (coleccionable.getTipo()) {
+		// Cada icono se escala al tamano REAL de su propio JLabel (getWidth()/getHeight()), no a
+		// un 100x92 hardcodeado -- bug real corregido 2026-08-05: el commit que redujo los slots
+		// del inventario a 74x68 (ver PnlTableta) nunca actualizo estos 10 valores, asi que cada
+		// coleccionable encontrado se escalaba a un tamano mayor que su propio contenedor.
 		case PELUCHE_FREDDY:
-			pnlTableta.getPELUCHE_FREDDY().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso), 100, 92));
-			;
+			pnlTableta.getPELUCHE_FREDDY().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso),
+					pnlTableta.getPELUCHE_FREDDY().getWidth(), pnlTableta.getPELUCHE_FREDDY().getHeight()));
 			break;
 		case PELUCHE_BONNIE:
-			pnlTableta.getPELUCHE_BONNIE().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso), 100, 92));
-			;
+			pnlTableta.getPELUCHE_BONNIE().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso),
+					pnlTableta.getPELUCHE_BONNIE().getWidth(), pnlTableta.getPELUCHE_BONNIE().getHeight()));
 			break;
 		case PELUCHE_FOXY:
-			pnlTableta.getPELUCHE_FOXY().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso), 100, 92));
-			;
+			pnlTableta.getPELUCHE_FOXY().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso),
+					pnlTableta.getPELUCHE_FOXY().getWidth(), pnlTableta.getPELUCHE_FOXY().getHeight()));
 			break;
 		case PELUCHE_CHICA:
-			pnlTableta.getPELUCHE_CHICA().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso), 100, 92));
-			;
+			pnlTableta.getPELUCHE_CHICA().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso),
+					pnlTableta.getPELUCHE_CHICA().getWidth(), pnlTableta.getPELUCHE_CHICA().getHeight()));
 			break;
 		case PELUCHE_GOLDEN_FREDDY:
-			pnlTableta.getPELUCHE_GOLDEN_FREDDY()
-					.setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso), 100, 92));
-			;
+			pnlTableta.getPELUCHE_GOLDEN_FREDDY().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso),
+					pnlTableta.getPELUCHE_GOLDEN_FREDDY().getWidth(), pnlTableta.getPELUCHE_GOLDEN_FREDDY().getHeight()));
 			break;
 		case CUPCAKE:
-			pnlTableta.getCUPCAKE().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso), 100, 92));
-			;
+			pnlTableta.getCUPCAKE().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso),
+					pnlTableta.getCUPCAKE().getWidth(), pnlTableta.getCUPCAKE().getHeight()));
 			break;
 		case MICROFONO_FREDDY:
-			pnlTableta.getMICROFONO_FREDDY().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso), 100, 92));
-			;
+			pnlTableta.getMICROFONO_FREDDY().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso),
+					pnlTableta.getMICROFONO_FREDDY().getWidth(), pnlTableta.getMICROFONO_FREDDY().getHeight()));
 			break;
 		case GUITARRA_BONNIE:
-			pnlTableta.getGUITARRA_BONNIE().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso), 100, 92));
-			;
+			pnlTableta.getGUITARRA_BONNIE().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso),
+					pnlTableta.getGUITARRA_BONNIE().getWidth(), pnlTableta.getGUITARRA_BONNIE().getHeight()));
 			break;
 		case GARFIO_FOXY:
-			pnlTableta.getGARFIO_FOXY().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso), 100, 92));
-			;
+			pnlTableta.getGARFIO_FOXY().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso),
+					pnlTableta.getGARFIO_FOXY().getWidth(), pnlTableta.getGARFIO_FOXY().getHeight()));
 			break;
 		case BALLOONBOY:
-			pnlTableta.getBALLOONBOY().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso), 100, 92));
-			;
+			pnlTableta.getBALLOONBOY().setIcon(EscalarVista.getImagenEscalada(new ImageIcon(recurso),
+					pnlTableta.getBALLOONBOY().getWidth(), pnlTableta.getBALLOONBOY().getHeight()));
 			break;
 		default:
 			break;
@@ -823,18 +871,15 @@ public class ControllerInterfaz implements JuegoListener {
 			pnlJuego.getLuzIzq().setIcon(EscalarVista.getImagenEscalada(CargarImagenes.luzIzq0,
 					pnlJuego.getLuzIzq().getWidth(), pnlJuego.getLuzIzq().getHeight()));
 
-			// NO BORRAR, GIF DE PUERTA
-			//reproducirGifPuertaUnaVez("izq", pnlJuego.getLblPuertaIzq(),
-				//	"/images/puertas/PuertaIzquierdaCerrando.gif", CargarImagenes.puertaIzq0);
-			pnlJuego.getLblPuertaIzq().setIcon(
-				    EscalarVista.getImagenEscalada(
-				        CargarImagenes.puertaIzq0,
-				        pnlJuego.getLblPuertaIzq().getWidth(),
-				        pnlJuego.getLblPuertaIzq().getHeight()
-				    )
-				);
-			////////////////
-			
+			// Cierre automatico animado (pedido explicito del usuario 2026-08-05: cuando el
+			// jugador deja de sostener la puerta abierta, debe verse natural, no cerrarse de
+			// golpe). Antes este cierre "automatico" (al soltar tras una revelacion) quedaba
+			// comentado -- solo el cierre MANUAL (alCerrarPuerta, toggle del boton) reproducia
+			// el gif; este quedaba con un snap instantaneo al icono estatico cerrado. Mismo
+			// helper/gif que ya usa el cierre manual, sin logica duplicada.
+			reproducirGifPuertaUnaVez("izq", pnlJuego.getLblPuertaIzq(),
+					"/images/puertas/pIZQ-CERRAR.gif", CargarImagenes.puertaIzq0);
+
 			pnlJuego.getLblImgOficina().setIcon(gifOficinaNormal);
 
 			pnlJuego.getBotonIzq().setIcon(EscalarVista.getImagenEscalada(CargarImagenes.btnIzq0,
@@ -843,18 +888,9 @@ public class ControllerInterfaz implements JuegoListener {
 			pnlJuego.getLuzDer().setIcon(EscalarVista.getImagenEscalada(CargarImagenes.luzDer0,
 					pnlJuego.getLuzDer().getWidth(), pnlJuego.getLuzDer().getHeight()));
 
-			// NO BORRAR, GIF DE PUERTA
-			//reproducirGifPuertaUnaVez("der", pnlJuego.getLblPuertaDer(),
-				//	"/images/puertas/PuertaDerechaCerrando.gif", CargarImagenes.puertaDer0);
-			
-			pnlJuego.getLblPuertaDer().setIcon(
-				    EscalarVista.getImagenEscalada(
-				        CargarImagenes.puertaDer0,
-				        pnlJuego.getLblPuertaDer().getWidth(),
-				        pnlJuego.getLblPuertaDer().getHeight()
-				    )
-				);
-			///////////
+			// Ver comentario del lado "izq" arriba -- mismo cierre automatico animado.
+			reproducirGifPuertaUnaVez("der", pnlJuego.getLblPuertaDer(),
+					"/images/puertas/pDER-CERRAR.gif", CargarImagenes.puertaDer0);
 
 			pnlJuego.getLblImgOficina().setIcon(gifOficinaNormal);
 
@@ -964,12 +1000,6 @@ public class ControllerInterfaz implements JuegoListener {
 		pantalla.getBtnSalir().setText(ingles ? "Exit Game" : "Salir del juego");
 	}
 
-	private void aplicarIdiomaWin(PnlWin pantalla) {
-		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
-		pantalla.getBtnJugarDeNuevo().setText(ingles ? "Play Again" : "Volver a jugar");
-		pantalla.getBtnSalir().setText(ingles ? "Exit Game" : "Salir del juego");
-	}
-	
 	
 
 	@Override
@@ -1212,48 +1242,121 @@ public class ControllerInterfaz implements JuegoListener {
 				return;
 			}
 
-			// Etapa 2: fondo win.png + circus.wav en loop + botones abajo
-			pantalla.mostrarFondo(CargarImagenes.WIN);
-
-			sonidoWin = new Sonido("win/circus.wav");
-			sonidoWin.loop();
-
-			aplicarIdiomaWin(pantalla);
-
-			pantalla.getBtnJugarDeNuevo().setVisible(true);
-			pantalla.getBtnSalir().setVisible(true);
-			pantalla.revalidate();
-			pantalla.repaint();
-		});
-
-		com.fdaf.util.InteraccionBoton.aplicarHoverYSonido(pantalla.getBtnJugarDeNuevo(), pantalla.getLblFlecha(), 30);
-		com.fdaf.util.InteraccionBoton.aplicarHoverYSonido(pantalla.getBtnSalir(), pantalla.getLblFlecha(), 30);
-
-		pantalla.getBtnJugarDeNuevo().addActionListener(e -> {
-			if (sonidoWin != null) {
-				sonidoWin.stop();
-			}
+			// Pedido explicito del usuario 2026-08-05: ya no se muestra la pantalla de
+			// "Volver a jugar"/"Salir del juego" al completar una noche -- el progreso ya
+			// quedo guardado arriba (antes de cualquier efecto visual/de audio, lineas
+			// 1223-1227), asi que aqui solo se vuelve directamente al menu principal, igual
+			// que hacia btnJugarDeNuevo manualmente antes de este cambio.
 			vistaPrincipal.setContenido(menu);
 			if (controllerMenuPadre != null) {
 				controllerMenuPadre.reanudarMusicaMenu();
 				controllerMenuPadre.limpiarPartidaActiva();
 			}
 		});
-		pantalla.getBtnSalir().addActionListener(e -> System.exit(0));
 
 	}
 
 	// Dispara tras ganar la Noche 5 (Architecture.md #7): escribe el
 	// archivo de traspaso y lanza Five Doors Escape en un proceso
-	// aparte, sin bloquear el EDT. El efecto de "glitch" que debe
-	// acompañar esta transición todavía no está diseñado (ver memoria
-	// de Claude) -- por ahora se muestra un mensaje de carga simple,
-	// honesto sobre ser un placeholder. Esta ventana se deja visible
-	// debajo (Escape la tapa al abrir su propia ventana) y solo vuelve
-	// al frente cuando el proceso de Escape termina -- por Game Over,
-	// el botón manual o la victoria del Escape, todos comparten el
-	// mismo mecanismo real de salida (cierre del proceso).
+	// aparte, sin bloquear el EDT. Antes de lanzarlo se reproduce un
+	// efecto de "glitch" agresivo (pedido explicito del usuario
+	// 2026-08-05: el juego debe sentirse como si "se rompiera" antes de
+	// entrar al Escape) -- ver mostrarGlitchYLanzarEscape. Esta ventana
+	// se deja visible debajo (Escape la tapa al abrir su propia ventana)
+	// y solo vuelve al frente cuando el proceso de Escape termina -- por
+	// Game Over, el botón manual o la victoria del Escape, todos
+	// comparten el mismo mecanismo real de salida (cierre del proceso).
 	private void iniciarTransicionAEscape(PnlWin pantalla, int vidasFinales) {
+		mostrarGlitchYLanzarEscape(pantalla, vidasFinales);
+	}
+
+	/** Duracion del efecto glitch, en milisegundos, antes de mostrar el mensaje de carga real y
+	 * lanzar Five Doors Escape. */
+	private static final int DURACION_GLITCH_MS = 2600;
+	private static final int INTERVALO_GLITCH_MS = 45;
+	private Timer timerGlitch;
+
+	/** Efecto de "corrupcion de senal" agresivo -- generado enteramente con Graphics2D dentro de
+	 * un JPanel transparente superpuesto, repintado por un javax.swing.Timer, EXACTAMENTE el
+	 * mismo patron ya usado por iniciarFadeDesdeNegro() (panel + Timer + paintComponent
+	 * personalizado) -- sin ninguna libreria o pipeline de postprocesado nueva, tal como pidio
+	 * el usuario ("investiga que puede hacerse usando unicamente las capacidades actuales del
+	 * proyecto"). Reutiliza ademas Static.gif (el mismo asset que ya se usa como interferencia
+	 * en la secuencia de Game Over) como una capa mas de corrupcion visual real, no solo
+	 * geometria dibujada a mano. Al terminar, muestra el mensaje de carga (ya existente antes de
+	 * este cambio) y recien ahi lanza el proceso de Escape -- LanzadorEscape.lanzar() en si no
+	 * cambio, solo el momento en que se invoca. */
+	private void mostrarGlitchYLanzarEscape(PnlWin pantalla, int vidasFinales) {
+		Random random = new Random();
+		Color[] paletaGlitch = {
+				new Color(255, 0, 90), new Color(0, 255, 200), new Color(255, 230, 0),
+				new Color(120, 0, 255), Color.WHITE, Color.BLACK
+		};
+		ImageIcon estaticaGlitch = com.fdaf.util.CargarGifs.cargarFresco(
+				"/gifs/fondos/Static.gif", CargarImagenes.estatica);
+
+		JPanel pnlGlitch = new JPanel() {
+			@Override
+			protected void paintComponent(Graphics g) {
+				int w = getWidth();
+				int h = getHeight();
+				if (w <= 0 || h <= 0) {
+					return;
+				}
+				Graphics2D g2 = (Graphics2D) g.create();
+
+				// Base: parpadeo de color solido saturado (simula corte de señal).
+				g2.setColor(paletaGlitch[random.nextInt(paletaGlitch.length)]);
+				g2.fillRect(0, 0, w, h);
+
+				// Interferencia real (mismo gif que el Game Over), desplazada al azar.
+				estaticaGlitch.paintIcon(this, g2, random.nextInt(41) - 20, random.nextInt(41) - 20);
+
+				// Barras de "tearing" horizontales con desplazamiento y color aleatorios.
+				int franjas = 6 + random.nextInt(6);
+				for (int i = 0; i < franjas; i++) {
+					int altoFranja = 4 + random.nextInt(Math.max(1, h / 6));
+					int y = random.nextInt(Math.max(1, h - altoFranja));
+					int desplazamientoX = random.nextInt(121) - 60;
+					g2.setColor(paletaGlitch[random.nextInt(paletaGlitch.length)]);
+					g2.fillRect(desplazamientoX, y, w, altoFranja);
+				}
+
+				// Franjas de canal de color (simula separacion RGB de una señal corrupta).
+				g2.setColor(new Color(255, 0, 0, 140));
+				g2.fillRect(random.nextInt(21) - 10, 0, w, h / 3);
+				g2.setColor(new Color(0, 255, 255, 140));
+				g2.fillRect(random.nextInt(21) - 10, h / 3, w, h / 3);
+
+				g2.dispose();
+			}
+		};
+		pnlGlitch.setOpaque(false);
+		pantalla.add(pnlGlitch);
+		pnlGlitch.setBounds(0, 0, pantalla.getWidth(), pantalla.getHeight());
+		pantalla.setComponentZOrder(pnlGlitch, 0);
+		pnlGlitch.setVisible(true);
+
+		long inicio = System.currentTimeMillis();
+		timerGlitch = new Timer(INTERVALO_GLITCH_MS, null);
+		timerGlitch.addActionListener(e -> {
+			long transcurrido = System.currentTimeMillis() - inicio;
+			if (transcurrido >= DURACION_GLITCH_MS) {
+				((Timer) e.getSource()).stop();
+				pantalla.remove(pnlGlitch);
+				pantalla.revalidate();
+				pantalla.repaint();
+				mostrarCargaYLanzarEscape(pantalla, vidasFinales);
+			} else {
+				pnlGlitch.repaint();
+			}
+		});
+		timerGlitch.start();
+	}
+
+	/** Mensaje de carga real (ya existia antes del efecto glitch) mientras el proceso de Escape
+	 * termina de arrancar -- puede tardar bastante mas que el glitch en si. */
+	private void mostrarCargaYLanzarEscape(PnlWin pantalla, int vidasFinales) {
 		pantalla.mostrarFondo(CargarImagenes.WIN);
 		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
 		pantalla.getLblCargando().setText(ingles ? "Loading Five Doors Escape..." : "Cargando Five Doors Escape...");
@@ -1364,7 +1467,9 @@ public class ControllerInterfaz implements JuegoListener {
 			sonidoWin.stop();
 		}
 
-		colgarLlamada();
+		// false: el juego esta terminando (victoria/derrota), sonidosAmbientales ya se detuvo
+		// arriba -- reanudarlo aqui seria un bug real (ver comentario en colgarLlamada(boolean)).
+		colgarLlamada(false);
 
 	// Ningún sonido de oficina debe sobrevivir a ganar/perder --
 	// incluye los loops de luz, que viven dentro de ControllerJuego.
