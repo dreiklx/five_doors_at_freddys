@@ -278,7 +278,7 @@ public class ControllerInterfaz implements JuegoListener {
 			ImageIcon gif = com.fdaf.util.CargarGifs.cargarFresco(rutaGif, imagenFinal);
 			destino.setIcon(new EscalarVista.GifEscalado(gif, destino.getWidth(), destino.getHeight()));
 
-			Timer detenerGif = new Timer(1000, e -> {
+			Timer detenerGif = new Timer(900, e -> {
 				((Timer) e.getSource()).stop();
 				destino.setIcon(EscalarVista.getImagenEscalada(imagenFinal, destino.getWidth(), destino.getHeight()));
 				pnlJuego.revalidate();
@@ -375,23 +375,16 @@ public class ControllerInterfaz implements JuegoListener {
 		@Override
 		public void alAbrirPuerta(String lado) {
 			if ("izq".equals(lado)) {
+				
 				pnlJuego.getBotonIzq().setIcon(EscalarVista.getImagenEscalada(CargarImagenes.btnIzq1,
 						pnlJuego.getBotonIzq().getWidth(), pnlJuego.getBotonIzq().getHeight()));
 
 				//ESTO ES PARA REPRODUCIR GIFS DE LAS PUERTAS 
 				// NO BORRAR
-				//reproducirGifPuertaUnaVez("izq", pnlJuego.getLblPuertaIzq(),
-					//	"/images/puertas/PuertaIzquierdAbriendo.gif", CargarImagenes.puertaIzq1);
+				reproducirGifPuertaUnaVez("izq", pnlJuego.getLblPuertaIzq(),
+						"/images/puertas/pIZQ-ABRIR.gif", CargarImagenes.puertaIzq1);
 				
-				//ESTO ES PARA DEJAR LA IMAGEN ESTATICA DE LAS PUERTAS
-				// NO BORRAR
-				pnlJuego.getLblPuertaIzq().setIcon(
-					    EscalarVista.getImagenEscalada(
-					        CargarImagenes.puertaIzq1,
-					        pnlJuego.getLblPuertaIzq().getWidth(),
-					        pnlJuego.getLblPuertaIzq().getHeight()
-					    )
-					);
+
 				
 			} else {
 				pnlJuego.getBotonDer().setIcon(EscalarVista.getImagenEscalada(CargarImagenes.btnDer1,
@@ -399,18 +392,10 @@ public class ControllerInterfaz implements JuegoListener {
 
 				//ESTO ES PARA REPRODUCIR GIFS DE LAS PUERTAS 
 				// NO BORRAR
-				//reproducirGifPuertaUnaVez("der", pnlJuego.getLblPuertaDer(),
-					//	"/images/puertas/PuertaDerechaAbriendo.gif", CargarImagenes.puertaDer1);
+				reproducirGifPuertaUnaVez("der", pnlJuego.getLblPuertaDer(),
+						"/images/puertas/pDER-ABRIR.gif", CargarImagenes.puertaDer1);
 				
-				//ESTO ES PARA DEJAR LA IMAGEN ESTATICA DE LAS PUERTAS
-				// NO BORRAR
-				pnlJuego.getLblPuertaDer().setIcon(
-					    EscalarVista.getImagenEscalada(
-					        CargarImagenes.puertaDer1,
-					        pnlJuego.getLblPuertaDer().getWidth(),
-					        pnlJuego.getLblPuertaDer().getHeight()
-					    )
-					);
+
 				
 				
 			}
@@ -427,18 +412,10 @@ public class ControllerInterfaz implements JuegoListener {
 				
 				//ESTO ES PARA REPRODUCIR GIFS DE LAS PUERTAS 
 				// NO BORRAR
-				//reproducirGifPuertaUnaVez("izq", pnlJuego.getLblPuertaIzq(),
-					//	"/images/puertas/PuertaIzquierdaCerrando.gif", CargarImagenes.puertaIzq0);
+				reproducirGifPuertaUnaVez("izq", pnlJuego.getLblPuertaIzq(),
+						"/images/puertas/pIZQ-CERRAR.gif", CargarImagenes.puertaIzq0);
 				
-				//ESTO ES PARA DEJAR LA IMAGEN ESTATICA DE LAS PUERTAS
-				// NO BORRAR
-				pnlJuego.getLblPuertaIzq().setIcon(
-					    EscalarVista.getImagenEscalada(
-					        CargarImagenes.puertaIzq0,
-					        pnlJuego.getLblPuertaIzq().getWidth(),
-					        pnlJuego.getLblPuertaIzq().getHeight()
-					    )
-					);
+
 				
 			} else {
 				pnlJuego.getBotonDer().setIcon(EscalarVista.getImagenEscalada(CargarImagenes.btnDer0,
@@ -446,18 +423,10 @@ public class ControllerInterfaz implements JuegoListener {
 				
 				//ESTO ES PARA REPRODUCIR GIFS DE LAS PUERTAS 
 				// NO BORRAR
-				//reproducirGifPuertaUnaVez("der", pnlJuego.getLblPuertaDer(),
-					//	"/images/puertas/PuertaDerechaCerrando.gif", CargarImagenes.puertaDer0);
+				reproducirGifPuertaUnaVez("der", pnlJuego.getLblPuertaDer(),
+						"/images/puertas/pDER-CERRAR.gif", CargarImagenes.puertaDer0);
 				
-				//ESTO ES PARA DEJAR LA IMAGEN ESTATICA DE LAS PUERTAS
-				// NO BORRAR
-				pnlJuego.getLblPuertaDer().setIcon(
-					    EscalarVista.getImagenEscalada(
-					        CargarImagenes.puertaDer0,
-					        pnlJuego.getLblPuertaDer().getWidth(),
-					        pnlJuego.getLblPuertaDer().getHeight()
-					    )
-					);
+
 				
 			}
 			pnlJuego.revalidate();

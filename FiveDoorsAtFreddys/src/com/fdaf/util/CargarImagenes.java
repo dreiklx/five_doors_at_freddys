@@ -42,10 +42,15 @@ public class CargarImagenes {
 	public static ImageIcon luzDer0;
 	public static ImageIcon luzIzq1;
 	public static ImageIcon luzDer1;
+	
 	public static ImageIcon puertaDer0;
 	public static ImageIcon puertaIzq0;
 	public static ImageIcon puertaDer1;
 	public static ImageIcon puertaIzq1;
+	public static ImageIcon puertaIzqCE;
+	public static ImageIcon puertaIzqAB;
+	public static ImageIcon puertaDerCE;
+	public static ImageIcon puertaDerAB;
 
 	public static ImageIcon bateria0;
 	public static ImageIcon bateria1;
@@ -77,6 +82,10 @@ public class CargarImagenes {
 		juegoLuzIzq = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/OficinaLuzIzq.gif"));
 	    juegoLuzDer = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/OficinaLuzDer.gif"));
 	    abanico = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/abanico.gif"));
+	    
+
+	    
+	    
 
 
 	    Toolkit.getDefaultToolkit().prepareImage(juegoLuzIzq.getImage(), -1, -1, null);
@@ -123,6 +132,15 @@ public class CargarImagenes {
 
 	
 		/*puertas*/
+		
+		
+	    puertaDerAB=new ImageIcon(CargarImagenes.class.getResource("/images/puertas/pDER-ABRIR.gif"));
+	    puertaDerCE=new ImageIcon(CargarImagenes.class.getResource("/images/puertas/pDER-CERRAR.gif"));
+	    
+	    puertaIzqAB=new ImageIcon(CargarImagenes.class.getResource("/images/puertas/pIZQ-ABRIR.gif"));
+	    puertaIzqCE=new ImageIcon(CargarImagenes.class.getResource("/images/puertas/pIZQ-CERRAR.gif"));
+		
+		
 		puertaDer0=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/puertaDer.png"));
 		puertaIzq0=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/puertaIzq.png"));
 		puertaDer1=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/104.png"));
