@@ -3,8 +3,10 @@ package com.fdaf.mvc.controllers;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
@@ -29,6 +31,7 @@ import com.fdaf.mvc.views.frames.pnl.PnlWin;
 import com.fdaf.mvc.views.multimedia.Sonido;
 import com.fdaf.util.CargarImagenes;
 import com.fdaf.util.EscalarVista;
+import com.fdaf.util.Fuentes;
 import com.fdaf.util.Idioma;
 import com.fdaf.util.PreferenciasJuego;
 
@@ -1292,16 +1295,33 @@ public class ControllerInterfaz implements JuegoListener {
 
 	/** Musica de la transicion completa Noche 5 -> Escape (pedido explicito del usuario
 	 * 2026-08-06): arranca justo cuando empieza el glitch de colores y NUNCA se detiene durante
-	 * toda la secuencia (glitch + pantallas de carga negra) -- sigue sonando incluso despues de
-	 * lanzar el proceso de Escape, hasta que termina sola (dura 104.5s reales, mas que de sobra
-	 * para cubrir el glitch + la carga + el audio de introduccion real del Escape). Se detiene
-	 * de forma defensiva solo si el jugador vuelve al menu antes de que termine sola. */
+	 * toda la secuencia (glitch + pantallas de carga negra + TODA la partida de Escape) -- sigue
+	 * sonando incluso despues de lanzar el proceso de Escape, hasta que termina sola (el usuario
+	 * la re-exporto a ~5 minutos reales especificamente para que alcance a cubrir una partida
+	 * completa de Escape, no solo la transicion). Se detiene de forma defensiva solo si el
+	 * jugador vuelve al menu antes de que termine sola. Su volumen baja ~25% (unico sonido que
+	 * se toca) justo cuando Escape avisa que sono la risa de Freddy -- ver
+	 * timerEsperarRisaFreddy, que vigila la señal de archivo compartido porque Swing/Escape son
+	 * procesos independientes sin otra forma de comunicarse ese instante. */
 	private Sonido sonidoTransicionEscape;
+	private Timer timerEsperarRisaFreddy;
+	private static final String RUTA_SENAL_RISA_FREDDY =
+			System.getProperty("user.home") + java.io.File.separator + ".fivedoorsatfreddys"
+					+ java.io.File.separator + "risa_freddy.flag";
 
-	/** Mensajes tipo error/glitch durante la pantalla de carga negra (pedido explicito del
-	 * usuario 2026-08-06): aparecen y desaparecen en intervalos aleatorios, sin patron
-	 * predecible, para sentirse como fallos reales de la señal -- no un contador de progreso. */
-	private Timer timerMensajesCarga;
+	/** Pantalla de carga negra "corrompida" (rediseño pedido explicito del usuario 2026-08-06:
+	 * "ya no quiero un unico label... quiero que 'SOY YO' aparezca por toda la pantalla,
+	 * muchisimas veces, en posiciones aleatorias, con diferentes tamaños, entrando y
+	 * desapareciendo constantemente... debe sentirse como una pantalla completamente
+	 * corrompida"). "THE GAME BEGINS"/"EMPIEZA EL JUEGO" (lblCargando) queda fijo y legible en
+	 * el centro exacto -- unico texto estatico. pnlGlitchTexto es un overlay transparente que
+	 * redibuja, en cada tick de timerGlitchTexto, un numero aleatorio de instancias de "SOY
+	 * YO"/"IT'S ME" en posiciones/tamaños/colores nuevos (nunca las mismas dos veces seguidas,
+	 * ver pintarGlitchTexto) -- mismo patron ya usado por pnlGlitch (JPanel+Timer+
+	 * paintComponent propio, sin libreria nueva). */
+	private JPanel pnlGlitchTexto;
+	private Timer timerGlitchTexto;
+	private static final int INTERVALO_GLITCH_TEXTO_MS = 90;
 
 	/** Efecto de "corrupcion de senal" agresivo -- generado enteramente con Graphics2D dentro de
 	 * un JPanel transparente superpuesto, repintado por un javax.swing.Timer, EXACTAMENTE el
@@ -1319,6 +1339,7 @@ public class ControllerInterfaz implements JuegoListener {
 		// contrato (nunca se detiene durante toda la secuencia).
 		sonidoTransicionEscape = new Sonido("win/LesToreadorsRemix.wav");
 		sonidoTransicionEscape.play();
+		iniciarEsperaRisaFreddy();
 
 		Random random = new Random();
 		Color[] paletaGlitch = {
@@ -1387,16 +1408,16 @@ public class ControllerInterfaz implements JuegoListener {
 		timerGlitch.start();
 	}
 
-	// Mensajes tipo error/glitch de la pantalla de carga negra (pedido explicito del usuario
-	// 2026-08-06), i18n via el mismo patron de ternarios que usa el resto del proyecto (FDAF no
-	// tiene archivos de localizacion propios). "SOY YO"/"IT'S ME" domina el pool (peso 4) para
-	// que se sienta como un mensaje que insiste/vuelve, "EMPIEZA EL JUEGO"/"THE GAME BEGINS" es
-	// mas raro (peso 1) -- ver elegirMensajeCargaAleatorio().
-	private String elegirMensajeCargaAleatorio(Random random) {
+	// Textos de la pantalla de carga corrompida, i18n via el mismo patron de ternarios que usa
+	// el resto del proyecto (FDAF no tiene archivos de localizacion propios).
+	private String textoEmpiezaElJuego() {
 		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
-		String empiezaElJuego = ingles ? "THE GAME BEGINS" : "EMPIEZA EL JUEGO";
-		String soyYo = ingles ? "IT'S ME" : "SOY YO";
-		return random.nextInt(5) == 0 ? empiezaElJuego : soyYo;
+		return ingles ? "THE GAME BEGINS" : "EMPIEZA EL JUEGO";
+	}
+
+	private String textoSoyYo() {
+		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
+		return ingles ? "IT'S ME" : "SOY YO";
 	}
 
 	/** Pantalla de carga negra con mensajes tipo error apareciendo de forma aleatoria/glitcheada
@@ -1405,20 +1426,77 @@ public class ControllerInterfaz implements JuegoListener {
 	 * errores") mientras el proceso de Escape termina de arrancar -- puede tardar bastante mas
 	 * que el glitch en si. sonidoTransicionEscape (arrancado en mostrarGlitchYLanzarEscape) sigue
 	 * sonando sin interrupcion durante todo este tramo -- no se toca aqui en absoluto. */
+	// Vigila la señal de archivo compartido que Escape (proceso independiente) escribe justo
+	// cuando suena la risa de Freddy en su propia introduccion (ver
+	// com.fivedoorsescape.io.SenalRisaFreddy del lado Escape) -- pedido explicito del usuario
+	// 2026-08-06: bajar el volumen de sonidoTransicionEscape ~25% en ese instante exacto, sin
+	// tocar el volumen de ningun otro sonido. Se borra cualquier señal vieja antes de empezar a
+	// vigilar (por si quedo de una sesion anterior) para no disparar el cambio de volumen de
+	// inmediato por error.
+	private static final int INTERVALO_ESPERA_RISA_FREDDY_MS = 400;
+	private void iniciarEsperaRisaFreddy() {
+		java.io.File archivoSenal = new java.io.File(RUTA_SENAL_RISA_FREDDY);
+		archivoSenal.delete();
+
+		if (timerEsperarRisaFreddy != null && timerEsperarRisaFreddy.isRunning()) {
+			timerEsperarRisaFreddy.stop();
+		}
+		timerEsperarRisaFreddy = new Timer(INTERVALO_ESPERA_RISA_FREDDY_MS, e -> {
+			if (archivoSenal.exists()) {
+				archivoSenal.delete();
+				if (sonidoTransicionEscape != null) {
+					// ~25% de reduccion de volumen LINEAL equivale a aproximadamente -2.5dB
+					// (20*log10(0.75)) -- unico sonido que se toca, pedido explicito del usuario.
+					sonidoTransicionEscape.subirVolumen(-2.5f);
+				}
+				((Timer) e.getSource()).stop();
+			}
+		});
+		timerEsperarRisaFreddy.start();
+	}
+
 	private void mostrarCargaYLanzarEscape(PnlWin pantalla, int vidasFinales) {
 		pantalla.mostrarFondo(CargarImagenes.fondoNegro);
-		pantalla.getLblCargando().setForeground(Color.WHITE);
-		pantalla.getLblCargando().setVisible(true);
+
+		// "THE GAME BEGINS"/"EMPIEZA EL JUEGO" -- unico texto fijo y legible, centrado de verdad
+		// en la pantalla (antes vivia en y=650, pensado para el ciclo de mensajes viejo). Se fija
+		// UNA sola vez aqui y no vuelve a cambiar durante toda la carga.
+		JLabel lblCentro = pantalla.getLblCargando();
+		lblCentro.setText(textoEmpiezaElJuego());
+		lblCentro.setForeground(Color.WHITE);
+		lblCentro.setFont(Fuentes.obtener(42));
+		lblCentro.setBounds(0, pantalla.getHeight() / 2 - 40, pantalla.getWidth(), 80);
+		lblCentro.setVisible(true);
+
+		// Overlay transparente de pantalla completa -- redibuja en cada tick un lote nuevo de
+		// instancias de "SOY YO" en posiciones/tamaños/colores aleatorios (nunca las mismas dos
+		// veces, ver pintarGlitchTexto) para que se sienta como una pantalla corrompida, no un
+		// patron repetitivo. Mismo patron ya probado por pnlGlitch (JPanel+Timer+
+		// paintComponent propio).
+		Random random = new Random();
+		pnlGlitchTexto = new JPanel() {
+			@Override
+			protected void paintComponent(Graphics g) {
+				pintarGlitchTexto(g, getWidth(), getHeight(), random);
+			}
+		};
+		pnlGlitchTexto.setOpaque(false);
+		pantalla.add(pnlGlitchTexto);
+		pnlGlitchTexto.setBounds(0, 0, pantalla.getWidth(), pantalla.getHeight());
+		// lblCentro siempre al frente (z=0); el overlay de "SOY YO" queda detras, nunca tapa el
+		// mensaje fijo por completo.
+		pantalla.setComponentZOrder(pnlGlitchTexto, 0);
+		pantalla.setComponentZOrder(lblCentro, 0);
+		pnlGlitchTexto.setVisible(true);
+
 		pantalla.revalidate();
 		pantalla.repaint();
 
-		Random random = new Random();
-		programarSiguienteMensajeCarga(pantalla, random);
+		timerGlitchTexto = new Timer(INTERVALO_GLITCH_TEXTO_MS, e -> pnlGlitchTexto.repaint());
+		timerGlitchTexto.start();
 
 		com.fdaf.util.LanzadorEscape.lanzar(PreferenciasJuego.idiomaSeleccionado, vidasFinales, () -> {
-			if (timerMensajesCarga != null) {
-				timerMensajesCarga.stop();
-			}
+			detenerGlitchTexto(pantalla);
 			// Defensivo: sonidoTransicionEscape dura 104.5s reales, mas que de sobra para todo
 			// el tramo de carga + la introduccion real del Escape -- pero si el jugador vuelve
 			// muy rapido al menu (p.ej. cerro Escape casi de inmediato), no debe seguir sonando
@@ -1436,22 +1514,49 @@ public class ControllerInterfaz implements JuegoListener {
 		});
 	}
 
-	// Reprograma el siguiente "parpadeo" de mensaje con una espera ALEATORIA (mismo patron ya
-	// usado por SonidosAmbientalesAleatorios.programarSiguiente -- un solo Timer que se
-	// autoreprograma con un intervalo distinto cada vez, en vez de un Timer de intervalo fijo)
-	// -- a veces muestra texto, a veces lo apaga (simula un mensaje que falla en aparecer del
-	// todo), para que nunca se sienta como un contador de progreso prolijo.
-	private void programarSiguienteMensajeCarga(PnlWin pantalla, Random random) {
-		boolean mostrar = random.nextInt(4) != 0; // 75% del tiempo muestra texto, 25% parpadea a vacio
-		pantalla.getLblCargando().setText(mostrar ? elegirMensajeCargaAleatorio(random) : "");
+	/** Dibuja un lote nuevo de instancias de "SOY YO"/"IT'S ME" en posiciones, tamaños y colores
+	 * aleatorios -- llamado en cada tick de timerGlitchTexto, así que el conjunto entero cambia
+	 * por completo en cada repintado (nunca la misma composición dos veces, sin necesidad de
+	 * animar cada instancia por separado). */
+	private static final Color[] COLORES_GLITCH_TEXTO = {
+			Color.WHITE, Color.WHITE, Color.WHITE, Color.LIGHT_GRAY,
+			new Color(255, 0, 90), new Color(0, 255, 200)
+	};
+	private void pintarGlitchTexto(Graphics g, int w, int h, Random random) {
+		if (w <= 0 || h <= 0) {
+			return;
+		}
+		Graphics2D g2 = (Graphics2D) g.create();
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		int esperaMs = 180 + random.nextInt(650); // 180-830ms, sin patron fijo
-		timerMensajesCarga = new Timer(esperaMs, e -> {
-			((Timer) e.getSource()).stop();
-			programarSiguienteMensajeCarga(pantalla, random);
-		});
-		timerMensajesCarga.setRepeats(false);
-		timerMensajesCarga.start();
+		int instancias = 12 + random.nextInt(14); // 12-25 por lote
+		for (int i = 0; i < instancias; i++) {
+			int tamano = 16 + random.nextInt(70); // 16-85px
+			g2.setFont(Fuentes.obtener(tamano));
+			int alpha = 70 + random.nextInt(186); // 70-255, nunca invisible del todo
+			Color base = COLORES_GLITCH_TEXTO[random.nextInt(COLORES_GLITCH_TEXTO.length)];
+			g2.setColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha));
+
+			String texto = textoSoyYo();
+			FontMetrics fm = g2.getFontMetrics();
+			int anchoTexto = fm.stringWidth(texto);
+			int x = random.nextInt(Math.max(1, w - anchoTexto));
+			int y = fm.getAscent() + random.nextInt(Math.max(1, h - fm.getHeight()));
+			g2.drawString(texto, x, y);
+		}
+		g2.dispose();
+	}
+
+	private void detenerGlitchTexto(PnlWin pantalla) {
+		if (timerGlitchTexto != null) {
+			timerGlitchTexto.stop();
+		}
+		if (pnlGlitchTexto != null) {
+			pantalla.remove(pnlGlitchTexto);
+			pnlGlitchTexto = null;
+			pantalla.revalidate();
+			pantalla.repaint();
+		}
 	}
 
 	private void deshabilitarControles() {
@@ -1517,8 +1622,11 @@ public class ControllerInterfaz implements JuegoListener {
 		if (timerGlitch != null && timerGlitch.isRunning()) {
 			timerGlitch.stop();
 		}
-		if (timerMensajesCarga != null && timerMensajesCarga.isRunning()) {
-			timerMensajesCarga.stop();
+		if (timerGlitchTexto != null && timerGlitchTexto.isRunning()) {
+			timerGlitchTexto.stop();
+		}
+		if (timerEsperarRisaFreddy != null && timerEsperarRisaFreddy.isRunning()) {
+			timerEsperarRisaFreddy.stop();
 		}
 		controllerCamara.detenerTimersDePartida();
 

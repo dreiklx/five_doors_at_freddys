@@ -11,6 +11,22 @@ public class Sonido {
 
 	private Clip clip;
 
+	// CAUSA RAIZ REAL de un OutOfMemoryError confirmado con profiling real 2026-08-06
+	// (jmap -histo:live sobre una sesion larga simulada: 835 instancias VIVAS de
+	// com.sun.media.sound.DirectAudioDevice$DirectClip, 243MB en arrays de bytes -- los
+	// buffers de audio PCM decodificados de cada Clip nunca liberado). Un Clip abierto queda
+	// registrado en el mixer nativo (DirectAudioDevice) indefinidamente sin importar si el
+	// objeto Java Sonido en si se volvio inalcanzable -- clip.close() es obligatorio, no
+	// opcional, para que el recurso nativo se libere de verdad (ya documentado como deuda
+	// tecnica conocida en CLAUDE.md #1.8 antes de esta sesion, sin crash confirmado hasta
+	// ahora). reiniciando evita que el clip se cierre cuando play() se llama de nuevo sobre la
+	// MISMA instancia para reiniciarla (unos pocos sonidos reutilizables del proyecto, como
+	// los de luces/llamada/ambiente de oficina) -- la inmensa mayoria de los sonidos del
+	// proyecto son de un solo uso (new Sonido(ruta).play(), nunca se llama stop() ni play() de
+	// nuevo sobre esa misma instancia), asi que el LineListener es lo unico que puede cerrarlos
+	// -- nunca nadie mas tiene la referencia para hacerlo explicitamente.
+	private volatile boolean reiniciando = false;
+
 	public Sonido(String archivo) {
 
 	    try {
@@ -28,6 +44,12 @@ public class Sonido {
 	        clip = AudioSystem.getClip();
 	        clip.open(audio);
 
+	        clip.addLineListener(evento -> {
+	            if (evento.getType() == LineEvent.Type.STOP && !reiniciando && clip.isOpen()) {
+	                clip.close();
+	            }
+	        });
+
 	        // Aplica el volumen global vigente apenas se abre el Clip --
 	        // cubre automáticamente los +30 puntos del proyecto donde ya
 	        // se crea un Sonido, sin que ninguno de ellos necesite cambiar.
@@ -39,8 +61,15 @@ public class Sonido {
 	}
 
 	public void play() {
-		if (clip == null) return;
-		stop();
+		if (clip == null || !clip.isOpen()) return;
+		// Reinicio interno -- NUNCA pasa por stop() (que dispara el cierre real via el
+		// LineListener de arriba) porque play() puede llamarse varias veces sobre la MISMA
+		// instancia para reiniciar un sonido reutilizable ya en curso.
+		reiniciando = true;
+		clip.stop();
+		clip.setFramePosition(0);
+		ConfiguracionAudio.desregistrarLoop(this);
+		reiniciando = false;
 		clip.start();
 	}
 
@@ -52,23 +81,27 @@ public class Sonido {
 	}
 
 	public void loop() {
-		if (clip == null) return;
+		if (clip == null || !clip.isOpen()) return;
 		clip.loop(Clip.LOOP_CONTINUOUSLY);
 		ConfiguracionAudio.registrarLoop(this);
 	}
 
 	public long getDuracionMs() {
-		if (clip == null) return 0;
+		if (clip == null || !clip.isOpen()) return 0;
 		return clip.getMicrosecondLength() / 1000;
 	}
 
 	public void setVolumen(float db) {
-	    if (clip == null) return;
-
-	    FloatControl volumen =
-	        (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-
-	    volumen.setValue(db);
+	    if (clip == null || !clip.isOpen()) return;
+	    try {
+	        FloatControl volumen =
+	            (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+	        volumen.setValue(db);
+	    } catch (Exception e) {
+	        // El clip se cerro (auto-cierre real via LineListener, ver el campo reiniciando
+	        // arriba) justo entre el chequeo de isOpen() y este punto -- se ignora, mismo
+	        // criterio defensivo que subirVolumen/aplicarNivelGlobal.
+	    }
 	}
 
 	public void subirVolumen(float incrementoDb) {
@@ -104,13 +137,19 @@ public class Sonido {
 
 		Timer fade = new Timer(pasoMs, null);
 		fade.addActionListener(e -> {
-			contador[0]++;
-			float nuevoValor = inicio - (decremento * contador[0]);
-			if (nuevoValor <= minimo || contador[0] >= pasos) {
-				volumen.setValue(minimo);
+			try {
+				contador[0]++;
+				float nuevoValor = inicio - (decremento * contador[0]);
+				if (nuevoValor <= minimo || contador[0] >= pasos) {
+					volumen.setValue(minimo);
+					((Timer) e.getSource()).stop();
+				} else {
+					volumen.setValue(nuevoValor);
+				}
+			} catch (Exception ex) {
+				// El clip se cerro (fin natural o stop() externo) a mitad del fade -- ya no
+				// hay nada que atenuar, se detiene el timer sin propagar la excepcion.
 				((Timer) e.getSource()).stop();
-			} else {
-				volumen.setValue(nuevoValor);
 			}
 		});
 		fade.start();

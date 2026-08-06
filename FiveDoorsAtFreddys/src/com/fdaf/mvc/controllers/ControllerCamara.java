@@ -225,7 +225,18 @@ public class ControllerCamara {
 		// rodea), no se arranca movimiento nuevo. "Tablet abierta" no
 		// necesita este chequeo -- ahí pnlJuego ya está desconectado de
 		// la ventana y no puede recibir estos eventos de todos modos.
-		if (interfaz.isTransicionTabletActiva() || juegoTerminado()) {
+		//
+		// CAUSA RAIZ REAL investigada desde cero 2026-08-06 (reporte del usuario: "las zonas de
+		// interferencia siguen sin funcionar"): "zonas de interferencia" son las zonaUno/Dos/
+		// TresIzq/Der (los hover que disparan este mismo metodo), no contenido visual del gif en
+		// si. juegoTerminado() SI debia bloquear esto en alGanar()/rendirse() (ahi pnlJuego deja
+		// de estar en pantalla de inmediato, asi que no importaba) pero tambien bloqueaba
+		// alPerder(), donde pnlJuego SIGUE visible ~20s completos durante todo el Game Over --
+		// contradiciendo el comentario original mas abajo ("el movimiento de camara... sigue
+		// funcionando exactamente igual") que documentaba la intencion real pero el codigo nunca
+		// la cumplia. Quitado de aqui -- el bloqueo de puertas/luces/tablet durante Game Over ya
+		// esta cubierto por sus propios guards en ControllerJuego, independientes de este.
+		if (interfaz.isTransicionTabletActiva()) {
 			return;
 		}
 
@@ -268,7 +279,8 @@ public class ControllerCamara {
 
 	public void derecha(int v) {
 
-		if (interfaz.isTransicionTabletActiva() || juegoTerminado()) {
+		// Ver el comentario en izquierda() -- mismo bloqueo (solo tablet, no juegoTerminado).
+		if (interfaz.isTransicionTabletActiva()) {
 			return;
 		}
 
