@@ -305,9 +305,20 @@ public class ControllerInterfaz implements JuegoListener {
 	 * ==== Implementación de JuegoListener ====
 	 */
 	
-	// Reproduce un gif de puerta UNA SOLA VEZ, respetando su duración
-		// real (~980ms), y al terminar lo congela en la imagen estática
-		// correspondiente -- corta el loop infinito del archivo desde afuera.
+	// Duracion de respaldo (ms) si el gif no pudiera leerse por algun motivo --
+		// nunca es el valor real usado en la practica (DuracionGif siempre logra leer
+		// los 4 gifs reales), solo una red de seguridad. Igual a la duracion real medida
+		// de los 4 gifs actuales (750ms, 15 frames) para que incluso ese caso raro se
+		// vea razonable.
+		private static final int MS_RESPALDO_GIF_PUERTA = 750;
+
+		// Reproduce un gif de puerta UNA SOLA VEZ, respetando su duración REAL
+		// (leida del propio archivo via DuracionGif -- pedido explicito del
+		// usuario 2026-08-05: "no quiero que el timer este hardcodeado... si en
+		// el futuro vuelvo a cambiar la velocidad del gif, el codigo debe
+		// adaptarse sin modificar constantes"), y al terminar lo congela en la
+		// imagen estática correspondiente -- corta el loop infinito del archivo
+		// desde afuera.
 		private void reproducirGifPuertaUnaVez(String lado, JLabel destino, String rutaGif, ImageIcon imagenFinal) {
 
 			Timer anterior = "izq".equals(lado) ? timerGifPuertaIzq : timerGifPuertaDer;
@@ -318,7 +329,9 @@ public class ControllerInterfaz implements JuegoListener {
 			ImageIcon gif = com.fdaf.util.CargarGifs.cargarFresco(rutaGif, imagenFinal);
 			destino.setIcon(new EscalarVista.GifEscalado(gif, destino.getWidth(), destino.getHeight()));
 
-			Timer detenerGif = new Timer(900, e -> {
+			int duracionMs = com.fdaf.util.DuracionGif.leerMilisegundos(rutaGif, MS_RESPALDO_GIF_PUERTA);
+
+			Timer detenerGif = new Timer(duracionMs, e -> {
 				((Timer) e.getSource()).stop();
 				destino.setIcon(EscalarVista.getImagenEscalada(imagenFinal, destino.getWidth(), destino.getHeight()));
 				pnlJuego.revalidate();
