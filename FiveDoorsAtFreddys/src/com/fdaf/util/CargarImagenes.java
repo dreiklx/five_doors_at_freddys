@@ -24,7 +24,6 @@ public class CargarImagenes {
 	public static ImageIcon juegoLuzDer;
 	public static ImageIcon abanico;
 	public static ImageIcon menu;
-	public static ImageIcon estatica;
 	public static ImageIcon camara;
 	public static ImageIcon puntoCamara;
 	
@@ -60,21 +59,57 @@ public class CargarImagenes {
 	public static ImageIcon powerLeft;
 	public static ImageIcon mutecall;
 	public static ImageIcon inventario;
-	public static ImageIcon gameOver;
-	public static ImageIcon JUMP_SCARE;
 	public static ImageIcon WIN;
-	public static ImageIcon introduccion;
 	public static ImageIcon fondoNegro;
 	public static ImageIcon gameOverFinal;
 	public static ImageIcon warning;
 
+	// Optimizacion de memoria investigada 2026-08-06 (el usuario reporto consumo excesivo en
+	// partidas largas -- "sospecho que la gran cantidad de gifs influye bastante"): gameOver,
+	// JUMP_SCARE, introduccion y estatica (mas abajo) NUNCA se pintan en pantalla realmente --
+	// su UNICO uso real en todo el proyecto es como "respaldo" de CargarGifs.cargarFresco(ruta,
+	// respaldo), que solo se devuelve si la carga real desde bytes frescos falla (practicamente
+	// nunca, para recursos empaquetados con el build). Como argumento de metodo, Java evalua
+	// "new ImageIcon(url)" ANTES de la llamada, sin importar si el respaldo termina usandose --
+	// eso forzaba decodificar 4 gifs completos (cada uno con su propio hilo "Image Animator" de
+	// AWT corriendo para siempre) en cada arranque, sin que ninguno se mostrara jamas en el
+	// camino normal. Diferidos a la primera vez que realmente se necesiten (que en la practica es
+	// nunca) en vez de al arrancar la app.
+	private static ImageIcon gameOverRespaldo;
+	private static ImageIcon jumpScareRespaldo;
+	private static ImageIcon introduccionRespaldo;
+	private static ImageIcon estaticaRespaldo;
+
+	public static ImageIcon getGameOverRespaldo() {
+		if (gameOverRespaldo == null) {
+			gameOverRespaldo = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/gameover.gif"));
+		}
+		return gameOverRespaldo;
+	}
+
+	public static ImageIcon getJumpScareRespaldo() {
+		if (jumpScareRespaldo == null) {
+			jumpScareRespaldo = new ImageIcon(CargarImagenes.class.getResource("/gifs/jumpscares/JumpscareFreddySinLuz.gif"));
+		}
+		return jumpScareRespaldo;
+	}
+
+	public static ImageIcon getIntroduccionRespaldo() {
+		if (introduccionRespaldo == null) {
+			introduccionRespaldo = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/empezar.gif"));
+		}
+		return introduccionRespaldo;
+	}
+
+	public static ImageIcon getEstaticaRespaldo() {
+		if (estaticaRespaldo == null) {
+			estaticaRespaldo = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/Static.gif"));
+		}
+		return estaticaRespaldo;
+	}
 
 	static {
-		introduccion=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/empezar.gif"));
-	
 		WIN=new ImageIcon(CargarImagenes.class.getResource("/images/fondos/win.png"));
-		JUMP_SCARE=new ImageIcon(CargarImagenes.class.getResource("/gifs/jumpscares/JumpscareFreddySinLuz.gif"));
-		gameOver=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/gameover.gif"));
 		inventario = new ImageIcon(CargarImagenes.class.getResource("/images/fondos/inventario.png"));
 		fondoNegro = new ImageIcon(CargarImagenes.class.getResource("/images/fondos/fondo_negro.png"));
 		warning = cargarImagenSegura("/images/fondos/warning_fdaf.png");
@@ -94,7 +129,6 @@ public class CargarImagenes {
 	
 
 	    menu=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/Menu.gif"));
- 		estatica=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/Static.gif"));
  		camara=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/camara.gif"));
  		puntoCamara=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/puntorojo.gif"));
  		

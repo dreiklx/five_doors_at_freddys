@@ -3,6 +3,7 @@ package com.fdaf.util;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.net.URL;
@@ -579,9 +580,44 @@ public class EscalarVista {
             this.alto = alto;
         }
 
+        // Causa raiz real investigada 2026-08-05 (ver CLAUDE.md, "GameOver.gif no avanza mas
+        // alla del frame 0"): drawImage(img, x, y, ANCHO, ALTO, observer) -- la sobrecarga que
+        // le pide a AWT un bitmap ya escalado -- congela ese bitmap escalado en el PRIMER frame
+        // disponible cuando el destino es MAS GRANDE que el tamano nativo de la imagen (escalar
+        // hacia arriba). Frames posteriores decodificados en el hilo de animacion de fondo
+        // nunca se reflejan ahi. Confirmado real: gameover.gif es nativamente 2200x1020, pero
+        // lblImgOficina (por el margen de paneo de camara) mide 2641x1224 -- justo un caso de
+        // escalado hacia arriba. Los gifs de puertas nunca mostraron este bug porque su destino
+        // es igual o mas chico que su tamano nativo (nunca escalan hacia arriba).
+        //
+        // Correccion real (no un parche): dibujar SIEMPRE a tamano nativo y delegar el escalado
+        // a la matriz de transformacion de Graphics2D (g2.scale(...)) en vez de pedirle a AWT
+        // que produzca el bitmap pre-escalado -- esto sigue leyendo el frame actual real en cada
+        // pintado, sin importar si el destino es mas grande o mas chico que el original.
+        //
+        // NUNCA cambiar gifOriginal.getImageObserver() (siempre queda tal cual, sin tocar) --
+        // ver CLAUDE.md §1.7, REGLA ABSOLUTA: cambiarlo por "c" ya causo corrupcion visual
+        // documentada en 2 sesiones independientes. Este fix es ortogonal a esa regla: cambia
+        // COMO se escala, no el observer.
         @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
-            g.drawImage(gifOriginal.getImage(), x, y, ancho, alto, gifOriginal.getImageObserver());
+            Image imagenNativa = gifOriginal.getImage();
+            int anchoNativo = gifOriginal.getIconWidth();
+            int altoNativo = gifOriginal.getIconHeight();
+
+            if (anchoNativo <= 0 || altoNativo <= 0) {
+                // Red de seguridad defensiva -- no debería ocurrir (ImageIcon ya carga el
+                // primer frame de forma síncrona en su constructor), pero evita una división
+                // por cero si algún día sí ocurre.
+                g.drawImage(imagenNativa, x, y, ancho, alto, gifOriginal.getImageObserver());
+                return;
+            }
+
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.translate(x, y);
+            g2.scale((double) ancho / anchoNativo, (double) alto / altoNativo);
+            g2.drawImage(imagenNativa, 0, 0, gifOriginal.getImageObserver());
+            g2.dispose();
         }
 
         @Override

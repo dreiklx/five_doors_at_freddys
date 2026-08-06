@@ -21,6 +21,14 @@ public class LanzadorEscape {
 			System.getProperty("user.home") + File.separator + ".fivedoorsatfreddys";
 	private static final String ARCHIVO_TRASPASO = CARPETA_TRASPASO + File.separator + "handoff.json";
 
+	// Señal de "cerrar TODO" (pedido explicito del usuario 2026-08-06: unificar las pantallas
+	// finales de Escape con las del juego principal -- boton "Salir" real, distinto de
+	// "Reintentar"). Ver com.fivedoorsescape.io.SalidaCompleta del lado Escape para el porque de
+	// este archivo compartido en vez de intentar leer el codigo de salida del proceso (no
+	// confiable: el proceso real se lanza envuelto en "cmd /c gradlew.bat lwjgl3:run", y Gradle
+	// no garantiza propagar el codigo de salida real de la aplicacion Java hacia afuera).
+	private static final String ARCHIVO_SALIDA_COMPLETA = CARPETA_TRASPASO + File.separator + "salir_completo.flag";
+
 	// Ruta relativa al propio proceso (Architecture.md #7): los dos
 	// proyectos son repos Git hermanos bajo la misma carpeta "git" del
 	// usuario -- five_doors_at_freddys/FiveDoorsAtFreddys (este
@@ -47,6 +55,10 @@ public class LanzadorEscape {
 	public static void lanzar(Idioma idioma, int vidasFinales, Runnable alTerminar) {
 		escribirTraspaso(idioma, vidasFinales);
 
+		// Por si quedo de una sesion anterior (no deberia, pero evita un falso positivo si algo
+		// dejo el archivo sin limpiar).
+		new File(ARCHIVO_SALIDA_COMPLETA).delete();
+
 		new Thread(() -> {
 			try {
 				File carpetaEscape = new File(System.getProperty("user.dir"), RUTA_RELATIVA_ESCAPE).getCanonicalFile();
@@ -61,7 +73,15 @@ public class LanzadorEscape {
 			} catch (IOException | InterruptedException e) {
 				System.out.println("[ESCAPE] No se pudo lanzar Five Doors Escape: " + e.getMessage());
 			} finally {
-				SwingUtilities.invokeLater(alTerminar);
+				File archivoSalidaCompleta = new File(ARCHIVO_SALIDA_COMPLETA);
+				if (archivoSalidaCompleta.exists()) {
+					archivoSalidaCompleta.delete();
+					// El jugador presiono "Salir" (no "Reintentar") en una pantalla final de
+					// Escape -- cierra la aplicacion COMPLETA, no solo vuelve al menu.
+					SwingUtilities.invokeLater(() -> System.exit(0));
+				} else {
+					SwingUtilities.invokeLater(alTerminar);
+				}
 			}
 		}, "LanzadorEscape").start();
 	}

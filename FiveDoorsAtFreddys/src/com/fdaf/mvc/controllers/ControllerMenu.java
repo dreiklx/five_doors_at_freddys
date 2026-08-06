@@ -416,7 +416,7 @@ public class ControllerMenu {
 
 		String rutaIntro = CargarImagenes.rutaIntroPorNoche(PreferenciasJuego.nocheActual.ordinal());
 		
-		ImageIcon introFresca = com.fdaf.util.CargarGifs.cargarFresco(rutaIntro, CargarImagenes.introduccion);
+		ImageIcon introFresca = com.fdaf.util.CargarGifs.cargarFresco(rutaIntro, CargarImagenes.getIntroduccionRespaldo());
 		
 		JPanel panelIntro = new PnlAplicarImagen(introFresca);
 		panelIntro.setBounds(0, 0,

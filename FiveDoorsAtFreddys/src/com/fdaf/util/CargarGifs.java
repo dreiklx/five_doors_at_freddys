@@ -2,6 +2,7 @@ package com.fdaf.util;
 
 import java.awt.Image;
 import java.awt.Toolkit;
+import java.awt.image.ImageObserver;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,6 +43,22 @@ import javax.swing.ImageIcon;
 // continúa desde un frame anterior", solo libera lo que ya no se usa.
 public class CargarGifs {
 
+	// Observador dedicado y persistente, propio de esta clase -- NUNCA el Component "c" del
+	// paintIcon de un Icon (eso ya esta prohibido, ver la REGLA ABSOLUTA en
+	// EscalarVista.GifEscalado -- causo corrupcion visual documentada). Causa raiz real
+	// investigada 2026-08-05: GifEscalado.paintIcon pasa null como observer a drawImage, e
+	// ImageIcon solo mantiene un observador (via MediaTracker) hasta que el PRIMER frame esta
+	// completo, no durante el resto de la animacion. Sin NINGUN consumidor activo registrado
+	// despues de eso, el hilo de decodificacion de gifs multi-frame de AWT puede pausarse tras un
+	// periodo sin observadores -- confirmado real con gameover.gif (37 frames, el primero con un
+	// delay de 7 SEGUNDOS): tiempo mas que suficiente para que el decodificador se pause y jamas
+	// retome, dejando la animacion congelada en el frame 0 durante toda la secuencia de Game
+	// Over real. Los gifs de puertas nunca mostraron este bug porque sus delays son uniformemente
+	// cortos (~50ms), sin ningun hueco así de largo. Registrar este observador (que no hace nada
+	// mas que seguir escuchando) mantiene el consumo activo durante toda la vida del Image, sin
+	// tocar el pintado en absoluto.
+	private static final ImageObserver MANTENER_ANIMACION_ACTIVA = (img, infoflags, x, y, w, h) -> true;
+
 	private static final Map<String, Image> ultimaImagenPorRuta = new HashMap<>();
 
 	// TEMPORAL: solo para reunir evidencia real antes de decidir el
@@ -70,6 +87,10 @@ public class CargarGifs {
 
 			Image imagenFresca = Toolkit.getDefaultToolkit().createImage(buffer.toByteArray());
 			ultimaImagenPorRuta.put(rutaClasspath, imagenFresca);
+
+			// Mantiene el consumo activo durante toda la vida del Image -- ver
+			// MANTENER_ANIMACION_ACTIVA arriba para la causa raiz completa.
+			Toolkit.getDefaultToolkit().prepareImage(imagenFresca, -1, -1, MANTENER_ANIMACION_ACTIVA);
 
 			contadorLlamadas++;
 			registrarMemoria(rutaClasspath);

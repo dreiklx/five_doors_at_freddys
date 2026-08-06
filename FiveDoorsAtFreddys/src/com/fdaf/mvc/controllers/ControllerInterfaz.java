@@ -310,7 +310,7 @@ public class ControllerInterfaz implements JuegoListener {
 		// los 4 gifs reales), solo una red de seguridad. Igual a la duracion real medida
 		// de los 4 gifs actuales (750ms, 15 frames) para que incluso ese caso raro se
 		// vea razonable.
-		private static final int MS_RESPALDO_GIF_PUERTA = 750;
+		private static final int MS_RESPALDO_GIF_PUERTA = 500;
 
 		// Reproduce un gif de puerta UNA SOLA VEZ, respetando su duración REAL
 		// (leida del propio archivo via DuracionGif -- pedido explicito del
@@ -1039,7 +1039,7 @@ public class ControllerInterfaz implements JuegoListener {
 		// es el mismo componente, no una copia. Cero lógica duplicada.
 		int anchoOficina = pnlJuego.getLblImgOficina().getWidth();
 		int altoOficina = pnlJuego.getLblImgOficina().getHeight();
-		ImageIcon gameOverFresco = com.fdaf.util.CargarGifs.cargarFresco("/gifs/fondos/gameover.gif", CargarImagenes.gameOver);
+		ImageIcon gameOverFresco = com.fdaf.util.CargarGifs.cargarFresco("/gifs/fondos/gameover.gif", CargarImagenes.getGameOverRespaldo());
 		pnlJuego.getLblImgOficina().setIcon(new EscalarVista.GifEscalado(gameOverFresco, anchoOficina, altoOficina));
 		pnlJuego.revalidate();
 		pnlJuego.repaint();
@@ -1150,7 +1150,7 @@ public class ControllerInterfaz implements JuegoListener {
 			if (sonidoGameOver != null)
 				sonidoGameOver.stop();
 
-			pantallaGameOver.mostrar(com.fdaf.util.CargarGifs.cargarFresco("/gifs/jumpscares/JumpscareFreddySinLuz.gif", CargarImagenes.JUMP_SCARE));
+			pantallaGameOver.mostrar(com.fdaf.util.CargarGifs.cargarFresco("/gifs/jumpscares/JumpscareFreddySinLuz.gif", CargarImagenes.getJumpScareRespaldo()));
 
 			sonidoGameOver = new Sonido("animatronicos/jumpscare.wav");
 			sonidoGameOver.play();
@@ -1160,7 +1160,7 @@ public class ControllerInterfaz implements JuegoListener {
 
 				if (sonidoGameOver != null) sonidoGameOver.stop();
 
-				pantallaGameOver.mostrar(com.fdaf.util.CargarGifs.cargarFresco("/gifs/fondos/Static.gif", CargarImagenes.estatica));
+				pantallaGameOver.mostrar(com.fdaf.util.CargarGifs.cargarFresco("/gifs/fondos/Static.gif", CargarImagenes.getEstaticaRespaldo()));
 				sonidoGameOver = new Sonido("gameover/static.wav");
 				sonidoGameOver.play();
 
@@ -1283,11 +1283,25 @@ public class ControllerInterfaz implements JuegoListener {
 		mostrarGlitchYLanzarEscape(pantalla, vidasFinales);
 	}
 
-	/** Duracion del efecto glitch, en milisegundos, antes de mostrar el mensaje de carga real y
-	 * lanzar Five Doors Escape. */
-	private static final int DURACION_GLITCH_MS = 2600;
+	/** Duracion del efecto glitch, en milisegundos, antes de mostrar la pantalla de carga negra y
+	 * lanzar Five Doors Escape (pedido explicito del usuario 2026-08-06: "aproximadamente 4
+	 * segundos", antes eran 2.6s). */
+	private static final int DURACION_GLITCH_MS = 4000;
 	private static final int INTERVALO_GLITCH_MS = 45;
 	private Timer timerGlitch;
+
+	/** Musica de la transicion completa Noche 5 -> Escape (pedido explicito del usuario
+	 * 2026-08-06): arranca justo cuando empieza el glitch de colores y NUNCA se detiene durante
+	 * toda la secuencia (glitch + pantallas de carga negra) -- sigue sonando incluso despues de
+	 * lanzar el proceso de Escape, hasta que termina sola (dura 104.5s reales, mas que de sobra
+	 * para cubrir el glitch + la carga + el audio de introduccion real del Escape). Se detiene
+	 * de forma defensiva solo si el jugador vuelve al menu antes de que termine sola. */
+	private Sonido sonidoTransicionEscape;
+
+	/** Mensajes tipo error/glitch durante la pantalla de carga negra (pedido explicito del
+	 * usuario 2026-08-06): aparecen y desaparecen en intervalos aleatorios, sin patron
+	 * predecible, para sentirse como fallos reales de la señal -- no un contador de progreso. */
+	private Timer timerMensajesCarga;
 
 	/** Efecto de "corrupcion de senal" agresivo -- generado enteramente con Graphics2D dentro de
 	 * un JPanel transparente superpuesto, repintado por un javax.swing.Timer, EXACTAMENTE el
@@ -1300,13 +1314,19 @@ public class ControllerInterfaz implements JuegoListener {
 	 * este cambio) y recien ahi lanza el proceso de Escape -- LanzadorEscape.lanzar() en si no
 	 * cambio, solo el momento en que se invoca. */
 	private void mostrarGlitchYLanzarEscape(PnlWin pantalla, int vidasFinales) {
+		// Arranca justo aqui, en el mismo instante en que empieza el glitch de colores (pedido
+		// explicito del usuario) -- ver el campo sonidoTransicionEscape para el resto del
+		// contrato (nunca se detiene durante toda la secuencia).
+		sonidoTransicionEscape = new Sonido("win/LesToreadorsRemix.wav");
+		sonidoTransicionEscape.play();
+
 		Random random = new Random();
 		Color[] paletaGlitch = {
 				new Color(255, 0, 90), new Color(0, 255, 200), new Color(255, 230, 0),
 				new Color(120, 0, 255), Color.WHITE, Color.BLACK
 		};
 		ImageIcon estaticaGlitch = com.fdaf.util.CargarGifs.cargarFresco(
-				"/gifs/fondos/Static.gif", CargarImagenes.estatica);
+				"/gifs/fondos/Static.gif", CargarImagenes.getEstaticaRespaldo());
 
 		JPanel pnlGlitch = new JPanel() {
 			@Override
@@ -1367,17 +1387,45 @@ public class ControllerInterfaz implements JuegoListener {
 		timerGlitch.start();
 	}
 
-	/** Mensaje de carga real (ya existia antes del efecto glitch) mientras el proceso de Escape
-	 * termina de arrancar -- puede tardar bastante mas que el glitch en si. */
-	private void mostrarCargaYLanzarEscape(PnlWin pantalla, int vidasFinales) {
-		pantalla.mostrarFondo(CargarImagenes.WIN);
+	// Mensajes tipo error/glitch de la pantalla de carga negra (pedido explicito del usuario
+	// 2026-08-06), i18n via el mismo patron de ternarios que usa el resto del proyecto (FDAF no
+	// tiene archivos de localizacion propios). "SOY YO"/"IT'S ME" domina el pool (peso 4) para
+	// que se sienta como un mensaje que insiste/vuelve, "EMPIEZA EL JUEGO"/"THE GAME BEGINS" es
+	// mas raro (peso 1) -- ver elegirMensajeCargaAleatorio().
+	private String elegirMensajeCargaAleatorio(Random random) {
 		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
-		pantalla.getLblCargando().setText(ingles ? "Loading Five Doors Escape..." : "Cargando Five Doors Escape...");
+		String empiezaElJuego = ingles ? "THE GAME BEGINS" : "EMPIEZA EL JUEGO";
+		String soyYo = ingles ? "IT'S ME" : "SOY YO";
+		return random.nextInt(5) == 0 ? empiezaElJuego : soyYo;
+	}
+
+	/** Pantalla de carga negra con mensajes tipo error apareciendo de forma aleatoria/glitcheada
+	 * (pedido explicito del usuario 2026-08-06: "ya NO quiero usar el fondo de Win... fondo
+	 * completamente negro... que no sigan un patron perfecto, que sea aleatorio y de miedo tipo
+	 * errores") mientras el proceso de Escape termina de arrancar -- puede tardar bastante mas
+	 * que el glitch en si. sonidoTransicionEscape (arrancado en mostrarGlitchYLanzarEscape) sigue
+	 * sonando sin interrupcion durante todo este tramo -- no se toca aqui en absoluto. */
+	private void mostrarCargaYLanzarEscape(PnlWin pantalla, int vidasFinales) {
+		pantalla.mostrarFondo(CargarImagenes.fondoNegro);
+		pantalla.getLblCargando().setForeground(Color.WHITE);
 		pantalla.getLblCargando().setVisible(true);
 		pantalla.revalidate();
 		pantalla.repaint();
 
+		Random random = new Random();
+		programarSiguienteMensajeCarga(pantalla, random);
+
 		com.fdaf.util.LanzadorEscape.lanzar(PreferenciasJuego.idiomaSeleccionado, vidasFinales, () -> {
+			if (timerMensajesCarga != null) {
+				timerMensajesCarga.stop();
+			}
+			// Defensivo: sonidoTransicionEscape dura 104.5s reales, mas que de sobra para todo
+			// el tramo de carga + la introduccion real del Escape -- pero si el jugador vuelve
+			// muy rapido al menu (p.ej. cerro Escape casi de inmediato), no debe seguir sonando
+			// sobre la musica del menu.
+			if (sonidoTransicionEscape != null) {
+				sonidoTransicionEscape.stop();
+			}
 			vistaPrincipal.setContenido(menu);
 			vistaPrincipal.toFront();
 			vistaPrincipal.requestFocus();
@@ -1386,6 +1434,24 @@ public class ControllerInterfaz implements JuegoListener {
 				controllerMenuPadre.limpiarPartidaActiva();
 			}
 		});
+	}
+
+	// Reprograma el siguiente "parpadeo" de mensaje con una espera ALEATORIA (mismo patron ya
+	// usado por SonidosAmbientalesAleatorios.programarSiguiente -- un solo Timer que se
+	// autoreprograma con un intervalo distinto cada vez, en vez de un Timer de intervalo fijo)
+	// -- a veces muestra texto, a veces lo apaga (simula un mensaje que falla en aparecer del
+	// todo), para que nunca se sienta como un contador de progreso prolijo.
+	private void programarSiguienteMensajeCarga(PnlWin pantalla, Random random) {
+		boolean mostrar = random.nextInt(4) != 0; // 75% del tiempo muestra texto, 25% parpadea a vacio
+		pantalla.getLblCargando().setText(mostrar ? elegirMensajeCargaAleatorio(random) : "");
+
+		int esperaMs = 180 + random.nextInt(650); // 180-830ms, sin patron fijo
+		timerMensajesCarga = new Timer(esperaMs, e -> {
+			((Timer) e.getSource()).stop();
+			programarSiguienteMensajeCarga(pantalla, random);
+		});
+		timerMensajesCarga.setRepeats(false);
+		timerMensajesCarga.start();
 	}
 
 	private void deshabilitarControles() {
@@ -1448,6 +1514,12 @@ public class ControllerInterfaz implements JuegoListener {
 		if (timerGifPuertaDer != null && timerGifPuertaDer.isRunning()) {
 			timerGifPuertaDer.stop();
 		}
+		if (timerGlitch != null && timerGlitch.isRunning()) {
+			timerGlitch.stop();
+		}
+		if (timerMensajesCarga != null && timerMensajesCarga.isRunning()) {
+			timerMensajesCarga.stop();
+		}
 		controllerCamara.detenerTimersDePartida();
 
 		// CORREGIDO: faltaba detener 'sonido' -- el jumpscare/coleccionable
@@ -1474,6 +1546,10 @@ public class ControllerInterfaz implements JuegoListener {
 
 		if (sonidoGameOver != null) {
 			sonidoGameOver.stop();
+		}
+
+		if (sonidoTransicionEscape != null) {
+			sonidoTransicionEscape.stop();
 		}
 
 		if (sonidoWin != null) {
