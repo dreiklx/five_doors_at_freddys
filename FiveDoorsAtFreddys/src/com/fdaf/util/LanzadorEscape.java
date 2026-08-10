@@ -35,8 +35,38 @@ public class LanzadorEscape {
 	// proyecto, de donde se ejecuta) y five_doors_escape (LibGDX),
 	// confirmado en disco. Si esta suposicion deja de cumplirse en otra
 	// maquina, este es el unico lugar que hace falta ajustar.
+	// Camino de DESARROLLO (gradlew, requiere JDK 21 instalado + internet la
+	// primera vez para que Gradle descargue dependencias) -- sigue siendo el
+	// que usa cualquiera que corra el proyecto desde el repo real/Eclipse.
 	private static final String RUTA_RELATIVA_ESCAPE =
 			".." + File.separator + ".." + File.separator + "five_doors_escape";
+
+	// Camino de DISTRIBUCION EMPAQUETADA (investigacion de distribucion
+	// portable, 2026-08-10): si existe una carpeta "FiveDoorsEscape" hermana
+	// de esta (misma convencion de carpetas hermanas que ya usa el proyecto,
+	// solo un nivel en vez de dos porque es la carpeta de la distribucion,
+	// no del repo Git) con un runtime JDK 21 y una distribucion ya
+	// construida (gradlew lwjgl3:installDist) adentro, se usa DIRECTO --
+	// nunca invoca gradlew, no necesita internet, no necesita ningun JDK 21
+	// instalado en la maquina destino, no depende de la estructura de
+	// carpetas del repositorio Git en absoluto. Ver build-distribucion.bat
+	// (raiz del repo) para como se genera esta carpeta.
+	private static final String RUTA_RELATIVA_DISTRIBUCION_ESCAPE =
+			".." + File.separator + "FiveDoorsEscape";
+
+	private static File resolverDistribucionEmpaquetada() {
+		try {
+			File carpetaDist = new File(System.getProperty("user.dir"), RUTA_RELATIVA_DISTRIBUCION_ESCAPE).getCanonicalFile();
+			File runtimeJava = new File(carpetaDist, "runtime" + File.separator + "bin" + File.separator + "java.exe");
+			File scriptLanzador = new File(carpetaDist, "lwjgl3" + File.separator + "bin" + File.separator + "lwjgl3.bat");
+			if (runtimeJava.isFile() && scriptLanzador.isFile()) {
+				return carpetaDist;
+			}
+		} catch (IOException e) {
+			// Ruta inválida/inaccesible -- se trata igual que "no encontrada", cae al modo desarrollo.
+		}
+		return null;
+	}
 
 	// Five Doors Escape requiere Java 21 (Architecture.md, independiente
 	// del Java 8 de este proyecto), y el JDK del PATH por defecto no
@@ -102,25 +132,44 @@ public class LanzadorEscape {
 
 		new Thread(() -> {
 			try {
-				File carpetaEscape = new File(System.getProperty("user.dir"), RUTA_RELATIVA_ESCAPE).getCanonicalFile();
-				File gradlew = new File(carpetaEscape, "gradlew.bat");
+				ProcessBuilder pb;
+				File carpetaDistribucion = resolverDistribucionEmpaquetada();
 
-				if (!gradlew.isFile()) {
-					System.out.println("[ESCAPE] No se encontro " + gradlew.getAbsolutePath()
-							+ " -- clona five_doors_escape como carpeta hermana de five_doors_at_freddys "
-							+ "(ver SETUP.md en la raiz del repositorio) antes de completar la Noche 5.");
-					return;
-				}
+				if (carpetaDistribucion != null) {
+					// Distribucion empaquetada (build-distribucion.bat): runtime JDK 21 propio +
+					// gradlew lwjgl3:installDist ya construido -- nunca gradlew, nunca internet,
+					// nunca depende de la estructura de carpetas del repo Git.
+					File runtimeJava = new File(carpetaDistribucion, "runtime");
+					File carpetaLwjgl3 = new File(carpetaDistribucion, "lwjgl3");
+					File script = new File(carpetaLwjgl3, "bin" + File.separator + "lwjgl3.bat");
 
-				ProcessBuilder pb = new ProcessBuilder("cmd", "/c", gradlew.getAbsolutePath(), "lwjgl3:run");
-				pb.directory(carpetaEscape);
-
-				String javaHome21 = resolverJavaHome21();
-				if (javaHome21 != null) {
-					pb.environment().put("JAVA_HOME", javaHome21);
+					System.out.println("[ESCAPE] Usando distribucion empaquetada: " + carpetaLwjgl3.getAbsolutePath());
+					pb = new ProcessBuilder("cmd", "/c", script.getAbsolutePath());
+					pb.directory(carpetaLwjgl3);
+					pb.environment().put("JAVA_HOME", runtimeJava.getAbsolutePath());
 				} else {
-					System.out.println("[ESCAPE] No se encontro un JDK 21 instalado -- se usara el JAVA_HOME/PATH "
-							+ "actual del sistema, que puede no ser compatible con Five Doors Escape.");
+					// Camino de desarrollo (repo Git real, gradlew) -- comportamiento identico al
+					// que ya existia antes de que se investigara la distribucion empaquetada.
+					File carpetaEscape = new File(System.getProperty("user.dir"), RUTA_RELATIVA_ESCAPE).getCanonicalFile();
+					File gradlew = new File(carpetaEscape, "gradlew.bat");
+
+					if (!gradlew.isFile()) {
+						System.out.println("[ESCAPE] No se encontro " + gradlew.getAbsolutePath()
+								+ " -- clona five_doors_escape como carpeta hermana de five_doors_at_freddys "
+								+ "(ver SETUP.md en la raiz del repositorio) antes de completar la Noche 5.");
+						return;
+					}
+
+					pb = new ProcessBuilder("cmd", "/c", gradlew.getAbsolutePath(), "lwjgl3:run");
+					pb.directory(carpetaEscape);
+
+					String javaHome21 = resolverJavaHome21();
+					if (javaHome21 != null) {
+						pb.environment().put("JAVA_HOME", javaHome21);
+					} else {
+						System.out.println("[ESCAPE] No se encontro un JDK 21 instalado -- se usara el JAVA_HOME/PATH "
+								+ "actual del sistema, que puede no ser compatible con Five Doors Escape.");
+					}
 				}
 				pb.inheritIO();
 
