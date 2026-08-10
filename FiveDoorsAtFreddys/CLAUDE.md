@@ -1099,6 +1099,42 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 
 **Commiteado y pusheado a `five_doors_at_freddys`:** `LanzadorEscape.java` (detección de distribución empaquetada + fallback), `build-distribucion.bat` (nuevo), `.gitignore`/`FiveDoorsAtFreddys/.gitignore` (`/dist/`, `/dist-completa/`). El `git worktree` temporal usado para probar se eliminó por completo (`git worktree remove`) -- no quedó rastro en el repo. La carpeta `dist-completa/` de casi 1.1GB generada para la prueba se eliminó por completo, no se commiteó (son salidas de build, no código fuente).
 
+### 1.22 Prueba de "segunda máquina" de §1.21 -- limitación real reconocida, prueba aislada real hecha en su lugar, sesión 2026-08-10 (misma fecha, sesión posterior)
+
+**Límite real, dicho explícitamente porque el usuario lo pidió así:** esta sesión de Claude **no tiene acceso a una segunda máquina física ni virtual** -- todo corre en la misma máquina de desarrollo. No se fingió una prueba en otra PC. En su lugar se hizo la prueba más rigurosa posible **dentro de la misma máquina simulando esas condiciones**, y se documenta con precisión qué quedó realmente probado y qué no.
+
+**Metodología real:** `dist-completa/` se reconstruyó desde cero (`build-distribucion.bat`, mismo `git worktree` limpio en HEAD que §1.21) y se copió completa a `C:\FiveDoorsPortableTest\` -- una carpeta **fuera de cualquier repo Git, sin relación con `C:\Users\dfarl\git\...`**, lo más parecido a "recién copiada a otra máquina" que se puede lograr sin una máquina real.
+
+**Hallazgo real de metodología (no un bug del producto) -- corregido en el momento:** el primer intento de aislar `user.home` para no tocar el progreso real del jugador usó la variable de entorno `USERPROFILE` (`cmd.exe /c "set USERPROFILE=... && FiveDoorsAtFreddys.bat"`) -- **no funcionó**: el proceso lanzado así siguió leyendo el `user.home` REAL de Windows (confirmado real: el menú mostró texto en inglés, coincidiendo exactamente con `idioma=INGLES` del `config.properties` real del usuario, no con la carpeta falsa). La JVM en Windows no deriva `user.home` de la variable de entorno `USERPROFILE` de forma confiable para un proceso lanzado así -- **la única forma confiable confirmada es `-Duser.home=...` como property directa de la JVM**, verificado correcto en el resto de la sesión. Se cerró esa ventana de inmediato (antes de cualquier acción que escribiera al disco) y se confirmó que el `config.properties` real del usuario no se alteró. **Lección para pruebas futuras de este tipo: usar siempre `-Duser.home=`, nunca depender de `USERPROFILE`.**
+
+**Verificado real desde `C:\FiveDoorsPortableTest\` (aislado, con `-Duser.home` real):**
+1. **`FiveDoorsAtFreddys.bat` real abre una ventana real** -- captura de pantalla real confirmando el menú completamente renderizado (título, fondo animatrónico, botones) usando `runtime\bin\javaw.exe` embebido.
+2. **Instalación limpia (sin `config.properties` previo) arranca en ESPAÑOL por defecto**, como está en el código -- confirmado real (no una suposición): texto de botón "Nueva Partida", no "New Game".
+3. **Toggle de idioma real ES→EN→ES** funcionó en ambas direcciones, con los textos de los botones actualizándose correctamente cada vez.
+4. **Noche 1 completa real:** `alGanar()` real avanzó el progreso, y el proceso **se reinició solo** -- confirmado con la línea de comandos real del proceso nuevo: `C:\FiveDoorsPortableTest\FiveDoorsAtFreddys\runtime\jre\bin\java.exe -cp ...;C:\FiveDoorsPortableTest\FiveDoorsAtFreddys\FiveDoorsAtFreddys.jar com.fdaf.init.Main --reinicio-interno` -- runtime embebido, classpath dentro de la distribución, marcador de reinicio interno correcto, **cero referencias a `C:\Users\dfarl\git\...`**. Proceso nuevo confirmado vivo y respondiendo (`Responding=True`).
+5. **Persistencia real confirmada** en el `config.properties` del home aislado: `nocheActual=NOCHE_2`, `idioma=ESPANOL` (el valor al que se volvió con el toggle) -- sobrevivió el reinicio de proceso real.
+6. **Noche 5 → Escape real, repetido desde esta copia aislada específica** (no solo inferido de §1.21): `alGanar()` real sobre la Noche 5 produjo `[ESCAPE] Usando distribucion empaquetada: C:\FiveDoorsPortableTest\FiveDoorsEscape\lwjgl3`, el proceso de Escape cargó los 4 animatrónicos reales (glTF, tangentes) y llegó a RUN (`Risa de Freddy reproducida`) sin ninguna excepción.
+7. **Grep real de los logs completos de ambas pruebas contra `C:\Users\dfarl\git`: cero coincidencias** en ambos casos.
+8. **`java.home` de cada proceso confirmado apuntando SIEMPRE al runtime embebido dentro de `C:\FiveDoorsPortableTest\...\runtime\`, nunca a ningún JDK del sistema.**
+
+**No verificado en esta sesión (dicho explícitamente, no evadido):**
+- **Una segunda máquina física/virtual real** -- limitación de entorno ya explicada arriba. `C:\FiveDoorsPortableTest\` quedó preparada y ya probada en esta máquina específicamente para que el usuario la copie (USB/red/etc.) a una máquina Windows realmente distinta.
+- **Desinstalar JDK/Gradle/Eclipse de esta máquina** para simular una PC "limpia" -- se descartó a propósito por ser una acción destructiva sobre el entorno real del usuario, fuera de lo que se pidió. La evidencia de "no depende de nada del sistema" es indirecta pero sólida: cada proceso lanzado confirmó `java.home` apuntando al runtime embebido, y `LanzadorEscape`/el `.bat` de Swing nunca consultan `PATH`/`JAVA_HOME` del sistema salvo que el mecanismo de distribución empaquetada no se detecte (fallback ya documentado en §1.21).
+- **Surrender y Retry específicamente desde la distribución** -- ambos caminos llaman al mismo `ReiniciadorJuego.reiniciar()` ya verificado real en el punto 4 de arriba (código sin cambios, sin ninguna rama especial para estos dos casos), así que la evidencia se considera aplicable, pero no se disparó cada uno por separado esta ronda.
+- **Interacción real de teclado/mouse dentro de la ventana de Escape/Swing de la distribución** (`Robot` no viable, ya documentado) -- Pirate Cove, puerta de escape, pantalla de victoria, controles, latidos, linterna: código sin cambios desde su verificación real en sesiones anteriores (§2.13-§2.15, §2.34, y las corridas reales de audio/pausa de §2.32-§2.33), no se volvieron a probar interactivamente desde esta distribución específica.
+
+**Instrucciones para la prueba manual real en una segunda máquina (lo que el usuario debe hacer):**
+1. Copiar `C:\FiveDoorsPortableTest\` completa (ambas carpetas, `FiveDoorsAtFreddys\` y `FiveDoorsEscape\`, ~1.1GB) a la otra máquina Windows -- USB, red, lo que sea más práctico. Mantener las dos carpetas como hermanas, sin renombrarlas.
+2. En esa máquina, doble clic en `FiveDoorsAtFreddys\FiveDoorsAtFreddys.bat`.
+3. Confirmar: aparece la advertencia inicial (primera vez), después el menú, con audio/gráficos normales.
+4. Jugar una noche cualquiera hasta ganar/perder/rendirse -- confirmar que la ventana se cierra y una nueva aparece sola (reinicio de proceso), sin quedarse trabada.
+5. Jugar hasta completar la Noche 5 (o usar el botón ESCAPE en Custom Night si ya está desbloqueado) -- confirmar que Swing se cierra y Escape abre solo, sin ninguna ventana de consola pidiendo Gradle ni mostrando errores de "comando no encontrado".
+6. Dentro de Escape: confirmar controles (WASD+mouse), linterna (CTRL), head bob sutil al caminar, pausa (ESC), latidos, Pirate Cove, y llegar a la puerta de escape/pantalla de victoria.
+7. Cerrar todo, volver a abrir `FiveDoorsAtFreddys.bat` -- confirmar que el progreso (noche actual, idioma) sigue ahí.
+8. Reportar cualquier cosa que no coincida con lo de arriba -- eso sería la primera señal real de un problema no capturado por las pruebas de esta sesión.
+
+**Limpieza de esta sesión:** todos los arneses de prueba temporales (`TestDistFull.java`, `TestDistNoche5.java`, `Screenshot.java`) y las 3 carpetas de home aisladas usadas se eliminaron por completo. `C:\FiveDoorsPortableTest\` se dejó intacta a propósito (no es un archivo temporal -- es el artefacto ya probado, listo para que el usuario lo copie). **No hubo cambios de código esta ronda** -- no se encontró ningún bug real en el producto, solo el hallazgo de metodología de prueba ya documentado arriba.
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos
