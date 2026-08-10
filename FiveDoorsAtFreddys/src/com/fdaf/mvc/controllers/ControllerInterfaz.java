@@ -1481,9 +1481,16 @@ public class ControllerInterfaz implements JuegoListener {
 			if (archivoSenal.exists()) {
 				archivoSenal.delete();
 				if (sonidoTransicionEscape != null) {
-					// ~25% de reduccion de volumen LINEAL equivale a aproximadamente -2.5dB
-					// (20*log10(0.75)) -- unico sonido que se toca, pedido explicito del usuario.
-					sonidoTransicionEscape.subirVolumen(-2.5f);
+					// Pedido explicito del usuario 2026-08-09: la reduccion anterior (-2.5dB,
+					// ~25% lineal) era insuficiente -- quiere que baje BASTANTE mas para que la
+					// musica de Freddy (sonidoMusicaFreddy, lado Escape) destaque mejor encima.
+					// -15dB equivale a bajar a ~18% del volumen lineal anterior (10^(-15/20)) --
+					// una caida clara y decisiva, sin llegar a silenciar del todo la cancion
+					// (sigue sonando, solo mucho mas de fondo). Unico sonido que se toca -- no
+					// afecta la risa de Freddy, la musica de Freddy, los latidos, la estatica ni
+					// ningun otro audio, todos en instancias de Sonido/Sound completamente
+					// separadas.
+					sonidoTransicionEscape.subirVolumen(-15f);
 				}
 				((Timer) e.getSource()).stop();
 			}
