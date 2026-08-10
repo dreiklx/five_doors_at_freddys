@@ -116,7 +116,12 @@ public class CargarImagenes {
 		gameOverFinal = new ImageIcon(CargarImagenes.class.getResource("/images/fondos/GAME_OVER_.png"));	    
 		juegoLuzIzq = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/OficinaLuzIzq.gif"));
 	    juegoLuzDer = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/OficinaLuzDer.gif"));
-	    abanico = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/abanico.gif"));
+	    // El archivo real en disco es "Abanico.gif" (A mayuscula) -- "abanico.gif" (minuscula)
+	    // funcionaba por pura casualidad al correr desde una carpeta de clases suelta en Windows
+	    // (NTFS es insensible a mayusculas), pero rompe con NullPointerException real al empaquetar
+	    // en un .jar (las entradas de un .jar SI son sensibles a mayusculas) -- encontrado al probar
+	    // una distribucion real empaquetada (2026-08-09/10, investigacion de distribucion portable).
+	    abanico = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/Abanico.gif"));
 	    
 
 	    

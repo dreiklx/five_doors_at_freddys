@@ -96,7 +96,11 @@ public class ReiniciadorJuego {
 				return false;
 			}
 
-			ProcessBuilder pb = new ProcessBuilder(javaBin, "-cp", classpath, "com.fdaf.init.Main");
+			// "--reinicio-interno": le dice a Main.main() que esta instancia nace de un
+			// reinicio de proceso, no de un lanzamiento externo real -- evita que la
+			// advertencia inicial (PnlWarning) reaparezca en cada noche (pedido explicito
+			// del usuario 2026-08-09, ver ControllerMenu).
+			ProcessBuilder pb = new ProcessBuilder(javaBin, "-cp", classpath, "com.fdaf.init.Main", "--reinicio-interno");
 			pb.directory(new File(System.getProperty("user.dir")));
 			pb.start();
 			return true;

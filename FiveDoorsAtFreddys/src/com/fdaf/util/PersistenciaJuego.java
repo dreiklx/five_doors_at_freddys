@@ -69,7 +69,11 @@ public class PersistenciaJuego {
 			PreferenciasJuego.volumenGeneral = Math.max(1, Math.min(10, PreferenciasJuego.volumenGeneral));
 		} catch (NumberFormatException e) {
 			System.out.println("[PERSISTENCIA] Volumen inválido en el archivo, se usa el valor por defecto.");
-		}	
+		}
+
+		// Ausente en archivos guardados antes de este cambio -- se interpreta como
+		// "todavia no desbloqueado", nunca lanza excepcion.
+		PreferenciasJuego.escapeDesbloqueado = Boolean.parseBoolean(props.getProperty("escapeDesbloqueado", "false"));
 	}
 
 	// Se llama cada vez que algo en PreferenciasJuego cambia y debe
@@ -81,6 +85,7 @@ public class PersistenciaJuego {
 		props.setProperty("idioma", PreferenciasJuego.idiomaSeleccionado.name());
 		props.setProperty("nocheActual", PreferenciasJuego.nocheActual.name());
 		props.setProperty("volumen", String.valueOf(PreferenciasJuego.volumenGeneral));
+		props.setProperty("escapeDesbloqueado", String.valueOf(PreferenciasJuego.escapeDesbloqueado));
 
 		File carpeta = new File(CARPETA);
 		if (!carpeta.exists()) {

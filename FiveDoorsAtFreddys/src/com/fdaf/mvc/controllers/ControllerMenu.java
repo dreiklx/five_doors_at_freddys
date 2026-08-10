@@ -1,5 +1,7 @@
 package com.fdaf.mvc.controllers;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
@@ -12,9 +14,11 @@ import javax.swing.ImageIcon;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.KeyStroke;
+import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
 import com.fdaf.mvc.models.juego.Noche;
@@ -62,11 +66,30 @@ public class ControllerMenu {
 	private boolean advertenciaActiva = false;
 	private Timer timerAdvertenciaActual;
 
+	// true cuando este ControllerMenu nace de un reinicio interno de proceso
+	// (ReiniciadorJuego, ganar 1-4/perder/rendirse -- CLAUDE.md #1.18), no de
+	// un lanzamiento externo real. En ese caso init() nunca debe mostrar la
+	// advertencia inicial otra vez -- para el jugador es la continuacion de
+	// la misma sesion, no "entrar al juego desde cero".
+	private final boolean reinicioInterno;
+
+	// Timer del mensaje transitorio "se desbloquea al completar la Noche 5"
+	// (boton ESCAPE bloqueado) -- mismo criterio que timerAdvertenciaActual:
+	// un solo campo para poder cancelar el anterior si el jugador insiste
+	// en hacer clic varias veces seguidas, sin apilar timers.
+	private Timer timerMensajeEscapeBloqueado;
+
 	public boolean isAdvertenciaActiva() {
 		return advertenciaActiva;
 	}
 
 	public ControllerMenu() {
+		this(false);
+	}
+
+	public ControllerMenu(boolean reinicioInterno) {
+
+		this.reinicioInterno = reinicioInterno;
 
 		menu = new PnlMenu();
 	    opciones = new PnlOpciones();
@@ -94,7 +117,17 @@ public class ControllerMenu {
 		registrarAtajosDebug();
 		registrarAtajoEscape();
 
-		mostrarAdvertenciaInicial();
+		if (reinicioInterno) {
+			// Reinicio interno (ver campo reinicioInterno arriba): el jugador
+			// ya vio la advertencia al entrar por primera vez a esta sesion
+			// de juego -- mostrarla otra vez en cada noche seria repetitiva
+			// e innecesaria, exactamente lo que el usuario pidio evitar. Va
+			// directo al mismo destino final que finalizarAdvertenciaYMostrarMenu(),
+			// sin instanciar PnlWarning ni tocar advertenciaActiva.
+			mostrarMenuPrincipal();
+		} else {
+			mostrarAdvertenciaInicial();
+		}
 
 		vp.init();
 	}
@@ -231,6 +264,75 @@ public class ControllerMenu {
 
 	}
 
+	// Mensaje transitorio bajo el boton ESCAPE cuando todavia esta
+	// bloqueado -- mismo patron de "mostrar 3s y ocultar solo" que ya usa
+	// mostrarAdvertenciaInicial() para su ventana de espera, aplicado aqui
+	// sin fundido (no hace falta, es solo texto informativo).
+	private void mostrarMensajeEscapeBloqueado() {
+		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
+		pantallaNochePersonalizada.getLblEscapeBloqueado().setText(
+				"<html>" + (ingles
+						? "Unlocks after completing the last night."
+						: "Se desbloquea al completar la ultima noche.") + "</html>");
+		pantallaNochePersonalizada.getLblEscapeBloqueado().setVisible(true);
+
+		if (timerMensajeEscapeBloqueado != null && timerMensajeEscapeBloqueado.isRunning()) {
+			timerMensajeEscapeBloqueado.stop();
+		}
+		timerMensajeEscapeBloqueado = new Timer(3000, ev -> {
+			((Timer) ev.getSource()).stop();
+			pantallaNochePersonalizada.getLblEscapeBloqueado().setVisible(false);
+		});
+		timerMensajeEscapeBloqueado.setRepeats(false);
+		timerMensajeEscapeBloqueado.start();
+	}
+
+	// Detiene el audio del menu sin arrancar ninguna intro -- version
+	// minima de detenerAudioMenuYComenzarPartida() para el unico otro
+	// caso real que necesita silenciar el menu sin ir a jugar una noche:
+	// lanzar Escape directo desde Custom Night.
+	private void detenerAudioMenu() {
+		if (musicaMenu != null) {
+			musicaMenu.stop();
+		}
+		if (sonidoEstaticaMenu != null) {
+			sonidoEstaticaMenu.stop();
+		}
+		if (timerTopeEstaticaMenu != null && timerTopeEstaticaMenu.isRunning()) {
+			timerTopeEstaticaMenu.stop();
+		}
+	}
+
+	// Acceso directo a Five Doors Escape desde Custom Night (pedido
+	// explicito del usuario 2026-08-09), una vez desbloqueado -- reutiliza
+	// LanzadorEscape.lanzar() tal cual, el mismo mecanismo real que ya usa
+	// la victoria de la Noche 5 (Architecture.md #7), sin duplicar el
+	// glitch/pantalla de PnlWin (ese efecto es especifico de la secuencia
+	// de victoria, no tiene sentido fuera de ella). vidasFinales=2 (las
+	// vidas iniciales reales de la Noche 5, Noche.NOCHE_5.getVidas()) --
+	// hoy en dia HandoffData.vidasFinales no se lee del lado Escape mas
+	// alla de guardarse (verificado, ningun HUD lo usa todavia), asi que
+	// cualquier valor razonable es equivalente; se usa este por
+	// consistencia narrativa con el contexto real de Noche 5.
+	private void lanzarEscapeDesdeCustomNight() {
+		detenerAudioMenu();
+
+		JPanel pantallaCarga = new JPanel(new BorderLayout());
+		pantallaCarga.setBackground(Color.BLACK);
+		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
+		JLabel lblCarga = new JLabel(ingles ? "Loading..." : "Cargando...", SwingConstants.CENTER);
+		lblCarga.setForeground(Color.WHITE);
+		lblCarga.setFont(com.fdaf.util.Fuentes.obtener(40));
+		pantallaCarga.add(lblCarga, BorderLayout.CENTER);
+		vp.setContenido(pantallaCarga);
+
+		com.fdaf.util.LanzadorEscape.lanzar(PreferenciasJuego.idiomaSeleccionado,
+				com.fdaf.mvc.models.juego.Noche.NOCHE_5.getVidas(), () -> {
+					vp.setContenido(menu);
+					reanudarMusicaMenu();
+				});
+	}
+
 	// Se llama al volver de una partida (ganada o perdida) -- indica que
 	// ya no hay ninguna partida activa, para que CTRL+G/CTRL+P dejen de
 	// funcionar hasta que se empiece una nueva.
@@ -264,6 +366,7 @@ public class ControllerMenu {
 			InteraccionBoton.aplicarHoverYSonido(btnNoche, pantallaNochePersonalizada.getLbl(), 0);
 		}
 		InteraccionBoton.aplicarHoverYSonido(pantallaNochePersonalizada.getBtnAtras(), pantallaNochePersonalizada.getLbl(), 0);
+		InteraccionBoton.aplicarHoverYSonido(pantallaNochePersonalizada.getBtnEscape(), pantallaNochePersonalizada.getLbl(), 0);
 	}	
 	// Único punto de todo el proyecto donde se decide qué texto mostrar
 	// según el idioma -- nada de "if (idioma == INGLES)" repartido en
@@ -309,6 +412,18 @@ public class ControllerMenu {
 			boolean esLaSeleccionada = (i == ordinalNocheActual);
 			pantallaNochePersonalizada.getBtnsNoche()[i].setText(esLaSeleccionada ? "> " + etiqueta : etiqueta);
 		}
+
+		// ESCAPE -- siempre visible (pedido explicito del usuario, genera
+		// expectativa aunque este bloqueado). Bloqueado: texto atenuado
+		// (gris) con indicador "(Bloqueado)/(Locked)". Desbloqueado: texto
+		// normal en blanco, igual estilo que el resto de los botones.
+		java.awt.Color colorEscape = PreferenciasJuego.escapeDesbloqueado
+				? java.awt.Color.WHITE : new java.awt.Color(140, 140, 140);
+		pantallaNochePersonalizada.getBtnEscape().setForeground(colorEscape);
+		pantallaNochePersonalizada.getBtnEscape().setText(
+				PreferenciasJuego.escapeDesbloqueado
+						? "ESCAPE"
+						: (ingles ? "ESCAPE (Locked)" : "ESCAPE (Bloqueado)"));
 	}
 	
 	public void botones() {
@@ -350,6 +465,15 @@ public class ControllerMenu {
 		opciones.getBtnCustomNight().addActionListener(e -> vp.setContenido(pantallaNochePersonalizada));
 		pantallaNochePersonalizada.getBtnAtras().addActionListener(e -> vp.setContenido(opciones));
 
+		pantallaNochePersonalizada.getBtnEscape().addActionListener(e -> {
+			if (!PreferenciasJuego.escapeDesbloqueado) {
+				new Sonido("botones/error_al_presionar_boton.wav").play();
+				mostrarMensajeEscapeBloqueado();
+				return;
+			}
+			lanzarEscapeDesdeCustomNight();
+		});
+
 		Noche[] noches = Noche.values();
 		for (int i = 0; i < pantallaNochePersonalizada.getBtnsNoche().length; i++) {
 			Noche noche = noches[i];
@@ -375,6 +499,9 @@ public class ControllerMenu {
 
 			menu.getPnlConfirmacion().mostrar(mensaje, textoConfirmar, textoCancelar, () -> {
 				PreferenciasJuego.nocheActual = Noche.NOCHE_1;
+				// "Reiniciar TODO el progreso" incluye el desbloqueo de ESCAPE -- consistente
+				// con lo que el propio boton promete, no una excepcion oculta.
+				PreferenciasJuego.escapeDesbloqueado = false;
 				com.fdaf.util.PersistenciaJuego.guardar();
 				actualizarTextosIdioma();
 				bloquearBotonesMenuPrincipal(false);

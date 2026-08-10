@@ -14,4 +14,10 @@ public class PreferenciasJuego {
 	public static Noche nocheActual = Noche.NOCHE_1;
 	public static int volumenGeneral = 10;
 
+	// true una vez que el jugador completo la Noche 5 al menos una vez
+	// (pedido explicito del usuario 2026-08-09: desbloquea el boton ESCAPE
+	// en Custom Night, persistido, nunca se vuelve a bloquear). Se fija en
+	// ControllerInterfaz.alGanar() cuando eraNoche5==true.
+	public static boolean escapeDesbloqueado = false;
+
 }

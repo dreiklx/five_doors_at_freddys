@@ -1252,6 +1252,17 @@ public class ControllerInterfaz implements JuegoListener {
 			PreferenciasJuego.nocheActual = com.fdaf.mvc.models.juego.Noche.values()[siguienteOrdinal];
 			com.fdaf.util.PersistenciaJuego.guardar();
 		}
+
+		// Desbloqueo persistente del boton ESCAPE en Custom Night (pedido
+		// explicito del usuario 2026-08-09) -- una sola vez basta, nunca se
+		// vuelve a bloquear despues. Guarda aparte porque el bloque de
+		// arriba solo guarda cuando siguienteOrdinal < Noche.values().length
+		// (nunca el caso cuando eraNoche5), asi que este flag necesita su
+		// propio guardar() para persistir de verdad.
+		if (eraNoche5 && !PreferenciasJuego.escapeDesbloqueado) {
+			PreferenciasJuego.escapeDesbloqueado = true;
+			com.fdaf.util.PersistenciaJuego.guardar();
+		}
 		if (controllerMenuPadre != null) {
 			controllerMenuPadre.actualizarTextosIdioma();
 		}
@@ -1481,16 +1492,16 @@ public class ControllerInterfaz implements JuegoListener {
 			if (archivoSenal.exists()) {
 				archivoSenal.delete();
 				if (sonidoTransicionEscape != null) {
-					// Pedido explicito del usuario 2026-08-09: la reduccion anterior (-2.5dB,
-					// ~25% lineal) era insuficiente -- quiere que baje BASTANTE mas para que la
-					// musica de Freddy (sonidoMusicaFreddy, lado Escape) destaque mejor encima.
-					// -15dB equivale a bajar a ~18% del volumen lineal anterior (10^(-15/20)) --
-					// una caida clara y decisiva, sin llegar a silenciar del todo la cancion
-					// (sigue sonando, solo mucho mas de fondo). Unico sonido que se toca -- no
-					// afecta la risa de Freddy, la musica de Freddy, los latidos, la estatica ni
-					// ningun otro audio, todos en instancias de Sonido/Sound completamente
-					// separadas.
-					sonidoTransicionEscape.subirVolumen(-15f);
+					// Historial: -2.5dB (~75% lineal) fue insuficiente -- casi no se notaba.
+					// -15dB (~18% lineal) sobrecorrigio -- pedido explicito del usuario
+					// 2026-08-09 (sesion posterior): "se escucha demasiado bajo", subirlo de
+					// vuelta a un punto medio que la deje claramente audible pero todavia mas
+					// baja que antes de la risa. -8dB equivale a ~40% del volumen lineal previo
+					// (10^(-8/20)) -- una caida clara (más de la mitad más floja) sin acercarse
+					// al -15dB anterior que la enterraba. Unico sonido que se toca -- no afecta
+					// la risa de Freddy, la musica de Freddy, los latidos, la estatica ni ningun
+					// otro audio, todos en instancias de Sonido/Sound completamente separadas.
+					sonidoTransicionEscape.subirVolumen(-8f);
 				}
 				((Timer) e.getSource()).stop();
 			}

@@ -75,11 +75,14 @@ public class PnlTableta extends JPanel {
 
 
 		// Justo encima de pbarRendirse -- deja explicito para que sirve esa barra.
+		// Pedido explicito del usuario 2026-08-09: un poco mas grande y en negrita
+		// (20->26, PLAIN->BOLD) -- altura del label ajustada de 28 a 34 solo para
+		// que la fuente mas grande no se recorte verticalmente, x/y sin tocar.
 		lblRendirseTexto = new JLabel("");
-		lblRendirseTexto.setBounds(1319, 792, 236, 28);
+		lblRendirseTexto.setBounds(1319, 789, 236, 34);
 		lblRendirseTexto.setHorizontalAlignment(SwingConstants.CENTER);
 		lblRendirseTexto.setForeground(java.awt.Color.WHITE);
-		lblRendirseTexto.setFont(com.fdaf.util.Fuentes.obtener(20));
+		lblRendirseTexto.setFont(com.fdaf.util.Fuentes.obtener(26, java.awt.Font.BOLD));
 
 		panel.setLayout(null);
 		panel.add(lblPuntoCam);
@@ -166,11 +169,14 @@ public class PnlTableta extends JPanel {
 		pnlColeccionables.add(lblCopyBateria);
 
 		// Debajo de POWER LEFT/bateria -- muestra la noche actual (ej. "NOCHE 1"/"NIGHT 1").
+		// Pedido explicito del usuario 2026-08-09: un poco mas grande y en negrita
+		// (22->28, PLAIN->BOLD) -- x/y/width sin tocar, altura +6 (40->46, centrada
+		// sobre el mismo punto) solo para que la fuente mas grande no se recorte.
 		lblNocheActual = new JLabel("");
-		lblNocheActual.setBounds(1326, 450, 200, 40);
+		lblNocheActual.setBounds(1326, 447, 200, 46);
 		lblNocheActual.setHorizontalAlignment(SwingConstants.CENTER);
 		lblNocheActual.setForeground(java.awt.Color.WHITE);
-		lblNocheActual.setFont(com.fdaf.util.Fuentes.obtener(22));
+		lblNocheActual.setFont(com.fdaf.util.Fuentes.obtener(28, java.awt.Font.BOLD));
 		pnlColeccionables.add(lblNocheActual);
 
 

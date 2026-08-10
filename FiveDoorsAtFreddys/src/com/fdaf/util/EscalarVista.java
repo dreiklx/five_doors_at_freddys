@@ -160,6 +160,8 @@ public class EscalarVista {
 		JLabel lblNocheSeleccionada = pantalla.getLblNocheSeleccionada();
 		JButton btnAtras = pantalla.getBtnAtras();
 		JLabel lblFlecha = pantalla.getLbl();
+		JButton btnEscape = pantalla.getBtnEscape();
+		JLabel lblEscapeBloqueado = pantalla.getLblEscapeBloqueado();
 
 		pantalla.setBounds(0, 0, ancho, alto);
 		pantalla.getPnlNochePersonalizada().setBounds(0, 0, ancho, alto);
@@ -183,6 +185,14 @@ public class EscalarVista {
 				getEscalaX(btnAtras.getWidth()), getEscalaY(btnAtras.getHeight()));
 
 		pantalla.getLbl().setSize(getEscalaX(lblFlecha.getWidth()), getEscalaY(lblFlecha.getHeight()));
+
+		pantalla.getBtnEscape().setBounds(
+				getEscalaX(btnEscape.getX()), getEscalaY(btnEscape.getY()),
+				getEscalaX(btnEscape.getWidth()), getEscalaY(btnEscape.getHeight()));
+
+		pantalla.getLblEscapeBloqueado().setBounds(
+				getEscalaX(lblEscapeBloqueado.getX()), getEscalaY(lblEscapeBloqueado.getY()),
+				getEscalaX(lblEscapeBloqueado.getWidth()), getEscalaY(lblEscapeBloqueado.getHeight()));
 	}
 	
 	public static void adaptarIdioma(VistaPrincipal vp, PnlIdioma pantalla) {

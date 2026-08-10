@@ -85,12 +85,30 @@ public class Juego {
 	// [noche][0]=probabilidad con 1 vida, [noche][1]=probabilidad con 2
 	// vidas. La tabla completa vive aquí como dato -- ajustar el balance
 	// en el futuro es editar estos números, no tocar la lógica de abajo.
+	//
+	// Noche 1 deliberadamente INTOCADA (pedido explicito del usuario,
+	// sesion 2026-08-09). Noche 2-5 subidas tras una simulacion Monte
+	// Carlo real (100k partidas/noche, reutilizando Juego/GeneradorArbol/
+	// Arbol sin modificar la logica, solo asumiendo un jugador que
+	// siempre revela y siempre recoge a tiempo -- el mejor caso posible,
+	// para aislar el riesgo de mala suerte pura del riesgo por error del
+	// jugador) que encontro tasas de derrota reales de 78%/76%/85%/87%
+	// para Noche 2/3/4/5 con la tabla anterior -- es decir, incluso un
+	// jugador optimo perdia la mayoria de las partidas solo por RNG.
+	// Con esta tabla la simulacion baja esas tasas a ~68%/66%/74%/73%
+	// (Noche 5 con un empuje extra, pedido explicito del usuario) --
+	// mejora real pero deliberadamente NO agresiva: la misma simulacion
+	// mostro que incluso probabilidades muy altas (45-70%) solo bajan el
+	// piso hasta ~58-66% (ese piso lo impone la mecanica de revelacion,
+	// no la tabla de bateria -- ver CLAUDE.md para el detalle completo),
+	// asi que "regalar baterias" mas alla de esto no soluciona el
+	// problema de fondo y si vacia la mecanica de tension.
 	private static final double[][] PROBABILIDAD_BATERIA = {
-			{ 0.08, 0.05 }, // Noche 1
-			{ 0.11, 0.08 }, // Noche 2
-			{ 0.28, 0.13 }, // Noche 3
-			{ 0.32, 0.16 }, // Noche 4
-			{ 0.36, 0.19 }, // Noche 5
+			{ 0.08, 0.05 }, // Noche 1 -- SIN CAMBIOS
+			{ 0.30, 0.22 }, // Noche 2
+			{ 0.46, 0.28 }, // Noche 3
+			{ 0.50, 0.32 }, // Noche 4
+			{ 0.62, 0.42 }, // Noche 5 -- atencion extra, pedido explicito
 	};
 
 	private boolean calificaParaBateria() {
