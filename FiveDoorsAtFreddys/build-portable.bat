@@ -16,11 +16,21 @@ REM jpackage (--type app-image) SI logra empaquetar el runtime JDK8+JavaFX,
 REM pero el .exe nativo que genera falla en Windows con un error clasico de
 REM registro ("Software\JavaSoft\Java Runtime Environment...") -- causa
 REM real: jpackage esta pensado para runtimes modulares (jlink, JDK 9+), no
-REM para un JDK 8 completo copiado tal cual, combinacion no soportada. El
-REM MISMO runtime, invocado directamente via runtime\bin\javaw.exe -jar
-REM (lo que hace este script), SI funciona -- verificado con una corrida
-REM real, ventana real del juego. Por eso este script usa un .bat lanzador
-REM en vez de intentar generar un .exe nativo.
+REM para un JDK 8 completo copiado tal cual, combinacion no soportada.
+REM
+REM [ACTUALIZADO 2026-08-10] launch4j (github.com/lukaszlenart/launch4j,
+REM via Maven Central) SI genera un .exe nativo que funciona de verdad --
+REM investigado y probado con una corrida real (ventana real del juego,
+REM ciclo completo ganar->reinicio->Noche 5->Escape confirmado). Se usa en
+REM modo "launching" (dontWrapJar=true, NO en modo "wrapping") a proposito:
+REM el exe queda como un stub nativo de ~60KB que referencia el .jar externo
+REM ya generado (nunca lo embebe) -- evita el falso positivo de antivirus
+REM que launch4j mismo advierte para el modo wrapping, y produce EXACTAMENTE
+REM el mismo proceso final (runtime\bin\javaw.exe -jar FiveDoorsAtFreddys.jar)
+REM que ya genera el .bat de mas abajo -- launch4j reemplaza solo COMO se
+REM invoca ese comando (.exe nativo en vez de .bat), nunca QUE se invoca.
+REM El .bat se conserva ademas del .exe (alternativa siempre disponible si
+REM launch4j no esta disponible para construir, ver mas abajo).
 
 set SCRIPT_DIR=%~dp0
 set DIST_DIR=%SCRIPT_DIR%dist\FiveDoorsAtFreddys
@@ -98,8 +108,21 @@ echo start "" "%%~dp0runtime\bin\javaw.exe" -jar "%%~dp0FiveDoorsAtFreddys.jar"
 rmdir /s /q "%TMP_DIR%"
 
 echo.
+echo === Generando FiveDoorsAtFreddys.exe (launch4j) ===
+call "%SCRIPT_DIR%build-exe-launcher.bat" "%DIST_DIR%" "%JDK8%"
+if errorlevel 1 (
+    echo ADVERTENCIA: no se pudo generar el .exe nativo -- FiveDoorsAtFreddys.bat
+    echo sigue siendo un lanzador completamente funcional, usa ese en su lugar.
+)
+
+echo.
 echo Listo. Carpeta portable generada en: %DIST_DIR%
 echo No necesita Java instalado en la maquina destino -- el runtime va incluido.
+if exist "%DIST_DIR%\FiveDoorsAtFreddys.exe" (
+    echo El usuario final solo necesita abrir FiveDoorsAtFreddys.exe
+) else (
+    echo El usuario final solo necesita abrir FiveDoorsAtFreddys.bat
+)
 echo.
 echo IMPORTANTE para que la transicion Noche 5 -^> Escape funcione: esta carpeta
 echo debe quedar en la misma posicion relativa que el checkout normal, es decir

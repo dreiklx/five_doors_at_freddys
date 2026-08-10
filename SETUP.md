@@ -101,9 +101,11 @@ carpeta** (la misma que ya pide §2) -- detecta el JDK automáticamente
 argumento: `build-portable.bat "C:\ruta\a\tu\jdk1.8"`.
 
 Genera `FiveDoorsAtFreddys/dist/FiveDoorsAtFreddys/` (~575 MB, incluye el
-runtime completo). **Copia esa carpeta entera** a la máquina destino --
-verificado con una corrida real, `FiveDoorsAtFreddys.bat` abre el juego sin
-ningún Java instalado en esa máquina.
+runtime completo) con **dos lanzadores equivalentes**: `FiveDoorsAtFreddys.exe`
+(recomendado -- `.exe` nativo real, ver §6.1) y `FiveDoorsAtFreddys.bat`
+(alternativa, siempre generado también). **Copia esa carpeta entera** a la
+máquina destino -- verificado con una corrida real, cualquiera de los dos
+abre el juego sin ningún Java instalado en esa máquina.
 
 **Importante para que Noche 5 → Escape siga funcionando:** `LanzadorEscape`
 resuelve `five_doors_escape` de forma relativa (`../../five_doors_escape`,
@@ -117,21 +119,48 @@ posición relativa que tendría el checkout normal:
 └── five_doors_escape/          <- carpeta hermana (clon normal, con JDK 21 instalado)
 ```
 
-**Por qué no es un `.exe` nativo de un solo archivo:** se investigó
-`jpackage --type app-image` (empaqueta un runtime completo en un `.exe`
-real) y el build en sí funciona, pero el `.exe` resultante falla en Windows
-con un error clásico de registro (`Software\JavaSoft\Java Runtime
-Environment...`) -- causa real: `jpackage` está pensado para runtimes
-modulares (JDK 9+, típicamente generados con `jlink`), no para un JDK 8
-completo copiado tal cual; es una combinación que la herramienta acepta
-pero no soporta de verdad. El MISMO runtime empaquetado, invocado
-directamente (`runtime\bin\javaw.exe -jar FiveDoorsAtFreddys.jar`, que es
-justo lo que hace `FiveDoorsAtFreddys.bat`), sí funciona -- verificado con
-una corrida real, ventana del juego abierta y cerrada limpiamente. Si en el
-futuro se quiere un `.exe` nativo de verdad, el camino real sería generar
-primero un runtime modular con `jlink` (requiere modularizar el proyecto,
-fuera de alcance de este cambio) en vez de apuntar `jpackage` a un JDK 8
-crudo.
+### 6.1 `FiveDoorsAtFreddys.exe` -- `.exe` nativo real (investigado y resuelto 2026-08-10)
+
+Se investigó `jpackage --type app-image` (empaqueta un runtime completo en
+un `.exe`) primero -- el build en sí funciona, pero el `.exe` resultante
+falla en Windows con un error clásico de registro (`Software\JavaSoft\Java
+Runtime Environment...`) -- causa real: `jpackage` está pensado para
+runtimes modulares (JDK 9+, típicamente generados con `jlink`), no para un
+JDK 8 completo copiado tal cual (JDK 8 no tiene sistema de módulos en
+absoluto, así que `jlink` ni siquiera puede procesarlo) -- combinación que
+la herramienta acepta pero no soporta de verdad.
+
+**[ACTUALIZADO 2026-08-10] [launch4j](https://launch4j.sourceforge.net/)
+(vía Maven Central, `net.sf.launch4j:launch4j:3.50`) SÍ genera un `.exe`
+nativo que funciona de verdad.** `build-portable.bat` ya lo usa
+automáticamente (llama a `build-exe-launcher.bat`, que descarga y cachea
+launch4j en `%USERPROFILE%\.launch4j-cache\` la primera vez, verificando el
+checksum SHA1 contra Maven Central antes de usarlo) -- no hace falta correr
+nada a mano. Se usa en modo **"launching"** (`dontWrapJar=true`), NO en modo
+"wrapping" (que launch4j mismo advierte que puede generar falsos positivos
+de antivirus): el `.exe` resultante es un stub nativo de ~60KB que
+referencia `FiveDoorsAtFreddys.jar` externo (nunca lo embebe) y termina
+ejecutando exactamente `runtime\bin\javaw.exe -jar FiveDoorsAtFreddys.jar`
+-- el mismo proceso final que ya generaba `FiveDoorsAtFreddys.bat`; launch4j
+solo cambia CÓMO se invoca ese comando, nunca QUÉ se invoca.
+
+**Verificado con el ciclo completo real, no solo con que el archivo
+existe:** ventana real abierta desde el `.exe` (proceso único
+`runtime\bin\javaw.exe`, sin ningún proceso wrapper que quede colgado
+gracias a `stayAlive=false`); Noche 1 ganada de verdad → el proceso murió
+solo y uno nuevo apareció con `--reinicio-interno` y el classpath apuntando
+al `.jar` real (nunca al `.exe`); Noche 5 ganada de verdad → detectó la
+distribución empaquetada de Escape y la lanzó, llegó a `RUN` sin errores.
+Sin ninguna referencia a rutas de la máquina de desarrollo en ningún log.
+`ReiniciadorJuego`/`LanzadorEscape` no necesitaron ningún cambio -- ya eran
+100% portátiles por diseño (usan `java.home`/`java.class.path`/`user.dir`
+del proceso en marcha, nunca una ruta fija ni asumen cómo se lanzó el
+proceso original).
+
+Si `build-exe-launcher.bat` no puede descargar/verificar launch4j (sin
+internet, checksum inválido, etc.), `build-portable.bat` sigue generando
+`FiveDoorsAtFreddys.bat` igual -- el `.exe` es un agregado, nunca un
+reemplazo que pueda romper el build completo.
 
 ## 7. Distribución sin Gradle/sin internet para Five Doors Escape (investigado, no implementado)
 

@@ -88,7 +88,11 @@ xcopy /e /i /q "%JDK21%\*" "%DIST_ROOT%\FiveDoorsEscape\runtime\" >nul
 echo.
 echo Listo. Distribucion completa en: %DIST_ROOT%
 echo Copia esa carpeta ENTERA a otra maquina y ejecuta:
-echo   FiveDoorsAtFreddys\FiveDoorsAtFreddys.bat
+if exist "%DIST_ROOT%\FiveDoorsAtFreddys\FiveDoorsAtFreddys.exe" (
+    echo   FiveDoorsAtFreddys\FiveDoorsAtFreddys.exe
+) else (
+    echo   FiveDoorsAtFreddys\FiveDoorsAtFreddys.bat  ^(no se pudo generar el .exe esta vez, ver arriba^)
+)
 echo No necesita Java/Gradle instalado en la maquina destino. La transicion
 echo Noche 5 -^> Escape usa automaticamente FiveDoorsEscape\ ^(carpeta hermana^)
 echo en vez de gradlew -- ver LanzadorEscape.resolverDistribucionEmpaquetada().
