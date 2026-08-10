@@ -38,13 +38,54 @@ public class LanzadorEscape {
 	private static final String RUTA_RELATIVA_ESCAPE =
 			".." + File.separator + ".." + File.separator + "five_doors_escape";
 
-	// El JDK del PATH por defecto en esta maquina es Java 17; Five Doors
-	// Escape requiere Java 21 (Architecture.md, independiente del Java 8
-	// de este proyecto). Mismo JAVA_HOME usado para verificar el
-	// proyecto LibGDX durante toda su sesion de desarrollo.
-	private static final String JAVA_HOME_JDK21 = "C:\\Program Files\\Java\\jdk-21";
+	// Five Doors Escape requiere Java 21 (Architecture.md, independiente
+	// del Java 8 de este proyecto), y el JDK del PATH por defecto no
+	// siempre es compatible (en la maquina de desarrollo original era
+	// Java 17). Antes esto era una ruta absoluta fija
+	// ("C:\Program Files\Java\jdk-21") -- funcionaba solo en esa maquina
+	// concreta. resolverJavaHome21() la reemplaza por una busqueda real
+	// entre ubicaciones de instalacion habituales de varios proveedores,
+	// para que un companero de equipo con Java 21 instalado en otro lado
+	// (u otra unidad) no necesite tocar el codigo para poder jugar Escape.
+	private static final String[] CARPETAS_CANDIDATAS_JDK21 = {
+			"C:\\Program Files\\Java",
+			"C:\\Program Files\\Eclipse Adoptium",
+			"C:\\Program Files\\Microsoft\\jdk-21",
+			"C:\\Program Files\\Zulu",
+			"C:\\Program Files\\BellSoft"
+	};
 
 	private LanzadorEscape() {
+	}
+
+	// Devuelve un JAVA_HOME real que apunte a un JDK 21, o null si no se
+	// encontro ninguno (en ese caso se deja que el proceso hijo use el
+	// JAVA_HOME/PATH que ya tenga el sistema, en vez de forzar una ruta
+	// que no existe en esta maquina).
+	private static String resolverJavaHome21() {
+		String javaHomeActual = System.getenv("JAVA_HOME");
+		if (javaHomeActual != null && esJdk21(new File(javaHomeActual))) {
+			return javaHomeActual;
+		}
+
+		for (String carpeta : CARPETAS_CANDIDATAS_JDK21) {
+			File[] hijos = new File(carpeta).listFiles();
+			if (hijos == null) continue;
+
+			for (File hijo : hijos) {
+				if (esJdk21(hijo)) {
+					return hijo.getAbsolutePath();
+				}
+			}
+		}
+		return null;
+	}
+
+	private static boolean esJdk21(File carpetaJdk) {
+		if (!carpetaJdk.isDirectory() || !carpetaJdk.getName().contains("21")) {
+			return false;
+		}
+		return new File(carpetaJdk, "bin" + File.separator + "java.exe").isFile();
 	}
 
 	// alTerminar se invoca en el EDT de Swing cuando el proceso de
@@ -63,9 +104,24 @@ public class LanzadorEscape {
 			try {
 				File carpetaEscape = new File(System.getProperty("user.dir"), RUTA_RELATIVA_ESCAPE).getCanonicalFile();
 				File gradlew = new File(carpetaEscape, "gradlew.bat");
+
+				if (!gradlew.isFile()) {
+					System.out.println("[ESCAPE] No se encontro " + gradlew.getAbsolutePath()
+							+ " -- clona five_doors_escape como carpeta hermana de five_doors_at_freddys "
+							+ "(ver SETUP.md en la raiz del repositorio) antes de completar la Noche 5.");
+					return;
+				}
+
 				ProcessBuilder pb = new ProcessBuilder("cmd", "/c", gradlew.getAbsolutePath(), "lwjgl3:run");
 				pb.directory(carpetaEscape);
-				pb.environment().put("JAVA_HOME", JAVA_HOME_JDK21);
+
+				String javaHome21 = resolverJavaHome21();
+				if (javaHome21 != null) {
+					pb.environment().put("JAVA_HOME", javaHome21);
+				} else {
+					System.out.println("[ESCAPE] No se encontro un JDK 21 instalado -- se usara el JAVA_HOME/PATH "
+							+ "actual del sistema, que puede no ser compatible con Five Doors Escape.");
+				}
 				pb.inheritIO();
 
 				Process proceso = pb.start();

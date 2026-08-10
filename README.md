@@ -46,7 +46,13 @@ La lógica de cada noche se modela como un **árbol binario** construido dinámi
 
 ## Instalación y ejecución
 
-Requiere JDK 8 o superior.
+> Este juego tiene una expansión 3D independiente, **Five Doors Escape**
+> (repositorio separado, LibGDX). Para clonar y ejecutar los dos juegos
+> juntos (necesario para llegar hasta el final real de la Noche 5), ver
+> [`SETUP.md`](SETUP.md).
+
+Requiere JDK 8 o superior (con JavaFX incluido -- ver `SETUP.md` si vas a
+usar la transición a Five Doors Escape).
 
 1. Clona el repositorio.
 2. Importa la carpeta `FiveDoorsAtFreddys` como proyecto existente en Eclipse (`File → Import → Existing Projects into Workspace`).
