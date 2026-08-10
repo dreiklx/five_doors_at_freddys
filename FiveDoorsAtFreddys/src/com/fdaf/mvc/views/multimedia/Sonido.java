@@ -9,6 +9,22 @@ import com.fdaf.util.ConfiguracionAudio;
 
 public class Sonido {
 
+	// CAUSA RAIZ REAL de un segundo OutOfMemoryError confirmado 2026-08-06 (stack trace real
+	// del usuario: OOM dentro de DirectAudioDevice$DirectClip.open() al crear el Sonido de
+	// LesToreadorsRemix.wav, justo al iniciar el glitch de la transicion Noche5->Escape).
+	// Investigado sin asumir que era el mismo leak que el fix de Clip.close() de arriba (ese ya
+	// estaba corregido) -- causa real DISTINTA: Clip.open() SIEMPRE decodifica el audio COMPLETO
+	// a un buffer en memoria antes de poder reproducirlo (a diferencia de SourceDataLine, que
+	// solo bufferea unos pocos KB a la vez) -- LesToreadorsRemix.wav mide ~50.8MB de PCM crudo
+	// (5 minutos estéreo 44.1kHz/16-bit, confirmado con AudioInputStream.getFrameLength()*
+	// getFrameSize()), y esa asignación de memoria de una sola vez fallaba justo en el momento
+	// en que se crea (heap maximo real 247MB, 168MB ya en uso por los assets de la transicion
+	// de Noche 5 en el stack trace del usuario). El siguiente archivo mas grande del proyecto
+	// (phoneguy_ingles.wav) pesa 9.9MB -- UMBRAL_STREAMING_BYTES deja margen amplio para que
+	// NINGUN otro Sonido existente (+30 sitios de uso) cambie de comportamiento; solo un
+	// archivo genuinamente enorme como este pasa al camino de streaming de abajo.
+	private static final long UMBRAL_STREAMING_BYTES = 15_000_000L;
+
 	private Clip clip;
 
 	// CAUSA RAIZ REAL de un OutOfMemoryError confirmado con profiling real 2026-08-06
@@ -27,40 +43,69 @@ public class Sonido {
 	// -- nunca nadie mas tiene la referencia para hacerlo explicitamente.
 	private volatile boolean reiniciando = false;
 
+	// --- Camino de streaming (solo para archivos por encima de UMBRAL_STREAMING_BYTES) ---
+	// SourceDataLine.open() solo reserva un buffer interno pequeño (unos pocos KB), nunca el
+	// archivo completo -- por eso resuelve el OOM de raiz para audio grande. lineaStreaming
+	// != null es la señal de que esta instancia usa este camino en vez de Clip.
+	private URL urlStreaming;
+	private AudioFormat formatoStreaming;
+	private SourceDataLine lineaStreaming;
+	private Thread hiloStreaming;
+	private volatile boolean detenerHiloStreaming = false;
+
 	public Sonido(String archivo) {
 
-	    try {
+		try {
 
-	        URL url = getClass().getResource("/sounds/" + archivo);
+			URL url = getClass().getResource("/sounds/" + archivo);
 
+			if (url == null) {
+				return;
+			}
 
-	        if (url == null) {
-	            return;
-	        }
+			AudioInputStream sondeo = AudioSystem.getAudioInputStream(url);
+			AudioFormat formato = sondeo.getFormat();
+			long bytesPcmEstimados = sondeo.getFrameLength() * (long) formato.getFrameSize();
+			sondeo.close();
 
-	        AudioInputStream audio =
-	                AudioSystem.getAudioInputStream(url);
+			if (bytesPcmEstimados > UMBRAL_STREAMING_BYTES) {
+				urlStreaming = url;
+				formatoStreaming = formato;
+				DataLine.Info info = new DataLine.Info(SourceDataLine.class, formato);
+				lineaStreaming = (SourceDataLine) AudioSystem.getLine(info);
+				lineaStreaming.open(formato);
+			} else {
+				AudioInputStream audio = AudioSystem.getAudioInputStream(url);
 
-	        clip = AudioSystem.getClip();
-	        clip.open(audio);
+				clip = AudioSystem.getClip();
+				clip.open(audio);
 
-	        clip.addLineListener(evento -> {
-	            if (evento.getType() == LineEvent.Type.STOP && !reiniciando && clip.isOpen()) {
-	                clip.close();
-	            }
-	        });
+				clip.addLineListener(evento -> {
+					if (evento.getType() == LineEvent.Type.STOP && !reiniciando && clip.isOpen()) {
+						clip.close();
+					}
+				});
+			}
 
-	        // Aplica el volumen global vigente apenas se abre el Clip --
-	        // cubre automáticamente los +30 puntos del proyecto donde ya
-	        // se crea un Sonido, sin que ninguno de ellos necesite cambiar.
-	        ConfiguracionAudio.aplicarVolumenInicial(this);
+			// Aplica el volumen global vigente apenas se abre el Clip/la línea de streaming --
+			// cubre automáticamente los +30 puntos del proyecto donde ya
+			// se crea un Sonido, sin que ninguno de ellos necesite cambiar.
+			ConfiguracionAudio.aplicarVolumenInicial(this);
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private boolean esStreaming() {
+		return lineaStreaming != null;
 	}
 
 	public void play() {
+		if (esStreaming()) {
+			reproducirStreaming();
+			return;
+		}
 		if (clip == null || !clip.isOpen()) return;
 		// Reinicio interno -- NUNCA pasa por stop() (que dispara el cierre real via el
 		// LineListener de arriba) porque play() puede llamarse varias veces sobre la MISMA
@@ -73,7 +118,61 @@ public class Sonido {
 		clip.start();
 	}
 
+	// Reabre la linea si stop() la habia cerrado, corta cualquier hilo de reproduccion anterior
+	// en curso (mismo espiritu que el reinicio de Clip.play() de arriba, aunque en la practica
+	// ningun archivo de streaming del proyecto vuelve a llamar play() dos veces) y arranca un
+	// hilo daemon propio que lee el archivo en bloques pequeños (8KB) y los escribe a la linea
+	// -- nunca decodifica el audio completo a memoria de una sola vez.
+	private void reproducirStreaming() {
+		detenerHiloStreaming = true;
+		if (hiloStreaming != null) {
+			try {
+				hiloStreaming.join(500);
+			} catch (InterruptedException ignorado) {
+				Thread.currentThread().interrupt();
+			}
+		}
+		detenerHiloStreaming = false;
+
+		try {
+			if (!lineaStreaming.isOpen()) {
+				lineaStreaming.open(formatoStreaming);
+			}
+		} catch (LineUnavailableException e) {
+			e.printStackTrace();
+			return;
+		}
+
+		hiloStreaming = new Thread(() -> {
+			try (AudioInputStream audio = AudioSystem.getAudioInputStream(urlStreaming)) {
+				lineaStreaming.start();
+				byte[] buffer = new byte[8192];
+				int leidos;
+				while (!detenerHiloStreaming && (leidos = audio.read(buffer)) != -1) {
+					lineaStreaming.write(buffer, 0, leidos);
+				}
+				if (!detenerHiloStreaming) {
+					lineaStreaming.drain();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}, "Sonido-Streaming");
+		hiloStreaming.setDaemon(true);
+		hiloStreaming.start();
+	}
+
 	public void stop() {
+		if (esStreaming()) {
+			detenerHiloStreaming = true;
+			if (lineaStreaming != null && lineaStreaming.isOpen()) {
+				lineaStreaming.stop();
+				lineaStreaming.flush();
+				lineaStreaming.close();
+			}
+			ConfiguracionAudio.desregistrarLoop(this);
+			return;
+		}
 		if (clip == null) return;
 		clip.stop();
 		clip.setFramePosition(0);
@@ -81,33 +180,37 @@ public class Sonido {
 	}
 
 	public void loop() {
-		if (clip == null || !clip.isOpen()) return;
+		// El streaming no soporta loop -- ningun archivo del proyecto por encima de
+		// UMBRAL_STREAMING_BYTES lo necesita hoy (LesToreadorsRemix se reproduce una sola vez).
+		if (esStreaming() || clip == null || !clip.isOpen()) return;
 		clip.loop(Clip.LOOP_CONTINUOUSLY);
 		ConfiguracionAudio.registrarLoop(this);
 	}
 
 	public long getDuracionMs() {
+		if (esStreaming()) {
+			if (formatoStreaming == null || formatoStreaming.getFrameRate() <= 0) return 0;
+			return 0; // no usado hoy por ningun archivo de streaming; sin dato de longitud barato.
+		}
 		if (clip == null || !clip.isOpen()) return 0;
 		return clip.getMicrosecondLength() / 1000;
 	}
 
 	public void setVolumen(float db) {
-	    if (clip == null || !clip.isOpen()) return;
-	    try {
-	        FloatControl volumen =
-	            (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-	        volumen.setValue(db);
-	    } catch (Exception e) {
-	        // El clip se cerro (auto-cierre real via LineListener, ver el campo reiniciando
-	        // arriba) justo entre el chequeo de isOpen() y este punto -- se ignora, mismo
-	        // criterio defensivo que subirVolumen/aplicarNivelGlobal.
-	    }
+		FloatControl volumen = obtenerControlVolumen();
+		if (volumen == null) return;
+		try {
+			volumen.setValue(db);
+		} catch (Exception e) {
+			// El clip/la linea se cerró justo entre el chequeo y este punto -- se ignora,
+			// mismo criterio defensivo que subirVolumen/aplicarNivelGlobal.
+		}
 	}
 
 	public void subirVolumen(float incrementoDb) {
-		if (clip == null) return;
+		FloatControl volumen = obtenerControlVolumen();
+		if (volumen == null) return;
 		try {
-			FloatControl volumen = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
 			float nuevo = volumen.getValue() + incrementoDb;
 			float maximo = volumen.getMaximum();
 			float minimo = volumen.getMinimum();
@@ -118,14 +221,8 @@ public class Sonido {
 	}
 
 	public void fadeOut(int duracionMs) {
-		if (clip == null) return;
-
-		final FloatControl volumen;
-		try {
-			volumen = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-		} catch (Exception e) {
-			return;
-		}
+		final FloatControl volumen = obtenerControlVolumen();
+		if (volumen == null) return;
 
 		final float inicio = volumen.getValue();
 		final float minimo = volumen.getMinimum();
@@ -147,28 +244,45 @@ public class Sonido {
 					volumen.setValue(nuevoValor);
 				}
 			} catch (Exception ex) {
-				// El clip se cerro (fin natural o stop() externo) a mitad del fade -- ya no
-				// hay nada que atenuar, se detiene el timer sin propagar la excepcion.
+				// El clip/la linea se cerro (fin natural o stop() externo) a mitad del fade --
+				// ya no hay nada que atenuar, se detiene el timer sin propagar la excepcion.
 				((Timer) e.getSource()).stop();
 			}
 		});
 		fade.start();
 	}
 
-	// Aplica el nivel global (0-10) al Clip real de esta instancia,
+	// Aplica el nivel global (0-10) al Clip/línea real de esta instancia,
 	// calculando el dB según el mínimo técnico REAL de este canal
 	// específico (no un valor asumido). Público porque ConfiguracionAudio
 	// lo invoca desde fuera, tanto al construir como al actualizar en vivo.
 	public void aplicarNivelGlobal(int nivel) {
-		if (clip == null) return;
+		FloatControl volumen = obtenerControlVolumen();
+		if (volumen == null) return;
 		try {
-			FloatControl volumen = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
 			float minimo = volumen.getMinimum();
 			float db = ConfiguracionAudio.calcularDb(minimo, nivel);
 			volumen.setValue(db);
 		} catch (Exception e) {
 			// Esta línea de audio no soporta control de volumen; se ignora.
 		}
+	}
+
+	// Único punto de acceso al control de volumen, sea Clip o SourceDataLine -- evita repetir
+	// la rama esStreaming()/clip en cada método de volumen de arriba.
+	private FloatControl obtenerControlVolumen() {
+		try {
+			if (esStreaming()) {
+				if (lineaStreaming == null || !lineaStreaming.isOpen()) return null;
+				return (FloatControl) lineaStreaming.getControl(FloatControl.Type.MASTER_GAIN);
+			}
+			if (clip != null) {
+				return (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+			}
+		} catch (Exception e) {
+			// Esta línea de audio no soporta control de volumen; se ignora.
+		}
+		return null;
 	}
 
 }

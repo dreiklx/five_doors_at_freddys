@@ -29,6 +29,7 @@ import com.fdaf.mvc.views.frames.pnl.PnlMenu;
 import com.fdaf.mvc.views.frames.pnl.PnlTableta;
 import com.fdaf.mvc.views.frames.pnl.PnlWin;
 import com.fdaf.mvc.views.multimedia.Sonido;
+import com.fdaf.util.CargarGifs;
 import com.fdaf.util.CargarImagenes;
 import com.fdaf.util.EscalarVista;
 import com.fdaf.util.Fuentes;
@@ -1042,7 +1043,7 @@ public class ControllerInterfaz implements JuegoListener {
 		// es el mismo componente, no una copia. Cero lógica duplicada.
 		int anchoOficina = pnlJuego.getLblImgOficina().getWidth();
 		int altoOficina = pnlJuego.getLblImgOficina().getHeight();
-		ImageIcon gameOverFresco = com.fdaf.util.CargarGifs.cargarFresco("/gifs/fondos/gameover.gif", CargarImagenes.getGameOverRespaldo());
+		ImageIcon gameOverFresco = CargarGifs.cargarFresco("/gifs/fondos/gameover.gif", CargarImagenes.getGameOverRespaldo());
 		pnlJuego.getLblImgOficina().setIcon(new EscalarVista.GifEscalado(gameOverFresco, anchoOficina, altoOficina));
 		pnlJuego.revalidate();
 		pnlJuego.repaint();
@@ -1613,6 +1614,19 @@ public class ControllerInterfaz implements JuegoListener {
 		if (timerFadeNegro != null && timerFadeNegro.isRunning()) {
 			timerFadeNegro.stop();
 		}
+		// Detener el timer no basta: si una revelación de animatrónico
+		// disparó iniciarFadeDesdeNegro() justo antes de perder/ganar
+		// (mismo instante -- alLiberar() la arranca y verificarFinDeJuego()
+		// llama a alPerder()/alGanar() a continuación, sin que el timer
+		// llegue a correr ni un tick), el panel negro queda congelado
+		// completamente opaco y al frente (z=0) tapando para siempre lo
+		// que se dibuje debajo -- incluido gameover.gif, que sí se pinta
+		// correctamente pero nunca se ve. Ocultarlo explícitamente aquí
+		// es la corrección real, no un parche sobre CargarGifs/EscalarVista.
+		if (pnlFadeNegro != null) {
+			pnlFadeNegro.setVisible(false);
+		}
+		alphaFade = 0;
 		if (timerGifPuertaIzq != null && timerGifPuertaIzq.isRunning()) {
 			timerGifPuertaIzq.stop();
 		}
