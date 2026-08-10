@@ -187,7 +187,10 @@ public class ControllerCamara {
 
 				progreso = 0;
 				pnlTableta.getPbarRendirse().setValue(progreso);
-				vp.setContenido(menu);
+				// Reinicio completo del proceso, igual que ganar/perder -- ver
+				// ControllerInterfaz.reiniciarJuegoCompleto(). Ya no vuelve al menu
+				// directamente dentro de este mismo proceso.
+				interfaz.reiniciarJuegoCompleto();
 			}
 		});
 		

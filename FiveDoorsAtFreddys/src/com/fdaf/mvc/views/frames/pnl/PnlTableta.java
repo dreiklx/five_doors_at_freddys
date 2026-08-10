@@ -42,6 +42,8 @@ public class PnlTableta extends JPanel {
 	private JLabel lblCopyPowerLeft;
 	private JLabel lblCopyBateria;
 	private JLabel lblDescripcion;
+	private JLabel lblNocheActual;
+	private JLabel lblRendirseTexto;
 	/**
 	 * Create the panel.
 	 */
@@ -72,9 +74,17 @@ public class PnlTableta extends JPanel {
 		pnlColeccionables.setOpaque(false);
 
 
+		// Justo encima de pbarRendirse -- deja explicito para que sirve esa barra.
+		lblRendirseTexto = new JLabel("");
+		lblRendirseTexto.setBounds(1319, 792, 236, 28);
+		lblRendirseTexto.setHorizontalAlignment(SwingConstants.CENTER);
+		lblRendirseTexto.setForeground(java.awt.Color.WHITE);
+		lblRendirseTexto.setFont(com.fdaf.util.Fuentes.obtener(20));
+
 		panel.setLayout(null);
 		panel.add(lblPuntoCam);
 		panel.add(pbarRendirse);
+		panel.add(lblRendirseTexto);
 		panel.add(pnlColeccionables);
 		pnlColeccionables.setLayout(null);
 	
@@ -154,7 +164,14 @@ public class PnlTableta extends JPanel {
 		lblCopyBateria = new JLabel("");
 		lblCopyBateria.setBounds(1340, 393, 100, 48);
 		pnlColeccionables.add(lblCopyBateria);
-		
+
+		// Debajo de POWER LEFT/bateria -- muestra la noche actual (ej. "NOCHE 1"/"NIGHT 1").
+		lblNocheActual = new JLabel("");
+		lblNocheActual.setBounds(1326, 450, 200, 40);
+		lblNocheActual.setHorizontalAlignment(SwingConstants.CENTER);
+		lblNocheActual.setForeground(java.awt.Color.WHITE);
+		lblNocheActual.setFont(com.fdaf.util.Fuentes.obtener(22));
+		pnlColeccionables.add(lblNocheActual);
 
 
 	}
@@ -288,5 +305,21 @@ public class PnlTableta extends JPanel {
 
 	public void setPbarRendirse(JProgressBar pbarRendirse) {
 		this.pbarRendirse = pbarRendirse;
+	}
+
+	public JLabel getLblNocheActual() {
+		return lblNocheActual;
+	}
+
+	public void setLblNocheActual(JLabel lblNocheActual) {
+		this.lblNocheActual = lblNocheActual;
+	}
+
+	public JLabel getLblRendirseTexto() {
+		return lblRendirseTexto;
+	}
+
+	public void setLblRendirseTexto(JLabel lblRendirseTexto) {
+		this.lblRendirseTexto = lblRendirseTexto;
 	}
 }

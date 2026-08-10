@@ -104,7 +104,11 @@ public class ControllerInterfaz implements JuegoListener {
 
 	// sonidos precargados
 
-	private Sonido respiracion = new Sonido("varios/respiracion_agitada.wav");
+	// reutilizable=true -- ver Sonido.java: se reproduce muchas veces sobre la MISMA instancia
+	// (una por animatronico sobrevivido), y sin esta bandera el clip se cerraba solo tras la
+	// PRIMERA reproduccion natural (bug real: "la respiracion deja de sonar tras algunos
+	// jumpscares", investigado 2026-08-09).
+	private Sonido respiracion = new Sonido("varios/respiracion_agitada.wav", true);
 	private com.fdaf.util.SonidosAmbientalesAleatorios sonidosAmbientales = new com.fdaf.util.SonidosAmbientalesAleatorios();
 	public ControllerInterfaz() {
 		pnlJuego = new PnlJuego();
@@ -155,8 +159,22 @@ public class ControllerInterfaz implements JuegoListener {
 		mutecall();
 
 		alActualizarVidas(controllerJuego.getVidas());
+		actualizarTextosPartida();
 
 		iniciarLlamada();
+	}
+
+	// Textos de la tableta que no cambian durante la partida (noche actual,
+	// etiqueta de Rendirse) -- se fijan una sola vez en init(), mismo
+	// criterio que el resto del estado inicial de la tableta. El idioma no
+	// puede cambiar a mitad de una partida (solo se elige desde el menú),
+	// así que no hace falta refrescarlos en ningún otro punto.
+	private void actualizarTextosPartida() {
+		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
+		int numeroNoche = PreferenciasJuego.nocheActual.ordinal() + 1;
+
+		pnlTableta.getLblNocheActual().setText((ingles ? "NIGHT " : "NOCHE ") + numeroNoche);
+		pnlTableta.getLblRendirseTexto().setText(ingles ? "Surrender" : "Rendirse");
 	}
 
 	private void prepararInstanciasPreEscaladas() {
@@ -1184,13 +1202,10 @@ public class ControllerInterfaz implements JuegoListener {
 		com.fdaf.util.InteraccionBoton.aplicarHoverYSonido(pantallaGameOver.getBtnReintentar(), pantallaGameOver.getLblFlecha(), 30);
 		com.fdaf.util.InteraccionBoton.aplicarHoverYSonido(pantallaGameOver.getBtnSalir(), pantallaGameOver.getLblFlecha(), 30);
 
-		pantallaGameOver.getBtnReintentar().addActionListener(ev -> {
-			vistaPrincipal.setContenido(menu);
-			if (controllerMenuPadre != null) {
-				controllerMenuPadre.reanudarMusicaMenu();
-				controllerMenuPadre.limpiarPartidaActiva();
-			}
-		});
+		// Reinicio completo del proceso, no solo volver al menu dentro del mismo -- ver
+		// reiniciarJuegoCompleto(). btnSalir sigue cerrando la aplicacion entera sin relanzar
+		// nada, eso no cambia.
+		pantallaGameOver.getBtnReintentar().addActionListener(ev -> reiniciarJuegoCompleto());
 		pantallaGameOver.getBtnSalir().addActionListener(ev -> System.exit(0));
 	}
 
@@ -1262,15 +1277,35 @@ public class ControllerInterfaz implements JuegoListener {
 			// Pedido explicito del usuario 2026-08-05: ya no se muestra la pantalla de
 			// "Volver a jugar"/"Salir del juego" al completar una noche -- el progreso ya
 			// quedo guardado arriba (antes de cualquier efecto visual/de audio, lineas
-			// 1223-1227), asi que aqui solo se vuelve directamente al menu principal, igual
-			// que hacia btnJugarDeNuevo manualmente antes de este cambio.
+			// 1223-1227). Pedido explicito del usuario 2026-08-09: en vez de volver
+			// directamente al menu dentro del MISMO proceso, reiniciar el proceso completo
+			// (ver reiniciarJuegoCompleto()) -- unica forma confiable de liberar de verdad
+			// toda la memoria/hilos nativos acumulados durante la noche recien jugada.
+			reiniciarJuegoCompleto();
+		});
+
+	}
+
+	// Único punto real de "la noche terminó, hay que volver al menú" para
+	// los 3 caminos normales de fin de partida (ganar noches 1-4, perder,
+	// rendirse) -- NO para la Noche 5, que sigue su propio flujo hacia
+	// Five Doors Escape (proceso ya separado, con su propia gestión de
+	// memoria). El progreso (nocheActual/idioma/volumen) ya está
+	// persistido a disco en cada uno de los 3 llamadores ANTES de invocar
+	// este método, así que la nueva instancia lo recupera sola. Si el
+	// reinicio no puede completarse (java.exe no encontrado, etc.),
+	// siFalla reproduce exactamente el comportamiento que existía antes
+	// de este mecanismo -- nunca se deja al jugador atascado.
+	public void reiniciarJuegoCompleto() {
+		if (controllerMenuPadre != null) {
+			controllerMenuPadre.limpiarPartidaActiva();
+		}
+		com.fdaf.util.ReiniciadorJuego.reiniciar(vistaPrincipal, () -> {
 			vistaPrincipal.setContenido(menu);
 			if (controllerMenuPadre != null) {
 				controllerMenuPadre.reanudarMusicaMenu();
-				controllerMenuPadre.limpiarPartidaActiva();
 			}
 		});
-
 	}
 
 	// Dispara tras ganar la Noche 5 (Architecture.md #7): escribe el
@@ -1660,7 +1695,9 @@ public class ControllerInterfaz implements JuegoListener {
 		}
 
 		if (respiracion != null) {
-			respiracion.stop();
+			// cerrar(), no stop() -- es 'reutilizable' (ver Sonido.java), asi que nada mas la
+			// cierra por su cuenta. Este es el unico punto real de fin de partida.
+			respiracion.cerrar();
 		}
 		if (timerSonido != null) {
 			timerSonido.stop();

@@ -43,6 +43,21 @@ public class Sonido {
 	// -- nunca nadie mas tiene la referencia para hacerlo explicitamente.
 	private volatile boolean reiniciando = false;
 
+	// CAUSA RAIZ REAL de "la respiracion agitada deja de sonar despues de algunos jumpscares"
+	// (investigado 2026-08-09): 'reiniciando' solo protege el reinicio SINCRONO que hace play()
+	// sobre un clip que YA esta sonando -- no cubre el caso real de 'respiracion', que se crea
+	// UNA VEZ (campo de instancia) y se vuelve a llamar play() sobre la MISMA instancia varias
+	// veces a lo largo de la partida, cada vez DESPUES de que el clip ya termino de sonar solo
+	// (STOP natural de fin de medio, no un stop() nuestro). Ese STOP natural, con reiniciando en
+	// false, disparaba el cierre del Clip vía el LineListener de abajo -- el PRIMER jumpscare
+	// sobrevivido cerraba el clip para siempre, y cada play() posterior entraba en el guard
+	// "!clip.isOpen() -> return" de forma silenciosa (sin excepcion, sin log). 'reutilizable'
+	// marca explícitamente las pocas instancias (como 'respiracion') que el propio llamador
+	// vuelve a reproducir despues de que terminen solas -- el LineListener nunca las cierra por
+	// su cuenta; el llamador debe cerrarlas explícitamente con cerrar() cuando de verdad terminó
+	// de usarlas (fin de partida), igual que ya se hace con detenerSonidosJuego().
+	private final boolean reutilizable;
+
 	// --- Camino de streaming (solo para archivos por encima de UMBRAL_STREAMING_BYTES) ---
 	// SourceDataLine.open() solo reserva un buffer interno pequeño (unos pocos KB), nunca el
 	// archivo completo -- por eso resuelve el OOM de raiz para audio grande. lineaStreaming
@@ -54,6 +69,14 @@ public class Sonido {
 	private volatile boolean detenerHiloStreaming = false;
 
 	public Sonido(String archivo) {
+		this(archivo, false);
+	}
+
+	// reutilizable=true: el LineListener nunca cierra el Clip por su cuenta al llegar a un STOP
+	// natural -- el llamador es responsable de invocar cerrar() cuando de verdad terminó de
+	// reutilizar esta instancia (ver comentario de 'reutilizable' arriba).
+	public Sonido(String archivo, boolean reutilizable) {
+		this.reutilizable = reutilizable;
 
 		try {
 
@@ -81,7 +104,7 @@ public class Sonido {
 				clip.open(audio);
 
 				clip.addLineListener(evento -> {
-					if (evento.getType() == LineEvent.Type.STOP && !reiniciando && clip.isOpen()) {
+					if (evento.getType() == LineEvent.Type.STOP && !reiniciando && !this.reutilizable && clip.isOpen()) {
 						clip.close();
 					}
 				});
@@ -177,6 +200,16 @@ public class Sonido {
 		clip.stop();
 		clip.setFramePosition(0);
 		ConfiguracionAudio.desregistrarLoop(this);
+	}
+
+	// Cierre explícito y definitivo -- necesario para instancias 'reutilizable' (ver comentario
+	// arriba), que el LineListener nunca cierra por su cuenta. Llamar solo cuando de verdad no se
+	// va a volver a reproducir esta instancia (p. ej. detenerSonidosJuego(), fin de partida).
+	public void cerrar() {
+		stop();
+		if (!esStreaming() && clip != null && clip.isOpen()) {
+			clip.close();
+		}
 	}
 
 	public void loop() {

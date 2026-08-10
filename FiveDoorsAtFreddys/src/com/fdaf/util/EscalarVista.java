@@ -330,11 +330,19 @@ public class EscalarVista {
 		tablet.getLblCopyPowerLeft().setIcon(getImagenEscalada(CargarImagenes.powerLeft,
 				tablet.getLblCopyPowerLeft().getWidth(), tablet.getLblCopyPowerLeft().getHeight()));
 
-		
+		JLabel nocheActual = tablet.getLblNocheActual();
+		tablet.getLblNocheActual().setBounds(
+				getEscalaX(nocheActual.getX()), getEscalaY(nocheActual.getY()),
+				getEscalaX(nocheActual.getWidth()), getEscalaY(nocheActual.getHeight()));
 
 		tablet.getPbarRendirse().setBounds(
 				getEscalaX(barra.getX()), getEscalaY(barra.getY()),
 				getEscalaX(barra.getWidth()), getEscalaY(barra.getHeight()));
+
+		JLabel rendirseTexto = tablet.getLblRendirseTexto();
+		tablet.getLblRendirseTexto().setBounds(
+				getEscalaX(rendirseTexto.getX()), getEscalaY(rendirseTexto.getY()),
+				getEscalaX(rendirseTexto.getWidth()), getEscalaY(rendirseTexto.getHeight()));
 
 		tablet.getLblTabletCerrar().setBounds(
 				getEscalaX(cerrar.getX()), getEscalaY(cerrar.getY()),
