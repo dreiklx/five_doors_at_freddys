@@ -1002,6 +1002,23 @@ El bloque `if (pausado) { ...; return; }` (línea ~716) ya existía y congelaba 
 
 **Commiteado y pusheado a `five_doors_escape`:** `pausarAudioContinuo()`/`reanudarAudioContinuo()` + hook en el chequeo de ESC (`GameplayScreen.java`).
 
+### 2.33 Cierre de §2.32 tras reinicio de Windows: verificación en vivo real, sesión posterior 2026-08-09
+
+**El reinicio de Windows resolvió el problema de driver descrito al final de §2.32/`SESSION_HANDOFF.md`** (`WGL: Failed to make context current`, antes precedido por un `OutOfMemoryError` de texturas) -- `gradlew lwjgl3:run` volvió a crear ventana/contexto OpenGL sin error alguno.
+
+**Pausa (§2.32): verificada en vivo, no solo por lectura de código de la librería.** Instrumentación temporal en `GameplayScreen.render()` simuló el toggle de ESC (4s tras entrar en `JUGANDO`, y de vuelta 4s después) y consultó el `AL_SOURCE_STATE` real de OpenAL del source de `sonidoMusicaFreddy` antes/después de cada toggle, via reflection sobre `OpenALLwjgl3Audio.getSourceId(long)` (público) + `AL10.alGetSourcei` -- necesario porque el módulo `core` de Escape no depende de `gdx-backend-lwjgl3`/LWJGL en tiempo de compilación. Resultado real capturado en una corrida real:
+```
+ANTES de pausar: AL_PLAYING(4114) -> DESPUES de pausar: AL_PAUSED(4115)
+ANTES de reanudar: AL_PAUSED(4115) -> DESPUES de reanudar: AL_PLAYING(4114)
+```
+Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar audio humano. Instrumentación retirada por completo después (`git diff` limpio en `five_doors_escape`).
+
+**Señal cruzada de la risa de Freddy (lado escritura, Escape): verificada en vivo por primera vez.** En la misma corrida real, `SenalRisaFreddy.marcar()` escribió efectivamente `~/.fivedoorsatfreddys/risa_freddy.flag` en el instante real en que sonó la risa de Freddy (`GameplayScreen` llegó a RUN). El lado lectura/aplicación (`ControllerInterfaz.iniciarEsperaRisaFreddy()`, `-15dB`) ya estaba verificado con una prueba real en la sesión que cerró §2.32 (delta exacto confirmado con un sonido de control aparte) -- no se repitió esa prueba, solo se confirmó por lectura que el código sigue intacto.
+
+**No verificado de oído humano** (limitación de entorno, no de código): ninguna sesión de Claude en esta máquina puede reproducir/escuchar audio real. Toda verificación de audio disponible es a nivel de estado nativo (OpenAL `AL_SOURCE_STATE`) y de señales de archivo -- ya el nivel más profundo posible sin un oyente humano.
+
+**Nota aparte, no relacionada:** al revisar `five_doors_at_freddys/FiveDoorsAtFreddys` para esta verificación se encontraron cambios sin commitear preexistentes en `.classpath`, `Main.java` (`FlatDarkLaf`) y `Juego.java` (gating de batería desde Noche 3+), más `src/libs/` sin trackear -- trabajo en progreso de otra sesión/tarea, sin relación con audio/pausa. Se dejaron intactos.
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos
