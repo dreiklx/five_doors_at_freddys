@@ -3,14 +3,11 @@ package com.fdaf.mvc.controllers;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
-import java.util.Random;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -1329,235 +1326,21 @@ public class ControllerInterfaz implements JuegoListener {
 	// y solo vuelve al frente cuando el proceso de Escape termina -- por
 	// Game Over, el botón manual o la victoria del Escape, todos
 	// comparten el mismo mecanismo real de salida (cierre del proceso).
+	/** Extraida a com.fdaf.util.TransicionEscape (sesion 2026-08-10) para que Custom Night ->
+	 * ESCAPE pueda reutilizar exactamente la misma secuencia (glitch + carga corrompida +
+	 * LesToreadorsRemix + risa de Freddy) sin duplicar logica -- ver esa clase para el detalle
+	 * completo. continuarSobrePantallaExistente() reutiliza el PnlWin que ya esta visible (con el
+	 * video de victoria recien terminado), preservando el comportamiento exacto ya verificado de
+	 * este camino. */
+	/** Referencia a la transicion en curso, unicamente para que detenerSonidosJuego() pueda
+	 * abortarla defensivamente (ver TransicionEscape.detener()) -- misma defensa que ya existia
+	 * como campos sueltos de esta clase antes de la extraccion a TransicionEscape. */
+	private com.fdaf.util.TransicionEscape transicionEscapeEnCurso;
+
 	private void iniciarTransicionAEscape(PnlWin pantalla, int vidasFinales) {
-		mostrarGlitchYLanzarEscape(pantalla, vidasFinales);
-	}
-
-	/** Duracion del efecto glitch, en milisegundos, antes de mostrar la pantalla de carga negra y
-	 * lanzar Five Doors Escape (pedido explicito del usuario 2026-08-06: "aproximadamente 4
-	 * segundos", antes eran 2.6s). */
-	private static final int DURACION_GLITCH_MS = 4000;
-	private static final int INTERVALO_GLITCH_MS = 45;
-	private Timer timerGlitch;
-
-	/** Musica de la transicion completa Noche 5 -> Escape (pedido explicito del usuario
-	 * 2026-08-06): arranca justo cuando empieza el glitch de colores y NUNCA se detiene durante
-	 * toda la secuencia (glitch + pantallas de carga negra + TODA la partida de Escape) -- sigue
-	 * sonando incluso despues de lanzar el proceso de Escape, hasta que termina sola (el usuario
-	 * la re-exporto a ~5 minutos reales especificamente para que alcance a cubrir una partida
-	 * completa de Escape, no solo la transicion). Se detiene de forma defensiva solo si el
-	 * jugador vuelve al menu antes de que termine sola. Su volumen baja ~25% (unico sonido que
-	 * se toca) justo cuando Escape avisa que sono la risa de Freddy -- ver
-	 * timerEsperarRisaFreddy, que vigila la señal de archivo compartido porque Swing/Escape son
-	 * procesos independientes sin otra forma de comunicarse ese instante. */
-	private Sonido sonidoTransicionEscape;
-	private Timer timerEsperarRisaFreddy;
-	private static final String RUTA_SENAL_RISA_FREDDY =
-			System.getProperty("user.home") + java.io.File.separator + ".fivedoorsatfreddys"
-					+ java.io.File.separator + "risa_freddy.flag";
-
-	/** Pantalla de carga negra "corrompida" (rediseño pedido explicito del usuario 2026-08-06:
-	 * "ya no quiero un unico label... quiero que 'SOY YO' aparezca por toda la pantalla,
-	 * muchisimas veces, en posiciones aleatorias, con diferentes tamaños, entrando y
-	 * desapareciendo constantemente... debe sentirse como una pantalla completamente
-	 * corrompida"). "THE GAME BEGINS"/"EMPIEZA EL JUEGO" (lblCargando) queda fijo y legible en
-	 * el centro exacto -- unico texto estatico. pnlGlitchTexto es un overlay transparente que
-	 * redibuja, en cada tick de timerGlitchTexto, un numero aleatorio de instancias de "SOY
-	 * YO"/"IT'S ME" en posiciones/tamaños/colores nuevos (nunca las mismas dos veces seguidas,
-	 * ver pintarGlitchTexto) -- mismo patron ya usado por pnlGlitch (JPanel+Timer+
-	 * paintComponent propio, sin libreria nueva). */
-	private JPanel pnlGlitchTexto;
-	private Timer timerGlitchTexto;
-	private static final int INTERVALO_GLITCH_TEXTO_MS = 90;
-
-	/** Efecto de "corrupcion de senal" agresivo -- generado enteramente con Graphics2D dentro de
-	 * un JPanel transparente superpuesto, repintado por un javax.swing.Timer, EXACTAMENTE el
-	 * mismo patron ya usado por iniciarFadeDesdeNegro() (panel + Timer + paintComponent
-	 * personalizado) -- sin ninguna libreria o pipeline de postprocesado nueva, tal como pidio
-	 * el usuario ("investiga que puede hacerse usando unicamente las capacidades actuales del
-	 * proyecto"). Reutiliza ademas Static.gif (el mismo asset que ya se usa como interferencia
-	 * en la secuencia de Game Over) como una capa mas de corrupcion visual real, no solo
-	 * geometria dibujada a mano. Al terminar, muestra el mensaje de carga (ya existente antes de
-	 * este cambio) y recien ahi lanza el proceso de Escape -- LanzadorEscape.lanzar() en si no
-	 * cambio, solo el momento en que se invoca. */
-	private void mostrarGlitchYLanzarEscape(PnlWin pantalla, int vidasFinales) {
-		// Arranca justo aqui, en el mismo instante en que empieza el glitch de colores (pedido
-		// explicito del usuario) -- ver el campo sonidoTransicionEscape para el resto del
-		// contrato (nunca se detiene durante toda la secuencia).
-		sonidoTransicionEscape = new Sonido("win/LesToreadorsRemix.wav");
-		sonidoTransicionEscape.play();
-		iniciarEsperaRisaFreddy();
-
-		Random random = new Random();
-		Color[] paletaGlitch = {
-				new Color(255, 0, 90), new Color(0, 255, 200), new Color(255, 230, 0),
-				new Color(120, 0, 255), Color.WHITE, Color.BLACK
-		};
-		ImageIcon estaticaGlitch = com.fdaf.util.CargarGifs.cargarFresco(
-				"/gifs/fondos/Static.gif", CargarImagenes.getEstaticaRespaldo());
-
-		JPanel pnlGlitch = new JPanel() {
-			@Override
-			protected void paintComponent(Graphics g) {
-				int w = getWidth();
-				int h = getHeight();
-				if (w <= 0 || h <= 0) {
-					return;
-				}
-				Graphics2D g2 = (Graphics2D) g.create();
-
-				// Base: parpadeo de color solido saturado (simula corte de señal).
-				g2.setColor(paletaGlitch[random.nextInt(paletaGlitch.length)]);
-				g2.fillRect(0, 0, w, h);
-
-				// Interferencia real (mismo gif que el Game Over), desplazada al azar.
-				estaticaGlitch.paintIcon(this, g2, random.nextInt(41) - 20, random.nextInt(41) - 20);
-
-				// Barras de "tearing" horizontales con desplazamiento y color aleatorios.
-				int franjas = 6 + random.nextInt(6);
-				for (int i = 0; i < franjas; i++) {
-					int altoFranja = 4 + random.nextInt(Math.max(1, h / 6));
-					int y = random.nextInt(Math.max(1, h - altoFranja));
-					int desplazamientoX = random.nextInt(121) - 60;
-					g2.setColor(paletaGlitch[random.nextInt(paletaGlitch.length)]);
-					g2.fillRect(desplazamientoX, y, w, altoFranja);
-				}
-
-				// Franjas de canal de color (simula separacion RGB de una señal corrupta).
-				g2.setColor(new Color(255, 0, 0, 140));
-				g2.fillRect(random.nextInt(21) - 10, 0, w, h / 3);
-				g2.setColor(new Color(0, 255, 255, 140));
-				g2.fillRect(random.nextInt(21) - 10, h / 3, w, h / 3);
-
-				g2.dispose();
-			}
-		};
-		pnlGlitch.setOpaque(false);
-		pantalla.add(pnlGlitch);
-		pnlGlitch.setBounds(0, 0, pantalla.getWidth(), pantalla.getHeight());
-		pantalla.setComponentZOrder(pnlGlitch, 0);
-		pnlGlitch.setVisible(true);
-
-		long inicio = System.currentTimeMillis();
-		timerGlitch = new Timer(INTERVALO_GLITCH_MS, null);
-		timerGlitch.addActionListener(e -> {
-			long transcurrido = System.currentTimeMillis() - inicio;
-			if (transcurrido >= DURACION_GLITCH_MS) {
-				((Timer) e.getSource()).stop();
-				pantalla.remove(pnlGlitch);
-				pantalla.revalidate();
-				pantalla.repaint();
-				mostrarCargaYLanzarEscape(pantalla, vidasFinales);
-			} else {
-				pnlGlitch.repaint();
-			}
-		});
-		timerGlitch.start();
-	}
-
-	// Textos de la pantalla de carga corrompida, i18n via el mismo patron de ternarios que usa
-	// el resto del proyecto (FDAF no tiene archivos de localizacion propios).
-	private String textoEmpiezaElJuego() {
-		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
-		return ingles ? "THE GAME BEGINS" : "EMPIEZA EL JUEGO";
-	}
-
-	private String textoSoyYo() {
-		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
-		return ingles ? "IT'S ME" : "SOY YO";
-	}
-
-	/** Pantalla de carga negra con mensajes tipo error apareciendo de forma aleatoria/glitcheada
-	 * (pedido explicito del usuario 2026-08-06: "ya NO quiero usar el fondo de Win... fondo
-	 * completamente negro... que no sigan un patron perfecto, que sea aleatorio y de miedo tipo
-	 * errores") mientras el proceso de Escape termina de arrancar -- puede tardar bastante mas
-	 * que el glitch en si. sonidoTransicionEscape (arrancado en mostrarGlitchYLanzarEscape) sigue
-	 * sonando sin interrupcion durante todo este tramo -- no se toca aqui en absoluto. */
-	// Vigila la señal de archivo compartido que Escape (proceso independiente) escribe justo
-	// cuando suena la risa de Freddy en su propia introduccion (ver
-	// com.fivedoorsescape.io.SenalRisaFreddy del lado Escape) -- pedido explicito del usuario
-	// 2026-08-06: bajar el volumen de sonidoTransicionEscape ~25% en ese instante exacto, sin
-	// tocar el volumen de ningun otro sonido. Se borra cualquier señal vieja antes de empezar a
-	// vigilar (por si quedo de una sesion anterior) para no disparar el cambio de volumen de
-	// inmediato por error.
-	private static final int INTERVALO_ESPERA_RISA_FREDDY_MS = 400;
-	private void iniciarEsperaRisaFreddy() {
-		java.io.File archivoSenal = new java.io.File(RUTA_SENAL_RISA_FREDDY);
-		archivoSenal.delete();
-
-		if (timerEsperarRisaFreddy != null && timerEsperarRisaFreddy.isRunning()) {
-			timerEsperarRisaFreddy.stop();
-		}
-		timerEsperarRisaFreddy = new Timer(INTERVALO_ESPERA_RISA_FREDDY_MS, e -> {
-			if (archivoSenal.exists()) {
-				archivoSenal.delete();
-				if (sonidoTransicionEscape != null) {
-					// Historial: -2.5dB (~75% lineal) fue insuficiente -- casi no se notaba.
-					// -15dB (~18% lineal) sobrecorrigio -- pedido explicito del usuario
-					// 2026-08-09 (sesion posterior): "se escucha demasiado bajo", subirlo de
-					// vuelta a un punto medio que la deje claramente audible pero todavia mas
-					// baja que antes de la risa. -8dB equivale a ~40% del volumen lineal previo
-					// (10^(-8/20)) -- una caida clara (más de la mitad más floja) sin acercarse
-					// al -15dB anterior que la enterraba. Unico sonido que se toca -- no afecta
-					// la risa de Freddy, la musica de Freddy, los latidos, la estatica ni ningun
-					// otro audio, todos en instancias de Sonido/Sound completamente separadas.
-					sonidoTransicionEscape.subirVolumen(-8f);
-				}
-				((Timer) e.getSource()).stop();
-			}
-		});
-		timerEsperarRisaFreddy.start();
-	}
-
-	private void mostrarCargaYLanzarEscape(PnlWin pantalla, int vidasFinales) {
-		pantalla.mostrarFondo(CargarImagenes.fondoNegro);
-
-		// "THE GAME BEGINS"/"EMPIEZA EL JUEGO" -- unico texto fijo y legible, centrado de verdad
-		// en la pantalla (antes vivia en y=650, pensado para el ciclo de mensajes viejo). Se fija
-		// UNA sola vez aqui y no vuelve a cambiar durante toda la carga.
-		JLabel lblCentro = pantalla.getLblCargando();
-		lblCentro.setText(textoEmpiezaElJuego());
-		lblCentro.setForeground(Color.WHITE);
-		lblCentro.setFont(Fuentes.obtener(42));
-		lblCentro.setBounds(0, pantalla.getHeight() / 2 - 40, pantalla.getWidth(), 80);
-		lblCentro.setVisible(true);
-
-		// Overlay transparente de pantalla completa -- redibuja en cada tick un lote nuevo de
-		// instancias de "SOY YO" en posiciones/tamaños/colores aleatorios (nunca las mismas dos
-		// veces, ver pintarGlitchTexto) para que se sienta como una pantalla corrompida, no un
-		// patron repetitivo. Mismo patron ya probado por pnlGlitch (JPanel+Timer+
-		// paintComponent propio).
-		Random random = new Random();
-		pnlGlitchTexto = new JPanel() {
-			@Override
-			protected void paintComponent(Graphics g) {
-				pintarGlitchTexto(g, getWidth(), getHeight(), random);
-			}
-		};
-		pnlGlitchTexto.setOpaque(false);
-		pantalla.add(pnlGlitchTexto);
-		pnlGlitchTexto.setBounds(0, 0, pantalla.getWidth(), pantalla.getHeight());
-		// lblCentro siempre al frente (z=0); el overlay de "SOY YO" queda detras, nunca tapa el
-		// mensaje fijo por completo.
-		pantalla.setComponentZOrder(pnlGlitchTexto, 0);
-		pantalla.setComponentZOrder(lblCentro, 0);
-		pnlGlitchTexto.setVisible(true);
-
-		pantalla.revalidate();
-		pantalla.repaint();
-
-		timerGlitchTexto = new Timer(INTERVALO_GLITCH_TEXTO_MS, e -> pnlGlitchTexto.repaint());
-		timerGlitchTexto.start();
-
-		com.fdaf.util.LanzadorEscape.lanzar(PreferenciasJuego.idiomaSeleccionado, vidasFinales, () -> {
-			detenerGlitchTexto(pantalla);
-			// Defensivo: sonidoTransicionEscape dura 104.5s reales, mas que de sobra para todo
-			// el tramo de carga + la introduccion real del Escape -- pero si el jugador vuelve
-			// muy rapido al menu (p.ej. cerro Escape casi de inmediato), no debe seguir sonando
-			// sobre la musica del menu.
-			if (sonidoTransicionEscape != null) {
-				sonidoTransicionEscape.stop();
-			}
+		transicionEscapeEnCurso = new com.fdaf.util.TransicionEscape();
+		transicionEscapeEnCurso.continuarSobrePantallaExistente(pantalla, vistaPrincipal, vidasFinales, () -> {
+			transicionEscapeEnCurso = null;
 			vistaPrincipal.setContenido(menu);
 			vistaPrincipal.toFront();
 			vistaPrincipal.requestFocus();
@@ -1566,51 +1349,6 @@ public class ControllerInterfaz implements JuegoListener {
 				controllerMenuPadre.limpiarPartidaActiva();
 			}
 		});
-	}
-
-	/** Dibuja un lote nuevo de instancias de "SOY YO"/"IT'S ME" en posiciones, tamaños y colores
-	 * aleatorios -- llamado en cada tick de timerGlitchTexto, así que el conjunto entero cambia
-	 * por completo en cada repintado (nunca la misma composición dos veces, sin necesidad de
-	 * animar cada instancia por separado). */
-	private static final Color[] COLORES_GLITCH_TEXTO = {
-			Color.WHITE, Color.WHITE, Color.WHITE, Color.LIGHT_GRAY,
-			new Color(255, 0, 90), new Color(0, 255, 200)
-	};
-	private void pintarGlitchTexto(Graphics g, int w, int h, Random random) {
-		if (w <= 0 || h <= 0) {
-			return;
-		}
-		Graphics2D g2 = (Graphics2D) g.create();
-		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-		int instancias = 12 + random.nextInt(14); // 12-25 por lote
-		for (int i = 0; i < instancias; i++) {
-			int tamano = 16 + random.nextInt(70); // 16-85px
-			g2.setFont(Fuentes.obtener(tamano));
-			int alpha = 70 + random.nextInt(186); // 70-255, nunca invisible del todo
-			Color base = COLORES_GLITCH_TEXTO[random.nextInt(COLORES_GLITCH_TEXTO.length)];
-			g2.setColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), alpha));
-
-			String texto = textoSoyYo();
-			FontMetrics fm = g2.getFontMetrics();
-			int anchoTexto = fm.stringWidth(texto);
-			int x = random.nextInt(Math.max(1, w - anchoTexto));
-			int y = fm.getAscent() + random.nextInt(Math.max(1, h - fm.getHeight()));
-			g2.drawString(texto, x, y);
-		}
-		g2.dispose();
-	}
-
-	private void detenerGlitchTexto(PnlWin pantalla) {
-		if (timerGlitchTexto != null) {
-			timerGlitchTexto.stop();
-		}
-		if (pnlGlitchTexto != null) {
-			pantalla.remove(pnlGlitchTexto);
-			pnlGlitchTexto = null;
-			pantalla.revalidate();
-			pantalla.repaint();
-		}
 	}
 
 	private void deshabilitarControles() {
@@ -1686,14 +1424,8 @@ public class ControllerInterfaz implements JuegoListener {
 		if (timerGifPuertaDer != null && timerGifPuertaDer.isRunning()) {
 			timerGifPuertaDer.stop();
 		}
-		if (timerGlitch != null && timerGlitch.isRunning()) {
-			timerGlitch.stop();
-		}
-		if (timerGlitchTexto != null && timerGlitchTexto.isRunning()) {
-			timerGlitchTexto.stop();
-		}
-		if (timerEsperarRisaFreddy != null && timerEsperarRisaFreddy.isRunning()) {
-			timerEsperarRisaFreddy.stop();
+		if (transicionEscapeEnCurso != null) {
+			transicionEscapeEnCurso.detener();
 		}
 		controllerCamara.detenerTimersDePartida();
 
@@ -1723,10 +1455,6 @@ public class ControllerInterfaz implements JuegoListener {
 
 		if (sonidoGameOver != null) {
 			sonidoGameOver.stop();
-		}
-
-		if (sonidoTransicionEscape != null) {
-			sonidoTransicionEscape.stop();
 		}
 
 		if (sonidoWin != null) {

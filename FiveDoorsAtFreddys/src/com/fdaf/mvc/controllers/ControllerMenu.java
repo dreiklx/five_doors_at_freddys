@@ -1,6 +1,5 @@
 package com.fdaf.mvc.controllers;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -18,7 +17,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.KeyStroke;
-import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
 import com.fdaf.mvc.models.juego.Noche;
@@ -303,30 +301,23 @@ public class ControllerMenu {
 		}
 	}
 
-	// Acceso directo a Five Doors Escape desde Custom Night (pedido
-	// explicito del usuario 2026-08-09), una vez desbloqueado -- reutiliza
-	// LanzadorEscape.lanzar() tal cual, el mismo mecanismo real que ya usa
-	// la victoria de la Noche 5 (Architecture.md #7), sin duplicar el
-	// glitch/pantalla de PnlWin (ese efecto es especifico de la secuencia
-	// de victoria, no tiene sentido fuera de ella). vidasFinales=2 (las
-	// vidas iniciales reales de la Noche 5, Noche.NOCHE_5.getVidas()) --
-	// hoy en dia HandoffData.vidasFinales no se lee del lado Escape mas
+	// Acceso directo a Five Doors Escape desde Custom Night, una vez
+	// desbloqueado. Pedido explicito del usuario 2026-08-10: la experiencia
+	// debe ser EQUIVALENTE a ganar la Noche 5 desde el punto donde empieza
+	// el glitch (nunca el video/pantalla de victoria de Noche 5 en si, que
+	// es especifico de haber jugado esa noche) -- reutiliza
+	// com.fdaf.util.TransicionEscape (extraida de ControllerInterfaz en
+	// esta misma sesion) para que ambos caminos compartan exactamente la
+	// misma secuencia (glitch + LesToreadorsRemix + pantalla de carga
+	// corrompida + risa de Freddy), sin duplicar logica. vidasFinales=2
+	// (las vidas iniciales reales de la Noche 5, Noche.NOCHE_5.getVidas())
+	// -- hoy en dia HandoffData.vidasFinales no se lee del lado Escape mas
 	// alla de guardarse (verificado, ningun HUD lo usa todavia), asi que
 	// cualquier valor razonable es equivalente; se usa este por
 	// consistencia narrativa con el contexto real de Noche 5.
 	private void lanzarEscapeDesdeCustomNight() {
 		detenerAudioMenu();
-
-		JPanel pantallaCarga = new JPanel(new BorderLayout());
-		pantallaCarga.setBackground(Color.BLACK);
-		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
-		JLabel lblCarga = new JLabel(ingles ? "Loading..." : "Cargando...", SwingConstants.CENTER);
-		lblCarga.setForeground(Color.WHITE);
-		lblCarga.setFont(com.fdaf.util.Fuentes.obtener(40));
-		pantallaCarga.add(lblCarga, BorderLayout.CENTER);
-		vp.setContenido(pantallaCarga);
-
-		com.fdaf.util.LanzadorEscape.lanzar(PreferenciasJuego.idiomaSeleccionado,
+		new com.fdaf.util.TransicionEscape().iniciarDesdeMenu(vp,
 				com.fdaf.mvc.models.juego.Noche.NOCHE_5.getVidas(), () -> {
 					vp.setContenido(menu);
 					reanudarMusicaMenu();
