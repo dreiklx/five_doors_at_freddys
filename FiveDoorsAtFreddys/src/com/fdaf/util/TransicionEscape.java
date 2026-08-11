@@ -126,6 +126,17 @@ public class TransicionEscape {
 				g2.setColor(new Color(0, 255, 255, 140));
 				g2.fillRect(random.nextInt(21) - 10, h / 3, w, h / 3);
 
+				// Intercalado con el glitch de texto (pedido explicito del usuario 2026-08-10):
+				// dentro de estos mismos ~4s, alternar frames de glitch puro con frames de
+				// glitch+"SOY YO"/"IT'S ME" disperso, reutilizando pintarGlitchTexto (el mismo
+				// metodo que ya usa la pantalla de carga posterior, sin duplicar logica) -- ~50%
+				// de los repaints (cada ~45ms) superponen el texto, dando la sensacion de
+				// interferencia alternante pedida ("glitch -> SOY YO -> glitch -> SOY YO") en vez
+				// de separar ambos efectos en fases secuenciales.
+				if (random.nextBoolean()) {
+					pintarGlitchTexto(g2, w, h, random);
+				}
+
 				g2.dispose();
 			}
 		};
