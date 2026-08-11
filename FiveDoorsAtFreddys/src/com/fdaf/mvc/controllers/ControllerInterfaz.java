@@ -1341,13 +1341,19 @@ public class ControllerInterfaz implements JuegoListener {
 		transicionEscapeEnCurso = new com.fdaf.util.TransicionEscape();
 		transicionEscapeEnCurso.continuarSobrePantallaExistente(pantalla, vistaPrincipal, vidasFinales, () -> {
 			transicionEscapeEnCurso = null;
-			vistaPrincipal.setContenido(menu);
+			// vistaPrincipal quedo detras de la ventana de Escape mientras esta existio -- la
+			// traemos al frente para que la pantalla de "Cargando..." del reinicio (mas abajo)
+			// sea realmente visible en vez de quedar oculta.
 			vistaPrincipal.toFront();
 			vistaPrincipal.requestFocus();
-			if (controllerMenuPadre != null) {
-				controllerMenuPadre.reanudarMusicaMenu();
-				controllerMenuPadre.limpiarPartidaActiva();
-			}
+			// BUG REAL corregido en esta sesion ("Escape aparentemente permanece en el mismo
+			// proceso"): este proceso Swing viene vivo desde antes de la Noche 5 (potencialmente
+			// toda la sesion) y, hasta ahora, simplemente volvia a mostrar el menu EN EL MISMO
+			// proceso al terminar Escape -- nunca se beneficiaba del reinicio completo de
+			// proceso que ya reciben ganar/perder/rendirse dentro de FDAF (ver
+			// reiniciarJuegoCompleto()). Reutiliza exactamente el mismo mecanismo, sin duplicar
+			// logica -- consistente con el resto de finales de partida.
+			reiniciarJuegoCompleto();
 		});
 	}
 

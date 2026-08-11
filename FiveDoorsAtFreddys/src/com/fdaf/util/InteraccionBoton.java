@@ -14,7 +14,20 @@ import com.fdaf.mvc.views.multimedia.Sonido;
 
 public class InteraccionBoton {
 
-	private static final Sonido SONIDO_HOVER = new Sonido("botones/botones_menu.wav");
+	// BUG REAL encontrado y corregido en esta sesion ("los sonidos de botones dejaron de sonar
+	// en todo el proyecto"): esta es una instancia COMPARTIDA y de VIDA LARGA (unico punto real
+	// de reproduccion del sonido de hover de todo el proyecto -- menu, idioma, Custom Night,
+	// abrir tablet, botones de la tableta, Game Over) que se reproduce muchas veces sobre si
+	// misma a lo largo de toda la sesion, exactamente el mismo patron que 'respiracion' en
+	// ControllerInterfaz (ver Sonido.java, parametro 'reutilizable'). Sin marcarla reutilizable,
+	// el LineListener de Sonido.java (agregado para el fix real de OutOfMemoryError de sesiones
+	// anteriores) cerraba el Clip en el PRIMER STOP natural -- el primer hover de toda la sesion
+	// (dura ~200ms) ya dejaba silenciosamente sordos a TODOS los hovers posteriores del resto de
+	// la partida, sin ninguna excepcion ni log. Reproducido y confirmado real antes de este fix
+	// (ver CLAUDE.md). Marcar 'reutilizable=true' no introduce una fuga nueva -- sigue siendo una
+	// unica instancia acotada (nunca se crean mas), igual que los demas sonidos reutilizables ya
+	// establecidos del proyecto (luces, llamada, ambiente de oficina).
+	private static final Sonido SONIDO_HOVER = new Sonido("botones/botones_menu.wav", true);
 	private static final int MARGEN_FLECHA = 6;
 
 	// Sobrecargas existentes: delegan a la única implementación real, sin

@@ -319,8 +319,18 @@ public class ControllerMenu {
 		detenerAudioMenu();
 		new com.fdaf.util.TransicionEscape().iniciarDesdeMenu(vp,
 				com.fdaf.mvc.models.juego.Noche.NOCHE_5.getVidas(), () -> {
-					vp.setContenido(menu);
-					reanudarMusicaMenu();
+					// BUG REAL corregido en esta sesion (mismo hallazgo que
+					// ControllerInterfaz.iniciarTransicionAEscape): al volver de Escape este
+					// proceso Swing seguia siendo el mismo de toda la sesion en vez de
+					// beneficiarse del reinicio completo que ya reciben ganar/perder/rendirse --
+					// se llama al mismo mecanismo real (ReiniciadorJuego), con el mismo
+					// respaldo si el reinicio no pudiera completarse.
+					vp.toFront();
+					vp.requestFocus();
+					com.fdaf.util.ReiniciadorJuego.reiniciar(vp, () -> {
+						vp.setContenido(menu);
+						reanudarMusicaMenu();
+					});
 				});
 	}
 
