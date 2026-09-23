@@ -60,14 +60,14 @@ public class PnlMenu extends JPanel {
 		btnContinuar.setContentAreaFilled(false);
 		btnContinuar.setOpaque(false);
 		btnContinuar.setBorder(null);
-		btnContinuar.setFont(new Font("Consolas", Font.PLAIN, 75));
+		btnContinuar.setFont(Fuentes.obtener(75));
 		btnContinuar.setForeground(Color.WHITE);
 		btnContinuar.setBounds(227, 534, 507, 84);
 		pnlMenu.add(btnContinuar);
 
 		lblNocheActual = new JLabel("Noche 1", SwingConstants.LEFT);
 		lblNocheActual.setForeground(Color.WHITE);
-		lblNocheActual.setFont(new Font("Consolas", Font.PLAIN, 32));
+		lblNocheActual.setFont(Fuentes.obtener(32));
 		lblNocheActual.setBounds(232, 590, 143, 39);
 		lblNocheActual.setVisible(false);
 		pnlMenu.add(lblNocheActual);
@@ -79,7 +79,7 @@ public class PnlMenu extends JPanel {
 		btnNuevaPartida.setContentAreaFilled(false);
 		btnNuevaPartida.setOpaque(false);
 		btnNuevaPartida.setBorder(null);
-		btnNuevaPartida.setFont(new Font("Consolas", Font.PLAIN, 75));
+		btnNuevaPartida.setFont(Fuentes.obtener(75));
 		btnNuevaPartida.setForeground(Color.WHITE);
 		btnNuevaPartida.setBounds(227, 433, 598, 88);
 		pnlMenu.add(btnNuevaPartida);
@@ -91,7 +91,7 @@ public class PnlMenu extends JPanel {
 		btnOpciones.setContentAreaFilled(false);
 		btnOpciones.setBorderPainted(false);
 		btnOpciones.setBorder(null);
-		btnOpciones.setFont(new Font("Consolas", Font.PLAIN, 75));
+		btnOpciones.setFont(Fuentes.obtener(75));
 		btnOpciones.setForeground(Color.WHITE);
 		btnOpciones.setBounds(227, 631, 458, 88);
 		pnlMenu.add(btnOpciones);

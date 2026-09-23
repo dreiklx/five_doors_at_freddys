@@ -567,7 +567,12 @@ public class ControllerInterfaz implements JuegoListener {
 		sonido.play();
 		
 		String ruta = "/images/" + coleccionable.getArchivoImagen();
-		mostrarEnOverlay(ruta, 0, lado);
+		
+		if(coleccionable.getTipo().equals(TipoColeccionable.GUITARRA_BONNIE)) {
+		mostrarEnOverlay(ruta, 02, lado);
+		}else {
+			mostrarEnOverlay(ruta, 0, lado);
+		}
 	}
 
 	@Override
@@ -584,7 +589,7 @@ public class ControllerInterfaz implements JuegoListener {
 		mostrarIconoEnOverlay(CargarImagenes.bateria1, lado, 45);
 	}
 
-	private void mostrarEnOverlay(String ruta, int c, String lado) {
+	private void mostrarEnOverlay(String ruta, int identificacion, String lado) {
 		URL recurso = getClass().getResource(ruta);
 		if (recurso == null) {
 			System.out.println("[RECURSO NO ENCONTRADO] " + ruta);
@@ -593,14 +598,17 @@ public class ControllerInterfaz implements JuegoListener {
 
 		JLabel overlay = pnlJuego.getLblOverlay();
 
-		if (c == 1) {
+		if (identificacion == 1) {
 			overlay.setCursor(Cursor.getDefaultCursor());
 			overlay.setBounds(0, 0, EscalarVista.getEscalaX(1610), EscalarVista.getEscalaY(910));
 			ImageIcon jumpscareFresco = com.fdaf.util.CargarGifs.cargarFresco(ruta, new ImageIcon(recurso));
 			overlay.setIcon(
 					new EscalarVista.GifEscalado(jumpscareFresco, overlay.getWidth(), overlay.getHeight()));
 
-		} else {
+		} else if(identificacion==02){
+			mostrarIconoEnOverlay(new ImageIcon(recurso), lado, 402);
+		
+		}else{
 			mostrarIconoEnOverlay(new ImageIcon(recurso), lado);
 			return;
 		}
@@ -622,12 +630,24 @@ public class ControllerInterfaz implements JuegoListener {
 		JLabel overlay = pnlJuego.getLblOverlay();
 		overlay.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+		
 		if ("izq".equals(lado)) {
-			overlay.setBounds(EscalarVista.getEscalaX(350), EscalarVista.getEscalaY(710),
-					EscalarVista.getEscalaX(80), EscalarVista.getEscalaY(altoBase));
+			if(altoBase>80) {
+			
+			overlay.setBounds(EscalarVista.getEscalaX(275), EscalarVista.getEscalaY(506),
+					EscalarVista.getEscalaX(153), EscalarVista.getEscalaY(altoBase));
+			}else {
+				overlay.setBounds(EscalarVista.getEscalaX(350), EscalarVista.getEscalaY(710),
+						EscalarVista.getEscalaX(80), EscalarVista.getEscalaY(altoBase));
+			}
 		} else {
-			overlay.setBounds(EscalarVista.getEscalaX(1200), EscalarVista.getEscalaY(740),
-					EscalarVista.getEscalaX(80), EscalarVista.getEscalaY(altoBase));
+			if(altoBase>80) {
+			overlay.setBounds(EscalarVista.getEscalaX(1755), EscalarVista.getEscalaY(506),
+					EscalarVista.getEscalaX(153), EscalarVista.getEscalaY(altoBase));
+			}else {
+				overlay.setBounds(EscalarVista.getEscalaX(1200), EscalarVista.getEscalaY(740),
+						EscalarVista.getEscalaX(80), EscalarVista.getEscalaY(altoBase));
+			}
 		}
 		overlay.setIcon(EscalarVista.getImagenEscalada(icono, overlay.getWidth(), overlay.getHeight()));
 
@@ -656,6 +676,8 @@ public class ControllerInterfaz implements JuegoListener {
 
 		return s;
 	}
+	
+	
 
 	@Override
 	public void alRecogerColeccionable(Coleccionable coleccionable) {

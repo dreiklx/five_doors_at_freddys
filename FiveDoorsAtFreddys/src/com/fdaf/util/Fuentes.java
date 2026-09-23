@@ -24,13 +24,13 @@ public class Fuentes {
 
 	// Uso normal -- cubre todos los textos del proyecto salvo uno.
 	public static Font obtener(int tamano) {
-		return new Font(FAMILIA_REAL, Font.PLAIN, tamano);
+		return new Font(FAMILIA_REAL, Font.PLAIN, EscalarVista.getEscalaX(EscalarVista.getEscalaY(tamano)));
 	}
 
 	// Único caso real con estilo distinto a PLAIN: el título de
 	// PnlGameOver ("GAME OVER") usa BOLD. Se expone el estilo como
 	// parámetro opcional en vez de forzarlo a PLAIN o duplicar la clase.
 	public static Font obtener(int tamano, int estilo) {
-		return new Font(FAMILIA_REAL, estilo, tamano);
+		return new Font(FAMILIA_REAL, estilo, EscalarVista.getEscalaX(EscalarVista.getEscalaY(tamano)));
 	}
 }
