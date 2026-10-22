@@ -101,11 +101,17 @@ public class PnlMenu extends JPanel {
 		btnOpciones.setBounds(227, 631, 458, 88);
 		pnlMenu.add(btnOpciones);
 
-		// Opciones secundarias (CLAUDE.md §1.34): mismo estilo que el resto
-		// pero más pequeñas, para no competir con Nueva Partida/Continuar/
-		// Opciones; terminan en y=838, por encima de la versión (y=865).
-		btnComoJugar = crearBotonSecundario(724);
-		btnAcercaDe = crearBotonSecundario(784);
+		// Navegación secundaria (CLAUDE.md §1.36): "Cómo jugar" y "Acerca del
+		// proyecto" van en una fila al pie, alineada con la columna de los
+		// botones principales y a la altura de la versión -- informativas,
+		// claramente por debajo de Nueva Partida/Continuar/Opciones. La
+		// posición se calcula en ubicarNavegacionSecundaria().
+		btnComoJugar = crearBotonSecundario();
+		btnAcercaDe = crearBotonSecundario();
+		lblSeparadorNav = new JLabel("·", SwingConstants.CENTER);
+		lblSeparadorNav.setForeground(COLOR_NAV_SECUNDARIA);
+		lblSeparadorNav.setFont(Fuentes.obtener(30));
+		pnlMenu.add(lblSeparadorNav);
 		
 		// Tamaño derivado del texto real de los botones (no un número
 		// fijo) -- mantiene la misma proporción visual (~0.77) que ya
@@ -186,8 +192,14 @@ public class PnlMenu extends JPanel {
 	public JButton getBtnComoJugar() { return btnComoJugar; }
 	public JButton getBtnAcercaDe() { return btnAcercaDe; }
 
-	// El texto lo fija ControllerMenu.actualizarTextosIdioma().
-	private JButton crearBotonSecundario(int y) {
+	private static final Color COLOR_NAV_SECUNDARIA = new Color(185, 185, 195);
+	private static final Color COLOR_NAV_HOVER = new Color(98, 96, 255); // violeta de NYDER
+	private JLabel lblSeparadorNav;
+
+	// El texto lo fija ControllerMenu.actualizarTextosIdioma(); la posición,
+	// ubicarNavegacionSecundaria(). Hover: resaltado violeta (sin la flecha
+	// ">>", que es de los botones principales).
+	private JButton crearBotonSecundario() {
 		JButton boton = new JButton();
 		boton.setHorizontalAlignment(SwingConstants.LEFT);
 		boton.setOpaque(false);
@@ -195,12 +207,46 @@ public class PnlMenu extends JPanel {
 		boton.setContentAreaFilled(false);
 		boton.setBorderPainted(false);
 		boton.setBorder(null);
-		boton.setFont(Fuentes.obtener(45));
-		boton.setForeground(Color.WHITE);
-		boton.setBounds(227, y, 640, 54);
+		boton.setFont(Fuentes.obtener(30));
+		boton.setForeground(COLOR_NAV_SECUNDARIA);
+		boton.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+		boton.addMouseListener(new java.awt.event.MouseAdapter() {
+			@Override
+			public void mouseEntered(java.awt.event.MouseEvent e) {
+				boton.setForeground(COLOR_NAV_HOVER);
+			}
+
+			@Override
+			public void mouseExited(java.awt.event.MouseEvent e) {
+				boton.setForeground(COLOR_NAV_SECUNDARIA);
+			}
+		});
 		pnlMenu.add(boton);
 		return boton;
 	}
+
+	// Coloca la fila secundaria con las coordenadas YA escaladas de los
+	// elementos que la enmarcan: empieza en la x de los botones principales
+	// y comparte el centro vertical de la versión. Los anchos salen del
+	// texto real, así que sirve para ambos idiomas; se llama después de
+	// adaptarMenu() y cada vez que cambia el idioma.
+	public void ubicarNavegacionSecundaria() {
+		int alto = EscalarVista.getEscalaY(40);
+		int y = lblVersion.getY() + lblVersion.getHeight() / 2 - alto / 2;
+		int separacion = EscalarVista.getEscalaX(18);
+		int finComoJugar = colocarEnFila(btnComoJugar, btnNuevaPartida.getX(), y, alto);
+		int anchoSeparador = lblSeparadorNav.getFontMetrics(lblSeparadorNav.getFont()).stringWidth("·") + 2 * separacion;
+		lblSeparadorNav.setBounds(finComoJugar, y, anchoSeparador, alto);
+		colocarEnFila(btnAcercaDe, finComoJugar + anchoSeparador, y, alto);
+	}
+
+	private static int colocarEnFila(JButton boton, int x, int y, int alto) {
+		int ancho = boton.getFontMetrics(boton.getFont()).stringWidth(boton.getText()) + 4;
+		boton.setBounds(x, y, ancho, alto);
+		return x + ancho;
+	}
+
+	public JLabel getLblSeparadorNav() { return lblSeparadorNav; }
 	// Se consume una sola vez (EscalarVista.adaptarMenu): devuelve el icono
 	// original y suelta la referencia, para no retener el PNG de 1254px.
 	public ImageIcon tomarLogoNyderOriginal() {

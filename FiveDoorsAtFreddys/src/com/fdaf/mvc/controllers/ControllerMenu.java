@@ -154,7 +154,42 @@ public class ControllerMenu {
 
 	private void mostrarAdvertenciaInicial() {
 		advertenciaActiva = true;
+		mostrarSelectorIdioma();
+	}
+
+	// Único punto que cambia el idioma: lo usan Opciones > Idioma y el
+	// selector inicial (§1.35). Fija la preferencia, refresca todos los
+	// textos del menú y la persiste en config.properties.
+	private void cambiarIdioma(Idioma idioma) {
+		PreferenciasJuego.idiomaSeleccionado = idioma;
+		actualizarTextosIdioma();
+		com.fdaf.util.PersistenciaJuego.guardar();
+	}
+
+	// Selector de idioma (CLAUDE.md §1.35): primer paso del inicio normal,
+	// antes de NYDER, para que la advertencia, la introducción y el menú ya
+	// se construyan en el idioma elegido. El reinicio interno no pasa por
+	// aquí (init() va directo al menú). Sin timers: espera al jugador.
+	private boolean selectorIdiomaActivo = false;
+
+	private void mostrarSelectorIdioma() {
+		selectorIdiomaActivo = true;
+		com.fdaf.mvc.views.frames.pnl.PnlSelectorIdioma pantalla = new com.fdaf.mvc.views.frames.pnl.PnlSelectorIdioma(
+				menu.getLblLogoNyder().getIcon(), PreferenciasJuego.idiomaSeleccionado, this::aplicarIdiomaInicial);
+		vp.setContenido(pantalla);
+	}
+
+	private void aplicarIdiomaInicial(Idioma idioma) {
+		if (!selectorIdiomaActivo) {
+			return;
+		}
+		selectorIdiomaActivo = false;
+		cambiarIdioma(idioma);
 		mostrarPresentacionNyder();
+	}
+
+	public boolean isSelectorIdiomaActivo() {
+		return selectorIdiomaActivo;
 	}
 
 	private void mostrarPresentacionNyder() {
@@ -331,6 +366,10 @@ public class ControllerMenu {
 		if (!advertenciaActiva) {
 			return;
 		}
+		// El idioma tiene que elegirse: CTRL+S no salta el selector.
+		if (selectorIdiomaActivo) {
+			return;
+		}
 		if (timerAdvertenciaActual != null && timerAdvertenciaActual.isRunning()) {
 			timerAdvertenciaActual.stop();
 		}
@@ -486,8 +525,8 @@ public class ControllerMenu {
 		InteraccionBoton.aplicarHoverYSonido(menu.getBtnContinuar(), menu.getLbl(), 30, menu.getLblNocheActual());
 		InteraccionBoton.aplicarHoverYSonido(menu.getBtnNuevaPartida(), menu.getLbl(), 30);
 		InteraccionBoton.aplicarHoverYSonido(menu.getBtnOpciones(), menu.getLbl(), 30);
-		InteraccionBoton.aplicarHoverYSonido(menu.getBtnComoJugar(), menu.getLbl(), 30);
-		InteraccionBoton.aplicarHoverYSonido(menu.getBtnAcercaDe(), menu.getLbl(), 30);
+		InteraccionBoton.aplicarHoverYSonido(menu.getBtnComoJugar());
+		InteraccionBoton.aplicarHoverYSonido(menu.getBtnAcercaDe());
 
 		InteraccionBoton.aplicarHoverYSonido(menu.getPnlConfirmacion().getBtnConfirmar(), menu.getPnlConfirmacion().getLblFlecha(), 0);
 		InteraccionBoton.aplicarHoverYSonido(menu.getPnlConfirmacion().getBtnCancelar(), menu.getPnlConfirmacion().getLblFlecha(), 0);
@@ -526,6 +565,8 @@ public class ControllerMenu {
 		menu.getBtnOpciones().setText(ingles ? "Options" : "Opciones");
 		menu.getBtnComoJugar().setText(TextosInfo.menuComoJugar());
 		menu.getBtnAcercaDe().setText(TextosInfo.menuAcercaDe());
+		// Los anchos de la fila secundaria dependen del idioma (§1.36).
+		menu.ubicarNavegacionSecundaria();
 		opciones.getLblTitulo().setText(ingles ? "Options" : "Opciones");
 		opciones.getBtnIdioma().setText(ingles ? "Language" : "Idioma");
 		opciones.getBtnCustomNight().setText("Custom Night");
@@ -580,17 +621,8 @@ public class ControllerMenu {
 		menu.getBtnComoJugar().addActionListener(e -> abrirComoJugar());
 		menu.getBtnAcercaDe().addActionListener(e -> abrirAcercaDe());
 
-		pantallaIdioma.getBtnEspanol().addActionListener(e -> {
-			PreferenciasJuego.idiomaSeleccionado = Idioma.ESPANOL;
-			actualizarTextosIdioma();
-			com.fdaf.util.PersistenciaJuego.guardar();
-		});
-
-		pantallaIdioma.getBtnIngles().addActionListener(e -> {
-			PreferenciasJuego.idiomaSeleccionado = Idioma.INGLES;
-			actualizarTextosIdioma();
-			com.fdaf.util.PersistenciaJuego.guardar();
-		});
+		pantallaIdioma.getBtnEspanol().addActionListener(e -> cambiarIdioma(Idioma.ESPANOL));
+		pantallaIdioma.getBtnIngles().addActionListener(e -> cambiarIdioma(Idioma.INGLES));
 
 		opciones.getBtnIdioma().addActionListener(e -> vp.setContenido(pantallaIdioma));
 		pantallaIdioma.getBtnAtras().addActionListener(e -> vp.setContenido(opciones));

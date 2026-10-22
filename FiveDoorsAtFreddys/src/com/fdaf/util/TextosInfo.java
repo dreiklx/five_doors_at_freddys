@@ -34,6 +34,19 @@ public final class TextosInfo {
 	public static String menuComoJugar() { return t("Cómo jugar", "How to Play"); }
 	public static String menuAcercaDe() { return t("Acerca del proyecto", "About the Project"); }
 
+	/* ===================== Selector de idioma (§1.35) ===================== */
+
+	// Aquí el idioma todavía no está elegido: el título se pide para el
+	// idioma de la opción resaltada, no para la preferencia guardada.
+	public static String tituloSelectorIdioma(Idioma idioma) {
+		return idioma == Idioma.INGLES ? "Choose your language" : "Elige tu idioma";
+	}
+
+	// Cada idioma se nombra en su propio idioma (endónimo), como es habitual.
+	public static String nombreIdioma(Idioma idioma) {
+		return idioma == Idioma.INGLES ? "English" : "Español";
+	}
+
 	/* ===================== Introducción inicial ===================== */
 
 	public static String[] introTitulos() {

@@ -222,6 +222,18 @@ public class CargarImagenes {
 		// dentro del bloque estático). PnlWarning ya verifica null antes de
 		// dibujar, así que sin el archivo solo se ve un fondo negro, no un
 		// crash.
+		// Advertencia inicial en español (CLAUDE.md §1.35): "warning" es la
+		// versión en inglés. Se carga solo si se usa (mismo criterio lazy que
+		// los respaldos de gifs de §1.13), una vez por proceso.
+		private static ImageIcon advertenciaEspanol;
+
+		public static ImageIcon getAdvertenciaEspanol() {
+			if (advertenciaEspanol == null) {
+				advertenciaEspanol = cargarImagenSegura("/images/fondos/advertencia_fdaf.png");
+			}
+			return advertenciaEspanol;
+		}
+
 		private static ImageIcon cargarImagenSegura(String ruta) {
 			java.net.URL url = CargarImagenes.class.getResource(ruta);
 			if (url == null) {

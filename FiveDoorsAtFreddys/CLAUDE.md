@@ -1617,6 +1617,46 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 
 **Archivos:** `PnlInfo.java`, `TextosInfo.java`, `PnlMenu.java`, `EscalarVista.java` (`adaptarMenu`), `ControllerMenu.java`.
 
+### 1.35 Selector de idioma al inicio y advertencia por idioma, sesión 2026-10-22 (v2.4)
+
+**Estado de partida verificado:** HEAD `aea8895` (v2.3), sincronizado con `origin/master`; working tree con el WIP ajeno de siempre (`.classpath`/`Main.java` FlatLaf, `Juego.java` baterías, `src/libs/`, carpeta `if3001…`, 3 PNG extra de `nyder/`) más dos cambios gráficos ajenos nuevos: `NYDER.png` rediseñado ("NYDER GAMES", mismo tamaño 2172×724, modificado 10:51) y **`images/fondos/advertencia_fdaf.png` sin seguimiento** (la advertencia en español, 1672×941, creada 11:05).
+
+**Hallazgo que condicionó el diseño:** la advertencia inicial es una imagen y solo existía en inglés (`warning_fdaf.png`, "WARNING! This game contains…"). Para cumplir "la advertencia en español", se usa `advertencia_fdaf.png` ("¡ADVERTENCIA! Este juego contiene…"), que apareció en el working tree justo para esto. **Decisión deliberada y documentada:** es el único archivo ajeno que se incluye en el commit, porque la funcionalidad pedida lo necesita y generar el texto por código duplicaría un recurso que ya existe. El `NYDER.png` rediseñado **no** se incluye (es una imagen, no afecta al idioma; queda para su autor).
+
+**Flujo de inicio normal:** **selector de idioma** → NYDER → advertencia → introducción → menú. `mostrarAdvertenciaInicial()` ahora abre `mostrarSelectorIdioma()`; al elegir, `aplicarIdiomaInicial()` → `cambiarIdioma(idioma)` → `mostrarPresentacionNyder()`. Como la advertencia (`new PnlWarning()`), la introducción, "Cómo jugar" y "Acerca de" se construyen DESPUÉS de elegir, todas nacen ya en el idioma elegido (nunca se ve una pantalla en un idioma que después cambia). El reinicio interno (`--reinicio-interno`: ganar 1-4, perder, rendirse, volver de Escape; `ControllerMenu(true)`) sigue yendo directo al menú sin selector, NYDER ni introducción.
+
+**Un solo mecanismo de idioma:** `cambiarIdioma(Idioma)` (nuevo) es ahora el único punto que cambia el idioma: asigna `PreferenciasJuego.idiomaSeleccionado`, llama a `actualizarTextosIdioma()` (refresca menú, opciones, idioma, volumen, Custom Night) y `PersistenciaJuego.guardar()` (`~/.fivedoorsatfreddys/config.properties`). Lo usan el selector y los botones de Opciones > Idioma, que antes repetían esos tres pasos cada uno. `PnlWarning()` elige `CargarImagenes.getAdvertenciaEspanol()` (nuevo, carga diferida) si el idioma es español y `CargarImagenes.warning` si es inglés (o si faltara la española).
+
+**Pantalla (`PnlSelectorIdioma`, nueva):** mismo lenguaje visual que `PnlInfo`: fondo = GIF animado del menú oscurecido, logo de NYDER (icono ya escalado del menú), título en negrita, y dos opciones grandes (fuente 60) centradas una junto a la otra, cada una con su endónimo ("Español", "English"). La opción resaltada al entrar es el idioma guardado (blanco + subrayado violeta; la otra en gris). Pasar el cursor por una opción la resalta y el título cambia a ese idioma ("Elige tu idioma" / "Choose your language"); un clic elige y continúa sin confirmación. Teclado: ←/→ y Enter. Un flag impide que un doble clic dispare la secuencia dos veces. CTRL+S no salta el selector (el idioma hay que elegirlo) y ESC no hace nada. Disposición en `doLayout()` relativa al tamaño real. Textos en `TextosInfo` (`tituloSelectorIdioma(Idioma)`, `nombreIdioma(Idioma)`), que aquí reciben el idioma explícito porque todavía no está elegido.
+
+**Pruebas reales** (`ControllerMenu.init()` real, ventana real, `-Duser.home` aislado con `config.properties` propio; `PersistenciaJuego.cargar()` como hace `Main`):
+- Preferencia guardada ESPANOL → el selector abre resaltando Español con "Elige tu idioma"; con INGLES guardado abre resaltando English con "Choose your language".
+- CTRL+S en el selector: no cambia de pantalla. Hover sobre la otra opción: cambia resaltado y título.
+- **Elegir INGLES:** preferencia en memoria y en el archivo = `INGLES`; NYDER → advertencia con la imagen inglesa (1080 px) → BEFORE YOU BEGIN / HOW IT WORKS / ONE LAST TIP con Next/Skip/Go to Menu → menú New Game / Continue / Options / How to Play / About the Project; Opciones "Options"/"Exit Game"; Cómo jugar "Nights … Back to Menu"; Acerca "ABOUT THE PROJECT". Luego Opciones > Idioma > Español: archivo `ESPANOL`, menú y Cómo jugar en español.
+- **Elegir ESPANOL:** lo mismo en español, con la imagen de advertencia española (1672 px); luego el cambio a inglés desde Opciones también funciona.
+- Reinicio interno (`ControllerMenu(true)`): menú directo, sin selector.
+- Capturas del selector en 1920×1080, 1920×1440 (4:3) y 2520×1080 (21:9): composición centrada, sin cortes.
+- *No verificado:* un reinicio de proceso real de punta a punta en esta sesión (sí probado en §1.20/§2.38 y el código de `ReiniciadorJuego`/`Main` no cambió); interacción con teclado/ratón físicos.
+
+**Archivos:** `PnlSelectorIdioma.java` (nuevo), `ControllerMenu.java`, `PnlWarning.java`, `CargarImagenes.java`, `TextosInfo.java`, `resources/images/fondos/advertencia_fdaf.png` (recurso ajeno incluido deliberadamente).
+
+### 1.36 Menú: "Cómo jugar" y "Acerca del proyecto" pasan a una fila de navegación secundaria al pie, sesión 2026-10-22 (v2.4)
+
+**Problema:** en §1.34 los dos botones se apilaban bajo Opciones (fuente 45, y=724/784 base), con la misma flecha `>>` que los principales: visualmente competían con Nueva Partida/Continuar/Opciones y parecían añadidos.
+
+**Nueva jerarquía:** los tres botones principales (fuente 75) quedan solos en su columna. "Cómo jugar · Acerca del proyecto" va en una **fila al pie**: empieza en la misma x que la columna principal y comparte el centro vertical de la versión (esquina inferior izquierda), con el logo de NYDER en la esquina opuesta -- un pie de página de tres elementos. Fuente 30, gris tenue (185,185,195), separador "·", resaltado violeta de NYDER al pasar el cursor + el mismo sonido de hover; sin la flecha `>>` (que se diseñó para los botones de 75). Siguen siendo botones de tamaño legible (36 px en 1080p) y con cursor de mano.
+
+**Implementación:** `PnlMenu.ubicarNavegacionSecundaria()` coloca la fila con las coordenadas ya escaladas por `adaptarMenu` (x de `btnNuevaPartida`, centro de `lblVersion`, separación con `EscalarVista.getEscalaX`) y el ancho real del texto, así que se adapta al idioma; `ControllerMenu.actualizarTextosIdioma()` la llama después de fijar los textos (al iniciar y en cada cambio de idioma). Se quitó de `adaptarMenu` el escalado de §1.34 para estos dos botones (ya no tienen bounds base fijos).
+
+**Verificación:**
+- *Captura* del `PnlMenu` real sobre el primer cuadro real de `Menu.gif` (1920×1080), ES y EN, con detección automática de solapes entre todos los componentes visibles y de textos de botón desbordados: ninguno. Composición: columna principal intacta, fila al pie alineada con ella y con la línea base de la versión.
+- *Cálculo* (no captura: el escalado del menú depende del monitor físico, no del tamaño del panel) con la misma fórmula del código y métricas reales de Consolas al tamaño escalado, para 1280×720, 1366×768, 1600×900, 1920×1080, 2560×1440, 3840×2160 (16:9), 1280×1024 (5:4), 1920×1440 (4:3), 2560×1080 y 3440×1440 (21:9), en ES y EN: la fila nunca toca la versión (hueco ≥110 px) ni el logo (≥561 px) y queda dentro de pantalla.
+- *Flujo real*: "Cómo jugar" y "Acerca del proyecto" abren sus pantallas y vuelven al menú (ver pruebas de §1.35 repetidas con este layout).
+
+**Versión:** `Version.MENOR` 3 → 4, el menú muestra **v 2.4**. Este commit agrupa §1.35 y §1.36 (una sola publicación, una sola subida de versión).
+
+**Archivos:** `PnlMenu.java`, `EscalarVista.java` (`adaptarMenu`), `ControllerMenu.java`, `Version.java`.
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos

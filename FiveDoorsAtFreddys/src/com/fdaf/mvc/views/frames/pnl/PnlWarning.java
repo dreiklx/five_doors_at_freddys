@@ -11,6 +11,8 @@ import java.awt.RenderingHints;
 import javax.swing.JPanel;
 
 import com.fdaf.util.CargarImagenes;
+import com.fdaf.util.Idioma;
+import com.fdaf.util.PreferenciasJuego;
 
 // Pantalla de advertencia inicial -- lo primero que ve el jugador, antes
 // del menú. Mismo mecanismo que PnlGameOver/PnlWin: paintComponent
@@ -27,8 +29,17 @@ public class PnlWarning extends JPanel {
 		setOpaque(true);
 		setLayout(null);
 
-		if (CargarImagenes.warning != null) {
-			this.imagenAdvertencia = CargarImagenes.warning.getImage();
+		// La advertencia se elige según el idioma vigente al construir el
+		// panel -- que ahora ocurre después del selector de idioma (§1.35),
+		// así que nunca aparece en un idioma y luego cambia. Si faltara la
+		// versión en español, se usa la inglesa.
+		javax.swing.ImageIcon imagen = (PreferenciasJuego.idiomaSeleccionado == Idioma.ESPANOL)
+				? CargarImagenes.getAdvertenciaEspanol() : null;
+		if (imagen == null) {
+			imagen = CargarImagenes.warning;
+		}
+		if (imagen != null) {
+			this.imagenAdvertencia = imagen.getImage();
 		}
 	}
 
