@@ -1505,6 +1505,19 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 
 **Commiteado y pusheado a `five_doors_escape`:** `GameplayScreen.java`.
 
+### 1.28 Estabilidad de memoria re-verificada, distribución portable reconstruida y probada, y hallazgo (no corregido) de intermitencia del video de victoria, sesión 2026-10-22
+
+**1. Prueba de estrés real de una noche larga (FDAF, `-Xmx256m`).** Arnés sobre `ControllerInterfaz`/`ControllerCamara` reales, 200 ciclos de puerta (abrir → luz → revelar animatrónico/coleccionable/batería → apagar → liberar → cerrar), con GIFs de puerta y de jumpscare, fade desde negro, respiración y sonidos reales. Medición cada 40 ciclos tras forzar GC (`jmap -histo:live` para `DirectClip`): heap vivo 68→104-134MB (oscila, sin tendencia), hilos 16→24-28, **"Image Animator" se estabiliza en 11** (uno por GIF distinto, por el caché `ultimaImagenPorRuta`+`flush()` de §1.7) y **`Clip` vivos 3-4**. Sin fuga ni acumulación con el código actual (incluido el cambio del compañero).
+
+**2. Distribución portable: estaba desactualizada y se reconstruyó.** `C:\FiveDoorsPortableTest` es del 2026-08-10 14:43, anterior a 12 commits de Escape (Golden Freddy, interacción E, etc.), al commit del compañero y a las correcciones de hoy. Reconstruida con `build-distribucion.bat` desde un `git worktree` limpio en HEAD `1364627` (sin el WIP ajeno, criterio de §1.21; **gotcha repetido**: invocar el `.bat` siempre con ruta completa). Verificado dentro de los jars que llevan el código actual (`Fuentes.escalar`, imágenes nuevas, `GoldenFreddy.glb`/`ItsMe.gif`, y el `dispose()` de §2.47 por `javap`). Copiada a **`C:\FiveDoorsPortable_2026-10-22\`** -- no se pudo borrar/reemplazar `C:\FiveDoorsPortableTest` (protección de la herramienta contra borrados recursivos; queda para que el usuario la borre a mano, igual que la carpeta vacía `C:\VidFresco` de las pruebas de video). Pruebas reales desde la carpeta nueva, runtime y jar del paquete y `-Duser.home` aislado:
+   - Noche 1 ganada (`alGanar()` real) → proceso viejo muerto, nuevo con `--reinicio-interno` y el runtime embebido; progreso `NOCHE_2` guardado.
+   - Noche 5 ganada → `[ESCAPE] Usando distribucion empaquetada: ...\FiveDoorsEscape\lwjgl3`, Escape con su JDK 21 embebido, 10912 colisionadores, RUN + risa de Freddy, `escapeDesbloqueado=true`. Al cerrar Escape, el Swing original murió y apareció uno nuevo (reinicio de §2.38). Sin procesos huérfanos; `config.properties` real del usuario intacto (`NOCHE_5`/`INGLES`/`escapeDesbloqueado=true`).
+   - **Metodología:** el proceso reiniciado NO hereda `-Duser.home` (ReiniciadorJuego solo pasa classpath) -- en pruebas aisladas hay que matarlo enseguida; en producción no aplica.
+
+**3. Hallazgo: el video de victoria (`ganar_fdaf.mp4`, JavaFX) falla de forma intermitente con `MediaException ERROR_MEDIA_INVALID`.** Apareció en la primera corrida desde la distribución. **Hipótesis "JavaFX 8 no reproduce MP4 desde `jar:`" descartada con evidencia:** el mismo jar reprodujo bien muchas veces después. Se implementó copiar el video a un temporal y reproducir desde `file:`, y se comparó sobre 5 copias frescas del jar cada uno: HEAD 5/5 bien, **fix 4/5 (también falló una vez desde `file:`)**. Conclusión: intermitencia del backend GStreamer de JavaFX en esta máquina, independiente del origen del archivo (~1 de cada 5-8 arranques observados). **El cambio se revirtió** (no ataca la causa). Impacto: `PnlWin.reproducirVideo` ya maneja `setOnError` llamando a `alTerminar`, así que la partida sigue (se salta el video, no se cuelga) -- verificado en la corrida de Noche 1. **Pendiente** si se quiere eliminar: investigar GStreamer/JavaFX o reintentar una vez (decisión del usuario).
+
+**Sin cambios de código en esta sección.**
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos
