@@ -57,6 +57,21 @@ public class PnlWarning extends JPanel {
 			}
 			g2.dispose();
 		}
+		if (alPrimerPintado != null && isShowing()) {
+			Runnable accion = alPrimerPintado;
+			alPrimerPintado = null;
+			javax.swing.SwingUtilities.invokeLater(accion);
+		}
+	}
+
+	// Se ejecuta una sola vez, cuando este panel se pinta por primera vez
+	// ya visible en pantalla. La ventana tarda ~400ms en pintarse después
+	// de setVisible(true): arrancar un fade antes de eso lo hace invisible
+	// para el jugador (causa raíz del fade in de NYDER, CLAUDE.md §1.31).
+	private Runnable alPrimerPintado;
+
+	public void alPrimerPintado(Runnable accion) {
+		this.alPrimerPintado = accion;
 	}
 
 	private void dibujarCentrada(Graphics2D g2) {

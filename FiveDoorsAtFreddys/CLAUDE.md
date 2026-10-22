@@ -1554,6 +1554,68 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 
 **Archivos:** `PnlMenu.java`, `EscalarVista.java` (`adaptarMenu`), `resources/images/nyder/NYDER-logo.png`.
 
+### 1.31 El fade in de NYDER no se veía -- causa raíz: arrancaba antes de que la ventana se pintara, sesión 2026-10-22
+
+**Síntoma (reportado por el usuario jugando):** se percibía el fade out de NYDER pero no una entrada gradual.
+
+**Causa raíz, medida (no supuesta):** `ControllerMenu.init()` llama a `mostrarAdvertenciaInicial()` (que arranca el fade) **antes** de `vp.init()` (`setVisible(true)`), y la ventana maximizada tarda ~400ms más en pintarse. Sonda en ejecución real (muestreo cada 10ms del alpha + `AWTEventListener` del primer `PaintEvent` de la ventana): con §1.29, el fade in completo ocurría entre 1937ms y 2329ms, y **el primer pintado real fue a los 2362ms** -- la imagen aparecía ya al 100%. La advertencia no tiene el problema porque arranca cuando la ventana ya está en pantalla.
+
+**Corrección:** `PnlWarning.alPrimerPintado(Runnable)` ejecuta una acción una sola vez, cuando el panel se pinta por primera vez estando visible. NYDER ya no arranca al crearse el panel sino ahí: 250ms de negro + 800ms de entrada + 1300ms visible + 650ms de salida (= 3.0s, misma duración total que antes). Un `Timer` de respaldo de 1500ms arranca la secuencia si el pintado nunca llegara; `entradaNyderIniciada` garantiza que solo una de las dos vías la inicie, y la presentación no arranca si CTRL+S ya la saltó. Los timers siguen pasando por `timerAdvertenciaActual` (uno a la vez). La advertencia no cambió.
+
+**Pruebas reales (ventana real, `-Duser.home` aislado):**
+- Sonda: primer pintado a 1915ms; NYDER en alpha 0 hasta ~2170ms, entrada 0.1→1.0 en 10 escalones entre 2238ms y 2938ms (**toda después del pintado**), visible, salida, advertencia.
+- Tira de fotogramas reales del panel durante la animación (alpha 0.00 / 0.34 / 0.71 / 1.00 / salida 0.47): entrada gradual visible, imagen centrada sin deformar.
+- CTRL+S durante la fase negra: advertencia completa una sola vez → menú; no aparece ningún fade de NYDER tardío.
+
+**Archivos:** `PnlWarning.java`, `ControllerMenu.java`.
+
+### 1.32 Política de versiones -- REGLA PERMANENTE para todo commit publicado, sesión 2026-10-22
+
+**Fuente única de verdad:** `com.fdaf.util.Version` (`MAYOR`, `MENOR`, `texto()` → `"v 2.2"`, mismo formato que ya mostraba el menú). `PnlMenu.lblVersion` usa `Version.texto()`; no hay ninguna otra constante de versión en el repo (verificado con `git grep`).
+
+**Regla (la propuesta por el usuario, adoptada tal cual):**
+- Cada commit que se publica a `origin/master` sube `MENOR` en 1: `v2.1 → v2.2 → v2.3 → … → v2.100`.
+- Después de `v2.100` viene `v3.1`: `MAYOR` sube en 1 y `MENOR` vuelve a **1** (nunca a 0).
+- Si una tarea necesita varios commits publicados, cada uno sube la versión una vez. Commits que solo tocan documentación también cuentan si se publican (la regla es "por commit publicado", sin excepciones, para que no haga falta decidir caso por caso).
+- El cambio de versión va en el mismo commit que el trabajo que publica, no en uno aparte.
+
+**Por qué no SemVer (`MAYOR.MENOR.PARCHE`):** se evaluó. SemVer exige decidir en cada commit si es incompatible/funcionalidad/corrección, y su valor está en comunicar compatibilidad a quien depende de una API -- este juego no tiene consumidores de API. La regla del usuario es mecánica (no requiere juicio), da un número que crece con cada publicación y es fácil de verificar en revisión. No se encontró una ventaja real que justificara cambiarla.
+
+**Estado de partida verificado:** HEAD `f6e9596` e índice tenían `"v 2.1"`; el working tree tenía `"v 2.7"`, que era el WIP ajeno ya documentado (§1.17, §1.25, §1.30) y no una versión publicada. Este commit publica **v2.2**. La línea de versión era la misma que tocaba ese WIP: se reemplazó por `Version.texto()` también en el working tree (la nueva política sustituye a ese número), y es el único cambio aplicado sobre trabajo ajeno; el resto del WIP (FlatLaf, `.classpath`, `Juego.java`, `src/libs/`) sigue intacto y fuera del commit.
+
+**Archivos:** `Version.java` (nuevo), `PnlMenu.java`.
+
+### 1.33 Introducción informativa después de la advertencia, sesión 2026-10-22
+
+**Flujo de inicio normal:** NYDER (§1.29/§1.31) → advertencia (sin cambios) → **introducción** → menú. `finalizarAdvertenciaYMostrarMenu()` ahora llama a `mostrarIntroduccion()`; el menú (y su música, como siempre) llega desde `cerrarIntroduccion()`, único cierre de la introducción ("Omitir", "Ir al menú" en la última pantalla o CTRL+S). El reinicio interno de proceso (`--reinicio-interno`: ganar 1-4, perder, rendirse, volver de Escape) sigue yendo directo al menú, así que la introducción aparece una sola vez por apertura del juego; se puede releer en "Cómo jugar". ESC no hace nada en la introducción (igual que en la advertencia). No usa timers: avanza solo con los botones.
+
+**Pantallas (3):** ANTES DE EMPEZAR (fan-made, no es el original, experiencia propia), CÓMO SE JUEGA (resumen real: oficina con dos puertas, objetivo = todos los coleccionables de la noche antes de quedarse sin baterías, mirar con el ratón en los bordes, DOOR/LIGHT, abrir+luz revela, animatrónico = pierdes una batería, objeto = clic antes de que se cierre, tableta en la barra inferior, todo con ratón; remite a "Cómo jugar") y UN ÚLTIMO CONSEJO (completar la Noche 5, hay una sorpresa). **Decisión:** la introducción no nombra Escape para no revelar la sorpresa que la propia pantalla 3 promete; Escape se explica en "Cómo jugar" solo cuando ya está desbloqueado (§1.34).
+
+**Componente:** `PnlInfo` (nuevo), compartido por las tres pantallas nuevas -- fondo = el GIF animado del menú ya cargado (`CargarImagenes.menu`) oscurecido, tarjeta central translúcida con borde, título en negrita con línea de acento violeta de NYDER, cuerpo en HTML, navegación `Anterior` / indicador `n / N` / `Siguiente` (→ texto final en la última página), botón superior derecho (Omitir/Volver), pestañas opcionales. Fuentes con `Fuentes` (Consolas escalada). Disposición calculada en `doLayout()` a partir del tamaño real del panel (no pasa por `EscalarVista`). Hover: mismo sonido de los menús (`InteraccionBoton`) y resaltado en violeta. Una sola instancia, creada en `ControllerMenu.init()`.
+
+**Gotcha real encontrado y corregido:** un `JLabel` con HTML solo ajusta líneas si se le fija un ancho CSS, y Swing no lo interpreta como píxeles (medido: 400px CSS → 520px en pantalla) -- la primera versión cortaba el texto por la derecha. `doLayout()` ahora calibra el ancho midiendo el `getPreferredSize()` real y corrigiendo por la proporción observada (robusto ante otra escala de pantalla). Las miniaturas de prueba hechas con `Graphics2D.scale(1/3)` muestran solapes de negritas que NO existen a tamaño real (verificado con captura 1:1): no usar capturas escaladas para juzgar texto.
+
+**Archivos:** `PnlInfo.java` (nuevo), `TextosInfo.java` (nuevo), `ControllerMenu.java`.
+
+### 1.34 "Cómo jugar", "Acerca del proyecto" e internacionalización, sesión 2026-10-22
+
+**Menú:** dos botones secundarios nuevos en `PnlMenu` (`btnComoJugar`, `btnAcercaDe`; fuente 45 frente a 75 de los principales, y=724 y y=784 base, terminan en y=838, por encima de la versión en y=865; escalados en `adaptarMenu` igual que el resto), con la misma flecha `>>` y sonido de hover. Las opciones existentes no cambiaron.
+
+**"Cómo jugar" / "How to Play":** `PnlInfo` con 5 pestañas para ir directo a cada tema: Noches (5 noches, tabla real de baterías/coleccionables de `Noche`, condición de victoria/derrota, llamada que bloquea puertas y luces y botón MUTE CALL, progreso guardado, Continuar y Custom Night), Puertas y luces (DOOR/LIGHT, revelación con puerta abierta + luz, contenido variable, cierre automático, animatrónico = susto y una batería menos), Objetos (coleccionables con clic antes del cierre, inventario y descripción, silueta = falta / X = no existe esa noche, baterías extra cuando quedan pocas, máximo 4, Power left), Controles (todo con ratón; bordes, DOOR/LIGHT, clic en objeto, barra inferior = tableta, mantener la barra Rendirse ~2.5s, MUTE CALL; ESC solo en menús -- CTRL+G/P/S no se documentan porque son atajos de depuración), y la quinta pestaña: **Escape** si `PreferenciasJuego.escapeDesbloqueado` (WASD, ratón, CTRL linterna, E interactuar, ESC pausa; llave + puerta de salida, 3 vidas, perder una vida hace perder la llave, latidos de proximidad; se rejuega desde Opciones > Custom Night > ESCAPE -- verificado contra `GameplayScreen` de five_doors_escape) o, si no, **Noche 5** con el consejo y sin revelar nada. Golden Freddy no se menciona (secreto del modo). Cada afirmación se contrastó con `ControllerJuego`, `ControllerCamara`, `ControllerInterfaz`, `Noche`, `Juego` y la imagen real del botón `mutecall.png` ("MUTE CALL"). Volver: botón superior, "Volver al menú" en la última página o ESC.
+
+**"Acerca del proyecto" / "About the Project":** `PnlInfo` de una página con el logo de NYDER (el icono ya escalado del menú, no se recarga el PNG) y el texto pedido (proyecto académico de estudiantes de segundo año de Informática Empresarial, UCR, Recinto de Siquirres, Limón; fan-made inspirado en FNaF con experiencia distinta; recomendación de la Noche 5). **Java/Eclipse verificado:** todo el código de este repo es Java (Swing; JavaFX solo para el video de victoria, parte de Java 8) y es un proyecto Eclipse (`.project`/`.classpath`, sin Maven/Gradle); el texto dice "Todo el juego fue programado en Java, utilizando Eclipse IDE" -- habla de la programación, no de imágenes/audio, que no se hicieron en Java. FlatLaf (WIP ajeno sin commitear) es una biblioteca Java y no cambia la afirmación.
+
+**Internacionalización:** se reutiliza el idioma existente (`PreferenciasJuego.idiomaSeleccionado`, persistido). Los textos largos viven en `TextosInfo` (mismo patrón que `TipoColeccionable.getDescripcion(ingles)`), que lee el idioma en el momento de abrir cada pantalla, así que un cambio en Opciones > Idioma se refleja la próxima vez que se abre. Las etiquetas de los dos botones nuevos se fijan en `ControllerMenu.actualizarTextosIdioma()`, el punto único que ya actualizaba el menú al cambiar de idioma. Ningún texto nuevo está escrito en las clases visuales.
+
+**Pruebas (distinguidas por tipo):**
+- *Compilación:* árbol exacto a commitear desde cero con JDK 1.8.0_271 (ver §1.35).
+- *Medición automatizada:* las 3+5+5+1 páginas en ES y EN, en 1920×1080, 1920×1440 (4:3) y 2520×1080 (21:9) -- con alto 1080 la escala de fuente coincide con la real de esta pantalla, así que la medición es fiel. Comprueba ancho y alto del cuerpo, títulos, botones y pestañas: primero 50 desbordes (pestaña más larga) → fuente de pestañas 26→22; luego alto del cuerpo en 2 páginas densas → cuerpo 27→26; final **0 desbordes**.
+- *Capturas:* hojas de contacto de todas las páginas en ES/EN y capturas 1:1 (texto limpio, margen derecho correcto); menú sobre el fondo real con los botones nuevos en ES/EN, con detección automática de solapes entre todos los componentes visibles (ninguno) y de textos de botón desbordados (ninguno).
+- *Flujo real* (`ControllerMenu.init()`, ventana real, `-Duser.home` aislado), ES y EN: NYDER (0ms) → advertencia (~3.1s) → introducción 1/3 (~8.4s); ESC no hace nada en la introducción; Siguiente/Anterior/Siguiente/"Ir al menú" → menú con `introduccionActiva=false`; Omitir en 1/3 → menú; CTRL+S en 2/3 → menú y estable; menú muestra `v 2.2` y los textos en el idioma correcto; Cómo jugar → pestaña 4 → Siguiente → ESC → menú; Acerca → Volver → menú; botón superior de la guía → menú; Opciones → ESC → menú; CTRL+S en Acerca no hace nada. Con `--reinicio-interno` el menú aparece directo (sin NYDER ni introducción).
+- *No verificado:* interacción humana real con teclado/ratón físico (los clics se hicieron con `doClick()` y las acciones reales de ESC/CTRL+S del `InputMap`), y la apariencia en monitores con otra resolución física (solo calculada/medida con tamaños de panel equivalentes).
+
+**Archivos:** `PnlInfo.java`, `TextosInfo.java`, `PnlMenu.java`, `EscalarVista.java` (`adaptarMenu`), `ControllerMenu.java`.
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos
@@ -1566,3 +1628,4 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 6. **Los atajos CTRL+G/P/S del Proyecto 1 son intencionales** — no proponer eliminarlos como "limpieza".
 7. **En el Proyecto 2, respetar `Architecture.md` v1.0 como contrato** — no introducir abstracciones nuevas sin que una necesidad real ya identificada las justifique (§3.1 del propio documento). No expandir el alcance del MVP (§2.2, lista de exclusiones) sin aprobación explícita del usuario.
 8. **El usuario prefiere iteración incremental con verificación en cada paso**, tanto en el Proyecto 1 (rondas de auditoría→propuesta→implementación→confirmación) como en el plan del Proyecto 2 (no avanzar de paso sin confirmar el anterior). Mantener ese ritmo — no adelantar varios pasos a la vez.
+9. **Versión (desde 2026-10-22, §1.32):** todo commit publicado de `five_doors_at_freddys` sube `MENOR` en `com.fdaf.util.Version` (v2.1→v2.2→…→v2.100→v3.1). Única fuente de verdad: esa clase.

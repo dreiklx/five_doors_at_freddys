@@ -269,8 +269,14 @@ public class EscalarVista {
 				getEscalaX(btnNuevaPartida.getWidth()), getEscalaY(btnNuevaPartida.getHeight()));
 
 		menu.getBtnOpciones().setBounds(
-				getEscalaX(btnOpciones.getX()), getEscalaY(btnOpciones.getY()), 
+				getEscalaX(btnOpciones.getX()), getEscalaY(btnOpciones.getY()),
 				getEscalaX(btnOpciones.getWidth()), getEscalaY(btnOpciones.getHeight()));
+
+		for (JButton secundario : new JButton[] { menu.getBtnComoJugar(), menu.getBtnAcercaDe() }) {
+			secundario.setBounds(
+					getEscalaX(secundario.getX()), getEscalaY(secundario.getY()),
+					getEscalaX(secundario.getWidth()), getEscalaY(secundario.getHeight()));
+		}
 
 		confirmacion.setBounds(0, 0, ancho, alto);
 

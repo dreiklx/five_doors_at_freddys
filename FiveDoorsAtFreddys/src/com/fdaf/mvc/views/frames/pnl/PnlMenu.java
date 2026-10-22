@@ -11,6 +11,7 @@ import com.fdaf.mvc.views.frames.VistaPrincipal;
 import com.fdaf.util.CargarImagenes;
 import com.fdaf.util.EscalarVista;
 import com.fdaf.util.Fuentes;
+import com.fdaf.util.Version;
 
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -24,6 +25,8 @@ public class PnlMenu extends JPanel {
 	private JButton btnContinuar;
 	private JButton btnNuevaPartida;
 	private JButton btnOpciones;
+	private JButton btnComoJugar;
+	private JButton btnAcercaDe;
 	private JLabel lblNocheActual;
 	private JLabel lblMenu;
 	private JLabel lbl;
@@ -97,6 +100,12 @@ public class PnlMenu extends JPanel {
 		btnOpciones.setForeground(Color.WHITE);
 		btnOpciones.setBounds(227, 631, 458, 88);
 		pnlMenu.add(btnOpciones);
+
+		// Opciones secundarias (CLAUDE.md §1.34): mismo estilo que el resto
+		// pero más pequeñas, para no competir con Nueva Partida/Continuar/
+		// Opciones; terminan en y=838, por encima de la versión (y=865).
+		btnComoJugar = crearBotonSecundario(724);
+		btnAcercaDe = crearBotonSecundario(784);
 		
 		// Tamaño derivado del texto real de los botones (no un número
 		// fijo) -- mantiene la misma proporción visual (~0.77) que ya
@@ -127,7 +136,7 @@ public class PnlMenu extends JPanel {
 
 		Color colorDiscreto = new Color(180, 180, 180);
 
-		lblVersion = new JLabel("v 2.1");
+		lblVersion = new JLabel(Version.texto());
 		lblVersion.setForeground(Color.WHITE);
 		lblVersion.setBackground(Color.WHITE);
 		lblVersion.setFont(Fuentes.obtener(25));
@@ -174,6 +183,24 @@ public class PnlMenu extends JPanel {
 	public JLabel getLblVersion() { return lblVersion; }
 	public void setLblVersion(JLabel lblVersion) { this.lblVersion = lblVersion; }
 	public JLabel getLblLogoNyder() { return lblLogoNyder; }
+	public JButton getBtnComoJugar() { return btnComoJugar; }
+	public JButton getBtnAcercaDe() { return btnAcercaDe; }
+
+	// El texto lo fija ControllerMenu.actualizarTextosIdioma().
+	private JButton crearBotonSecundario(int y) {
+		JButton boton = new JButton();
+		boton.setHorizontalAlignment(SwingConstants.LEFT);
+		boton.setOpaque(false);
+		boton.setFocusPainted(false);
+		boton.setContentAreaFilled(false);
+		boton.setBorderPainted(false);
+		boton.setBorder(null);
+		boton.setFont(Fuentes.obtener(45));
+		boton.setForeground(Color.WHITE);
+		boton.setBounds(227, y, 640, 54);
+		pnlMenu.add(boton);
+		return boton;
+	}
 	// Se consume una sola vez (EscalarVista.adaptarMenu): devuelve el icono
 	// original y suelta la referencia, para no retener el PNG de 1254px.
 	public ImageIcon tomarLogoNyderOriginal() {

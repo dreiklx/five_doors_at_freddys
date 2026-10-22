@@ -33,6 +33,7 @@ import com.fdaf.util.EscalarVista;
 import com.fdaf.util.Idioma;
 import com.fdaf.util.InteraccionBoton;
 import com.fdaf.util.PreferenciasJuego;
+import com.fdaf.util.TextosInfo;
 
 @SuppressWarnings("unused")
 public class ControllerMenu {
@@ -46,6 +47,10 @@ public class ControllerMenu {
 	private PnlIdioma pantallaIdioma;
 	private PnlVolumen pantallaVolumen;
 	private PnlNochePersonalizada pantallaNochePersonalizada;
+	// Introducción inicial, "Cómo jugar" y "Acerca del proyecto" (CLAUDE.md §1.33-§1.34):
+	// una sola instancia reutilizada por las tres pantallas.
+	private com.fdaf.mvc.views.frames.pnl.PnlInfo pantallaInfo;
+	private boolean introduccionActiva = false;
 
 
 
@@ -94,6 +99,7 @@ public class ControllerMenu {
 	    pantallaIdioma = new PnlIdioma();
 	    pantallaVolumen = new PnlVolumen();
 	    pantallaNochePersonalizada = new PnlNochePersonalizada();
+	    pantallaInfo = new com.fdaf.mvc.views.frames.pnl.PnlInfo();
 	    vp = new VistaPrincipal();
 
 	    EscalarVista.adaptarMenu(vp, menu);
@@ -135,9 +141,15 @@ public class ControllerMenu {
 	// y con el mismo animarFade/timerAdvertenciaActual -- nunca hay dos
 	// timers de la secuencia corriendo a la vez. ~3s en total.
 	private static final String RUTA_NYDER = "/images/nyder/NYDER.png";
-	private static final int NYDER_FADE_MS = 600;
-	private static final int NYDER_VISIBLE_MS = 1800;
+	// 250 negro + 800 entrada + 1300 visible + 650 salida = 3.0s, contados
+	// desde el primer pintado real de la ventana (§1.31).
+	private static final int NYDER_NEGRO_MS = 250;
+	private static final int NYDER_FADE_IN_MS = 800;
+	private static final int NYDER_VISIBLE_MS = 1300;
+	private static final int NYDER_FADE_OUT_MS = 650;
+	private static final int NYDER_RESPALDO_SIN_PINTADO_MS = 1500;
 	private boolean presentacionNyderActiva = false;
+	private boolean entradaNyderIniciada = false;
 	private java.awt.Image imagenNyder;
 
 	private void mostrarAdvertenciaInicial() {
@@ -161,15 +173,41 @@ public class ControllerMenu {
 		pantalla.setAlpha(0.0f);
 		vp.setContenido(pantalla);
 
-		animarFade(pantalla, 0.0f, 1.0f, NYDER_FADE_MS, () -> {
-			Timer esperar = new Timer(NYDER_VISIBLE_MS, e1 -> {
-				((Timer) e1.getSource()).stop();
-				animarFade(pantalla, 1.0f, 0.0f, NYDER_FADE_MS, this::finalizarPresentacionNyder);
-			});
-			esperar.setRepeats(false);
-			timerAdvertenciaActual = esperar;
-			esperar.start();
+		// La secuencia arranca cuando el panel negro ya se pintó de verdad
+		// (no al crearlo: la ventana todavía no es visible en ese momento).
+		// El respaldo cubre el caso improbable de que nunca llegue a pintarse;
+		// entradaNyderIniciada garantiza que solo una de las dos vías arranque.
+		Timer respaldo = new Timer(NYDER_RESPALDO_SIN_PINTADO_MS, e -> iniciarEntradaNyder(pantalla));
+		respaldo.setRepeats(false);
+		timerAdvertenciaActual = respaldo;
+		pantalla.alPrimerPintado(() -> {
+			respaldo.stop();
+			iniciarEntradaNyder(pantalla);
 		});
+		respaldo.start();
+	}
+
+	private void iniciarEntradaNyder(com.fdaf.mvc.views.frames.pnl.PnlWarning pantalla) {
+		if (!presentacionNyderActiva || entradaNyderIniciada) {
+			return; // ya arrancó, o CTRL+S ya saltó la presentación
+		}
+		entradaNyderIniciada = true;
+
+		Timer negro = new Timer(NYDER_NEGRO_MS, e0 -> {
+			((Timer) e0.getSource()).stop();
+			animarFade(pantalla, 0.0f, 1.0f, NYDER_FADE_IN_MS, () -> {
+				Timer esperar = new Timer(NYDER_VISIBLE_MS, e1 -> {
+					((Timer) e1.getSource()).stop();
+					animarFade(pantalla, 1.0f, 0.0f, NYDER_FADE_OUT_MS, this::finalizarPresentacionNyder);
+				});
+				esperar.setRepeats(false);
+				timerAdvertenciaActual = esperar;
+				esperar.start();
+			});
+		});
+		negro.setRepeats(false);
+		timerAdvertenciaActual = negro;
+		negro.start();
 	}
 
 	// Único cierre de la presentación (fade-out natural o CTRL+S): libera
@@ -238,7 +276,53 @@ public class ControllerMenu {
 	// una segunda ruta.
 	private void finalizarAdvertenciaYMostrarMenu() {
 		advertenciaActiva = false;
+		mostrarIntroduccion();
+	}
+
+	// Introducción informativa (CLAUDE.md §1.33): va después de la
+	// advertencia y antes del menú, solo en el inicio normal del juego (el
+	// reinicio interno tras ganar/perder/rendirse o volver de Escape va
+	// directo al menú sin pasar por aquí). Sin timers: avanza solo con los
+	// botones del jugador.
+	private void mostrarIntroduccion() {
+		introduccionActiva = true;
+		pantallaInfo.configurar(TextosInfo.introTitulos(), TextosInfo.introCuerpos(), null, null,
+				TextosInfo.botonOmitir(), TextosInfo.botonIrAlMenu(), this::cerrarIntroduccion);
+		vp.setContenido(pantallaInfo);
+	}
+
+	// Único cierre de la introducción: "Omitir", "Ir al menú" en la
+	// última pantalla o CTRL+S.
+	private void cerrarIntroduccion() {
+		if (!introduccionActiva) {
+			return;
+		}
+		introduccionActiva = false;
 		mostrarMenuPrincipal();
+	}
+
+	public boolean isIntroduccionActiva() {
+		return introduccionActiva;
+	}
+
+	// "Cómo jugar" (§1.34): las pestañas permiten ir directo a un tema. La
+	// sección de Escape solo se explica si ya está desbloqueado; si no, es
+	// un consejo sobre la Noche 5 que no revela la sorpresa.
+	private void abrirComoJugar() {
+		boolean escape = PreferenciasJuego.escapeDesbloqueado;
+		String[] titulos = TextosInfo.guiaTitulos(escape);
+		pantallaInfo.configurar(titulos, TextosInfo.guiaCuerpos(escape), titulos, null,
+				TextosInfo.botonVolverAlMenu(), TextosInfo.botonVolverAlMenu(), () -> vp.setContenido(menu));
+		vp.setContenido(pantallaInfo);
+	}
+
+	// "Acerca del proyecto" (§1.34): una sola página, con el logo de NYDER
+	// que el menú ya tiene escalado (no se vuelve a cargar el PNG).
+	private void abrirAcercaDe() {
+		pantallaInfo.configurar(new String[] { TextosInfo.acercaTitulo() },
+				new String[] { TextosInfo.acercaCuerpo() }, null, menu.getLblLogoNyder().getIcon(), null,
+				TextosInfo.botonVolverAlMenu(), () -> vp.setContenido(menu));
+		vp.setContenido(pantallaInfo);
 	}
 
 	// Único punto de entrada externo. Si la advertencia ya no está
@@ -402,6 +486,8 @@ public class ControllerMenu {
 		InteraccionBoton.aplicarHoverYSonido(menu.getBtnContinuar(), menu.getLbl(), 30, menu.getLblNocheActual());
 		InteraccionBoton.aplicarHoverYSonido(menu.getBtnNuevaPartida(), menu.getLbl(), 30);
 		InteraccionBoton.aplicarHoverYSonido(menu.getBtnOpciones(), menu.getLbl(), 30);
+		InteraccionBoton.aplicarHoverYSonido(menu.getBtnComoJugar(), menu.getLbl(), 30);
+		InteraccionBoton.aplicarHoverYSonido(menu.getBtnAcercaDe(), menu.getLbl(), 30);
 
 		InteraccionBoton.aplicarHoverYSonido(menu.getPnlConfirmacion().getBtnConfirmar(), menu.getPnlConfirmacion().getLblFlecha(), 0);
 		InteraccionBoton.aplicarHoverYSonido(menu.getPnlConfirmacion().getBtnCancelar(), menu.getPnlConfirmacion().getLblFlecha(), 0);
@@ -438,6 +524,8 @@ public class ControllerMenu {
 		menu.getBtnContinuar().setText(ingles ? "Continue" : "Continuar");
 		menu.getBtnNuevaPartida().setText(ingles ? "New Game" : "Nueva Partida");
 		menu.getBtnOpciones().setText(ingles ? "Options" : "Opciones");
+		menu.getBtnComoJugar().setText(TextosInfo.menuComoJugar());
+		menu.getBtnAcercaDe().setText(TextosInfo.menuAcercaDe());
 		opciones.getLblTitulo().setText(ingles ? "Options" : "Opciones");
 		opciones.getBtnIdioma().setText(ingles ? "Language" : "Idioma");
 		opciones.getBtnCustomNight().setText("Custom Night");
@@ -489,6 +577,8 @@ public class ControllerMenu {
 			vp.setContenido(opciones);
 			opciones();
 		});
+		menu.getBtnComoJugar().addActionListener(e -> abrirComoJugar());
+		menu.getBtnAcercaDe().addActionListener(e -> abrirAcercaDe());
 
 		pantallaIdioma.getBtnEspanol().addActionListener(e -> {
 			PreferenciasJuego.idiomaSeleccionado = Idioma.ESPANOL;
@@ -693,6 +783,9 @@ public class ControllerMenu {
 				vp.setContenido(opciones);
 			} else if (actual == opciones) {
 				vp.setContenido(menu);
+			} else if (actual == pantallaInfo && !introduccionActiva) {
+				// "Cómo jugar" y "Acerca del proyecto" vuelven al menú; la introducción no reacciona a ESC.
+				vp.setContenido(menu);
 			}
 			// menu, warning, intro, gameover, win: ESC no hace nada.
 		}
@@ -734,6 +827,10 @@ public class ControllerMenu {
 			public void actionPerformed(ActionEvent e) {
 				if (advertenciaActiva) {
 					saltarAdvertencia();
+					return;
+				}
+				if (introduccionActiva) {
+					cerrarIntroduccion();
 					return;
 				}
 				if (timerIntroActivo != null && timerIntroActivo.isRunning()) {
