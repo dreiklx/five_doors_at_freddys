@@ -358,7 +358,8 @@ public class EscalarVista {
 		tablet.getLblCopyPowerLeft().setBounds(
 				getEscalaX(1326), getEscalaY(314),
 				getEscalaX(200), getEscalaY(55));
-		tablet.getLblCopyPowerLeft().setIcon(getImagenEscalada(CargarImagenes.powerLeft,
+		// Etiqueta localizada, sin deformar (CLAUDE.md §1.40).
+		tablet.getLblCopyPowerLeft().setIcon(CargarImagenes.ajustarProporcional(CargarImagenes.getEtiquetaEnergia(),
 				tablet.getLblCopyPowerLeft().getWidth(), tablet.getLblCopyPowerLeft().getHeight()));
 
 		JLabel nocheActual = tablet.getLblNocheActual();
@@ -500,8 +501,9 @@ public class EscalarVista {
 				
 				juego.getLblPowerLeft().setBounds(
 						getEscalaX(57), getEscalaY(808),
-						getEscalaX(194), getEscalaY(35));
-				juego.getLblPowerLeft().setIcon(getImagenEscalada(CargarImagenes.powerLeft,
+						getEscalaX(205), getEscalaY(35));
+				// Etiqueta localizada, sin deformar (CLAUDE.md §1.40).
+				juego.getLblPowerLeft().setIcon(CargarImagenes.ajustarProporcional(CargarImagenes.getEtiquetaEnergia(),
 						juego.getLblPowerLeft().getWidth(), juego.getLblPowerLeft().getHeight()));
 				
 				juego.getLblBateria().setBounds(
@@ -516,7 +518,7 @@ public class EscalarVista {
 		juego.getLblMuteCall().setBounds(
 				getEscalaX(muteCall.getX()), getEscalaY(muteCall.getY()),
 				getEscalaX(muteCall.getWidth()), getEscalaY(muteCall.getHeight()));
-		juego.getLblMuteCall().setIcon(getImagenEscalada(CargarImagenes.mutecall,
+		juego.getLblMuteCall().setIcon(getImagenEscalada(CargarImagenes.getMuteCall(),
 				juego.getLblMuteCall().getWidth(), juego.getLblMuteCall().getHeight()));
 
 				

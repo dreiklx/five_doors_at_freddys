@@ -58,7 +58,7 @@ public class PnlVolumen extends JPanel {
 		btnBajar.setBounds(227, 457, 680, 70);
 		pnlVolumen.add(btnBajar);
 
-		btnAtras = new JButton("Atras");
+		btnAtras = new JButton("Atrás");
 		estilizarBoton(btnAtras, fuenteBoton);
 		btnAtras.setBounds(227, 540, 269, 70);
 		pnlVolumen.add(btnAtras);

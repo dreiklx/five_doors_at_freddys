@@ -59,7 +59,7 @@ public class PnlJuego extends JPanel {
 		lblOverlay.setBounds(0, 0, 129, 124);
 		lblOverlay.setVisible(false);
 
-		panelDer=new PnlAplicarImagen(CargarImagenes.panelDer);
+		panelDer=new PnlAplicarImagen(CargarImagenes.getPanelBotonesDer());
 		panelDer.setOpaque(false);
 		panelDer.setBounds(1739, 400,70,210);
 		panelDer.setLayout(null);
@@ -78,7 +78,7 @@ public class PnlJuego extends JPanel {
 		luzDer.setOpaque(false);
 		luzDer.setHorizontalAlignment(SwingConstants.CENTER);
 
-		panelIzq=new PnlAplicarImagen(CargarImagenes.panelIzq);
+		panelIzq=new PnlAplicarImagen(CargarImagenes.getPanelBotonesIzq());
 		panelIzq.setOpaque(false);
 		panelIzq.setBounds(-194,400,70,210);
 		panelIzq.setLayout(null);
@@ -148,7 +148,7 @@ public class PnlJuego extends JPanel {
 
 		lblPowerLeft = new JLabel("");
 		pnlComponentes.add(lblPowerLeft);
-		lblPowerLeft.setBounds(57, 808, 194, 35);
+		lblPowerLeft.setBounds(57, 808, 205, 35);
 		
 		//mutecall
 		lblMuteCall = new JLabel("");

@@ -40,7 +40,7 @@ public class PnlNochePersonalizada extends JPanel {
 		lblTitulo = new JLabel("Custom Night");
 		lblTitulo.setForeground(Color.WHITE);
 		lblTitulo.setFont(Fuentes.obtener(60));
-		lblTitulo.setBounds(227, 160, 600, 90);
+		lblTitulo.setBounds(227, 160, 900, 90); // 900: cabe "Noche personalizada" (§1.43)
 		pnlNochePersonalizada.add(lblTitulo);
 
 		lblNocheSeleccionada = new JLabel("Noche seleccionada: 1");
@@ -62,7 +62,7 @@ public class PnlNochePersonalizada extends JPanel {
 			btnsNoche[i] = btnNoche;
 		}
 
-		btnAtras = new JButton("Atras");
+		btnAtras = new JButton("Atrás");
 		estilizarBoton(btnAtras, fuenteBoton);
 		btnAtras.setBounds(227, 729, 269, 70);
 		pnlNochePersonalizada.add(btnAtras);

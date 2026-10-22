@@ -202,6 +202,10 @@ public class ControllerCamara {
 			}
 		});
 
+		// Control de "mantener pulsado": suena al entrar como cualquier otro
+		// botón (CLAUDE.md §1.38); el comportamiento de la barra no cambia.
+		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(pnlTableta.getPbarRendirse(), () -> !juegoTerminado());
+
 		pnlTableta.getPbarRendirse().addMouseListener(new MouseAdapter() {
 
 			@Override

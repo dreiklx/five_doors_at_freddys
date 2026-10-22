@@ -451,7 +451,7 @@ public class ControllerMenu {
 		pantallaNochePersonalizada.getLblEscapeBloqueado().setText(
 				"<html>" + (ingles
 						? "Unlocks after completing the last night."
-						: "Se desbloquea al completar la ultima noche.") + "</html>");
+						: "Se desbloquea al completar la última noche.") + "</html>");
 		pantallaNochePersonalizada.getLblEscapeBloqueado().setVisible(true);
 
 		if (timerMensajeEscapeBloqueado != null && timerMensajeEscapeBloqueado.isRunning()) {
@@ -569,29 +569,30 @@ public class ControllerMenu {
 		menu.ubicarNavegacionSecundaria();
 		opciones.getLblTitulo().setText(ingles ? "Options" : "Opciones");
 		opciones.getBtnIdioma().setText(ingles ? "Language" : "Idioma");
-		opciones.getBtnCustomNight().setText("Custom Night");
+		opciones.getBtnCustomNight().setText(ingles ? "Custom Night" : "Noche personalizada");
+		pantallaNochePersonalizada.getLblTitulo().setText(ingles ? "Custom Night" : "Noche personalizada");
 		opciones.getBtnVolumen().setText(ingles ? "Volume" : "Volumen");
-		opciones.getBtnAtras().setText(ingles ? "Back" : "Atras");
+		opciones.getBtnAtras().setText(ingles ? "Back" : "Atrás");
 		opciones.getBtnSalir().setText(ingles ? "Exit Game" : "Salir del Juego");
 
 		pantallaIdioma.getLblTitulo().setText(ingles ? "Language" : "Idioma");
 		pantallaIdioma.getLblIdiomaActual().setText(ingles ? "English" : "Español");
 		pantallaIdioma.getBtnEspanol().setText(!ingles ? "> Español" : "Español");
 		pantallaIdioma.getBtnIngles().setText(ingles ? "> English" : "English");
-		pantallaIdioma.getBtnAtras().setText(ingles ? "Back" : "Atras");
+		pantallaIdioma.getBtnAtras().setText(ingles ? "Back" : "Atrás");
 
 		pantallaVolumen.getLblTitulo().setText(ingles ? "Volume" : "Volumen");
 		pantallaVolumen.getLblNivel().setText((ingles ? "Level: " : "Nivel: ") + PreferenciasJuego.volumenGeneral + "/10");
 		pantallaVolumen.getBtnSubir().setText(ingles ? "Increase Volume" : "Subir Volumen");
 		pantallaVolumen.getBtnBajar().setText(ingles ? "Decrease Volume" : "Bajar Volumen");
-		pantallaVolumen.getBtnAtras().setText(ingles ? "Back" : "Atras");
+		pantallaVolumen.getBtnAtras().setText(ingles ? "Back" : "Atrás");
 
 		int numeroNoche = PreferenciasJuego.nocheActual.ordinal() + 1;
 		menu.getLblNocheActual().setText((ingles ? "Night " : "Noche ") + numeroNoche);
 
 		pantallaNochePersonalizada.getLblNocheSeleccionada().setText(
 				(ingles ? "Selected Night: " : "Noche seleccionada: ") + numeroNoche);
-		pantallaNochePersonalizada.getBtnAtras().setText(ingles ? "Back" : "Atras");
+		pantallaNochePersonalizada.getBtnAtras().setText(ingles ? "Back" : "Atrás");
 
 		int ordinalNocheActual = PreferenciasJuego.nocheActual.ordinal();
 		for (int i = 0; i < pantallaNochePersonalizada.getBtnsNoche().length; i++) {
@@ -725,7 +726,10 @@ public class ControllerMenu {
 		
 		ImageIcon introFresca = com.fdaf.util.CargarGifs.cargarFresco(rutaIntro, CargarImagenes.getIntroduccionRespaldo());
 		
-		JPanel panelIntro = new PnlAplicarImagen(introFresca);
+		// La tarjeta final "12:00 AM / Nth Night" va en el idioma elegido
+		// (CLAUDE.md §1.41): PnlIntroNoche sustituye esa línea del gif.
+		JPanel panelIntro = new com.fdaf.mvc.views.frames.pnl.PnlIntroNoche(introFresca,
+				CargarImagenes.getEtiquetaNoche(PreferenciasJuego.nocheActual.ordinal() + 1));
 		panelIntro.setBounds(0, 0,
 				EscalarVista.getEscalaX(1600),
 				EscalarVista.getEscalaY(900));

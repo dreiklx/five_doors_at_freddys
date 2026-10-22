@@ -170,7 +170,19 @@ public class ControllerInterfaz implements JuegoListener {
 		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
 		int numeroNoche = PreferenciasJuego.nocheActual.ordinal() + 1;
 
-		pnlTableta.getLblNocheActual().setText((ingles ? "NIGHT " : "NOCHE ") + numeroNoche);
+		// "Noche N" / "Night N" como imagen localizada (misma fuente pixelada
+		// que "Energía restante"), sin deformar; el texto queda solo como
+		// respaldo si la imagen faltara (CLAUDE.md §1.40).
+		JLabel lblNoche = pnlTableta.getLblNocheActual();
+		ImageIcon etiquetaNoche = CargarImagenes.ajustarProporcional(CargarImagenes.getEtiquetaNoche(numeroNoche),
+				lblNoche.getWidth(), lblNoche.getHeight());
+		if (etiquetaNoche != null) {
+			lblNoche.setText("");
+			lblNoche.setIcon(etiquetaNoche);
+		} else {
+			lblNoche.setIcon(null);
+			lblNoche.setText((ingles ? "Night " : "Noche ") + numeroNoche);
+		}
 		pnlTableta.getLblRendirseTexto().setText(ingles ? "Surrender" : "Rendirse");
 	}
 
@@ -194,14 +206,25 @@ public class ControllerInterfaz implements JuegoListener {
 		accion.run();
 	}
 
+	// DOOR/LIGHT solo suenan al pasar el cursor cuando de verdad responden:
+	// ni durante la llamada (ControllerJuego los ignora) ni con la partida
+	// terminada (CLAUDE.md §1.38).
+	private boolean puertasYLucesResponden() {
+		return !controllerJuego.isJuegoTerminado() && !controllerJuego.isLlamadaActiva();
+	}
+
 	private void conectarPuertas() {
 		pnlJuego.getBotonIzq().addActionListener(e -> siPartidaActiva(() -> controllerJuego.abrirIzquierda()));
 		pnlJuego.getBotonDer().addActionListener(e -> siPartidaActiva(() -> controllerJuego.abrirDerecha()));
+		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(pnlJuego.getBotonIzq(), this::puertasYLucesResponden);
+		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(pnlJuego.getBotonDer(), this::puertasYLucesResponden);
 	}
 
 	private void conectarLuces() {
 		pnlJuego.getLuzIzq().addActionListener(e -> siPartidaActiva(() -> controllerJuego.revelarIzquierda()));
 		pnlJuego.getLuzDer().addActionListener(e -> siPartidaActiva(() -> controllerJuego.revelarDerecha()));
+		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(pnlJuego.getLuzIzq(), this::puertasYLucesResponden);
+		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(pnlJuego.getLuzDer(), this::puertasYLucesResponden);
 
 		pnlJuego.getLblOverlay().addMouseListener(new MouseAdapter() {
 			@Override
@@ -209,6 +232,11 @@ public class ControllerInterfaz implements JuegoListener {
 				siPartidaActiva(() -> controllerJuego.recogerColeccionable());
 			}
 		});
+		// El mismo overlay muestra también los jumpscares a pantalla completa:
+		// solo suena cuando contiene un objeto recogible (cursor de mano).
+		JLabel overlay = pnlJuego.getLblOverlay();
+		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(overlay, () -> !controllerJuego.isJuegoTerminado()
+				&& overlay.getIcon() != null && overlay.getCursor().getType() == Cursor.HAND_CURSOR);
 	}
 
 	/*
@@ -283,6 +311,11 @@ public class ControllerInterfaz implements JuegoListener {
 	private void colgarLlamada() {
 		// Colgado real (boton Mute Call): SI reanuda el ambiente, la llamada realmente termino
 		// para el jugador. Ver la sobrecarga de abajo para el otro caso (fin de partida).
+		// Guard (CLAUDE.md §1.39): un segundo clic encolado antes de que el botón se
+		// oculte, o un clic tras el fin natural, no vuelve a "terminar" la llamada.
+		if (llamadaColgada || !controllerJuego.isLlamadaActiva()) {
+			return;
+		}
 		colgarLlamada(true);
 	}
 
@@ -318,6 +351,8 @@ public class ControllerInterfaz implements JuegoListener {
 				siPartidaActiva(() -> colgarLlamada());
 			}
 		});
+		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(pnlJuego.getLblMuteCall(),
+				() -> !controllerJuego.isJuegoTerminado());
 	}
 
 	/*
@@ -394,7 +429,9 @@ public class ControllerInterfaz implements JuegoListener {
 				timerOcultarBotonesTablet.stop();
 			}
 
-			com.fdaf.util.InteraccionBoton.obtenerSonidoHover().play();
+			// reproducirSonidoHover() aplica el volumen vigente; el play()
+			// directo de antes ignoraba la configuración de volumen.
+			com.fdaf.util.InteraccionBoton.reproducirSonidoHover();
 
 			transicionTabletActiva = true;
 			controllerCamara.detenerMovimientoCamara();
@@ -766,6 +803,10 @@ public class ControllerInterfaz implements JuegoListener {
 				manejarClicColeccionable(tipo);
 			}
 		});
+		// Solo los huecos que existen esta noche: los marcados con X
+		// responden al clic con el sonido de error, no son un control válido.
+		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(label, () -> !controllerJuego.isJuegoTerminado()
+				&& tipo.ordinal() < PreferenciasJuego.nocheActual.getCantidadColeccionables());
 	}
 
 	private void manejarClicColeccionable(TipoColeccionable tipo) {
@@ -1055,6 +1096,7 @@ public class ControllerInterfaz implements JuegoListener {
 	// pantallas.
 	private void aplicarIdiomaGameOver(PnlGameOver pantalla) {
 		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
+		pantalla.getLblTitulo().setText(ingles ? "GAME OVER" : "FIN DEL JUEGO");
 		pantalla.getBtnReintentar().setText(ingles ? "Retry" : "Volver a intentar");
 		pantalla.getBtnSalir().setText(ingles ? "Exit Game" : "Salir del juego");
 	}

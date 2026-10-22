@@ -396,6 +396,10 @@ public class ControllerJuego {
 		this.llamadaActiva = llamadaActiva;
 	}
 
+	public boolean isLlamadaActiva() {
+		return llamadaActiva;
+	}
+
 	public void setJuegoTerminado(boolean juegoTerminado) {
 		this.juegoTerminado = juegoTerminado;
 	}

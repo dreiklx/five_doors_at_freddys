@@ -58,7 +58,7 @@ public class PnlIdioma extends JPanel {
 		btnIngles.setBounds(227, 547, 350, 70);
 		pnlIdioma.add(btnIngles);
 
-		btnAtras = new JButton("Atras");
+		btnAtras = new JButton("Atrás");
 		estilizarBoton(btnAtras, fuenteBoton);
 		btnAtras.setBounds(227, 630, 269, 70);
 		pnlIdioma.add(btnAtras);

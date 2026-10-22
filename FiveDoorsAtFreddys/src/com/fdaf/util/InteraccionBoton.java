@@ -4,6 +4,7 @@ import java.awt.FontMetrics;
 import java.awt.Insets;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.function.BooleanSupplier;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -48,6 +49,12 @@ public class InteraccionBoton {
 		boton.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseEntered(MouseEvent e) {
+				// Un botón deshabilitado (p. ej. el menú bloqueado tras el
+				// diálogo de confirmación) no debe sonar ni mostrar la flecha:
+				// sería una interacción engañosa (CLAUDE.md §1.38).
+				if (!boton.isEnabled()) {
+					return;
+				}
 				reproducirSonidoHover();
 
 				if (flecha != null) {
@@ -70,6 +77,25 @@ public class InteraccionBoton {
 				}
 				if (elementoAdicional != null) {
 					elementoAdicional.setVisible(false);
+				}
+			}
+		});
+	}
+
+	// Controles de partida que no son JButton de menú (etiquetas, la barra de
+	// Rendirse, los huecos del inventario, DOOR/LIGHT): solo el sonido, sin
+	// flecha. 'activo' decide en cada entrada si el control responde de
+	// verdad en ese momento (partida terminada, llamada en curso, hueco que no
+	// existe esta noche...), para no sonar sobre algo que no hará nada. Un
+	// único listener por componente, registrado una sola vez por quien crea
+	// la pantalla (CLAUDE.md §1.38).
+	public static void aplicarSonidoHover(JComponent componente, BooleanSupplier activo) {
+		componente.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				if (componente.isEnabled() && componente.isShowing()
+						&& (activo == null || activo.getAsBoolean())) {
+					reproducirSonidoHover();
 				}
 			}
 		});

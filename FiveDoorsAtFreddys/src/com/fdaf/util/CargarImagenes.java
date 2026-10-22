@@ -56,7 +56,6 @@ public class CargarImagenes {
 	public static ImageIcon bateria2;
 	public static ImageIcon bateria3;
 	public static ImageIcon bateria4;
-	public static ImageIcon powerLeft;
 	public static ImageIcon mutecall;
 	public static ImageIcon inventario;
 	public static ImageIcon WIN;
@@ -185,7 +184,6 @@ public class CargarImagenes {
 		puertaDer1=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/104.png"));
 		puertaIzq1=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/103.png"));
 
-		powerLeft=new ImageIcon(CargarImagenes.class.getResource("/images/hud/powerLeft.png"));
 		bateria0=new ImageIcon(CargarImagenes.class.getResource("/images/hud/bateria0.png"));
 		bateria1=new ImageIcon(CargarImagenes.class.getResource("/images/hud/bateria1.png"));
 		bateria2=new ImageIcon(CargarImagenes.class.getResource("/images/hud/bateria2.png"));
@@ -241,6 +239,75 @@ public class CargarImagenes {
 				return null;
 			}
 			return new ImageIcon(url);
+		}
+
+		/*
+		 * Etiquetas del HUD con texto dibujado (CLAUDE.md §1.40). Son imágenes
+		 * (fuente pixelada) y existen en dos idiomas en /images/hud/idioma/,
+		 * recortadas de los originales de "FDAF assets/FDAF HUD". Se eligen
+		 * por PreferenciasJuego.idiomaSeleccionado en el momento de pedirlas
+		 * (el idioma no cambia a mitad de una partida) y se cachean por ruta.
+		 */
+		private static final java.util.Map<String, ImageIcon> etiquetasHud = new java.util.HashMap<>();
+
+		private static boolean ingles() {
+			return PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES;
+		}
+
+		// "Energía restante:" / "Power left:"
+		public static ImageIcon getEtiquetaEnergia() {
+			return etiquetaHud(ingles() ? "/images/hud/idioma/power_left_en.png"
+					: "/images/hud/idioma/energia_restante_es.png");
+		}
+
+		// "Noche N" / "Night N" (numero 1-5).
+		public static ImageIcon getEtiquetaNoche(int numero) {
+			int n = Math.max(1, Math.min(5, numero));
+			return etiquetaHud(ingles() ? "/images/hud/idioma/night" + n + "_en.png"
+					: "/images/hud/idioma/noche" + n + "_es.png");
+		}
+
+		// Botones de la oficina con texto incrustado (CLAUDE.md §1.42): el
+		// original en inglés ("DOOR"/"LIGHT", "MUTE CALL") y una variante
+		// española generada a partir de él ("PUERTA"/"LUZ", "COLGAR").
+		public static ImageIcon getPanelBotonesIzq() {
+			ImageIcon es = ingles() ? null : etiquetaHud("/images/hud/idioma/pnlBotonesIzq_es.png");
+			return es != null ? es : panelIzq;
+		}
+
+		public static ImageIcon getPanelBotonesDer() {
+			ImageIcon es = ingles() ? null : etiquetaHud("/images/hud/idioma/pnlBotonesDer_es.png");
+			return es != null ? es : panelDer;
+		}
+
+		public static ImageIcon getMuteCall() {
+			ImageIcon es = ingles() ? null : etiquetaHud("/images/hud/idioma/mutecall_es.png");
+			return es != null ? es : mutecall;
+		}
+
+		private static ImageIcon etiquetaHud(String ruta) {
+			ImageIcon icono = etiquetasHud.get(ruta);
+			if (icono == null) {
+				icono = cargarImagenSegura(ruta);
+				if (icono != null) {
+					etiquetasHud.put(ruta, icono);
+				}
+			}
+			return icono;
+		}
+
+		// Escala conservando la proporción para que quepa en maxAncho x
+		// maxAlto -- las etiquetas de texto no deben deformarse (el antiguo
+		// powerLeft.png se estiraba al tamaño de su label).
+		public static ImageIcon ajustarProporcional(ImageIcon original, int maxAncho, int maxAlto) {
+			if (original == null || original.getIconWidth() <= 0 || maxAncho <= 0 || maxAlto <= 0) {
+				return null;
+			}
+			double escala = Math.min((double) maxAncho / original.getIconWidth(),
+					(double) maxAlto / original.getIconHeight());
+			int ancho = Math.max(1, (int) Math.round(original.getIconWidth() * escala));
+			int alto = Math.max(1, (int) Math.round(original.getIconHeight() * escala));
+			return EscalarVista.getImagenEscalada(original, ancho, alto);
 		}
 
 }

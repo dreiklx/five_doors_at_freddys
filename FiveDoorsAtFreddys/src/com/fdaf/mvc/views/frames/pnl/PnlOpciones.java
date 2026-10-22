@@ -53,7 +53,7 @@ public class PnlOpciones extends JPanel {
 
 		btnCustomNight = new JButton("Custom Night");
 		estilizarBoton(btnCustomNight, fuenteBoton);
-		btnCustomNight.setBounds(227, 457, 450, 70);
+		btnCustomNight.setBounds(227, 457, 600, 70); // 600: cabe "Noche personalizada" (§1.43)
 		pnlOpciones.add(btnCustomNight);
 
 		btnVolumen = new JButton("Volumen");
@@ -61,7 +61,7 @@ public class PnlOpciones extends JPanel {
 		btnVolumen.setBounds(227, 540, 269, 70);
 		pnlOpciones.add(btnVolumen);
 
-		btnAtras = new JButton("Atras");
+		btnAtras = new JButton("Atrás");
 		estilizarBoton(btnAtras, fuenteBoton);
 		btnAtras.setBounds(227, 623, 269, 70);
 		pnlOpciones.add(btnAtras);
