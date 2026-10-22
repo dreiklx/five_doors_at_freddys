@@ -16,6 +16,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JTextPane;
 
 import com.fdaf.mvc.models.coleccionables.TipoColeccionable;
 import com.fdaf.mvc.views.frames.VistaPrincipal;
@@ -306,6 +307,14 @@ public class EscalarVista {
 		menu.getLblCreditos().setBounds(
 				getEscalaX(lblCreditos.getX()), getEscalaY(lblCreditos.getY()),
 				getEscalaX(lblCreditos.getWidth()), getEscalaY(lblCreditos.getHeight()));
+
+		// El título nunca pasaba por el escalado de bounds -- daba igual
+		// mientras la fuente no escalaba, pero desde que Fuentes escala con
+		// la resolución, "Freddy's" (4ª línea) quedaba cortado (CLAUDE.md §1.25).
+		// Solo se escala el TAMAÑO: la posición sin escalar es la que siempre
+		// dejó el título alineado con los botones en pantalla real.
+		JTextPane txtTitulo = menu.getTxtpnFiveDoorsAt();
+		txtTitulo.setSize(getEscalaX(txtTitulo.getWidth()), getEscalaY(txtTitulo.getHeight()));
 	}
 	
 	public static void adaptarTablet(VistaPrincipal vp, PnlTableta tablet) {

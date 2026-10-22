@@ -22,15 +22,25 @@ public class Fuentes {
 		return consolasDisponible ? FAMILIA_PREFERIDA : FAMILIA_RESPALDO;
 	}
 
+	// El tamaño se escala con la resolución real, igual que los bounds de
+	// cada componente (EscalarVista.adaptar*). Se usa UN solo factor, el
+	// menor entre X e Y: aplicar ambos (escalaX(escalaY(t))) multiplicaba
+	// el tamaño por ~1.44 en 1920x1080 mientras los componentes solo
+	// crecen ~1.2, y textos como "Nueva Partida" o "Salir del Juego"
+	// quedaban recortados (ver CLAUDE.md §1.25).
+	private static int escalar(int tamano) {
+		return Math.min(EscalarVista.getEscalaX(tamano), EscalarVista.getEscalaY(tamano));
+	}
+
 	// Uso normal -- cubre todos los textos del proyecto salvo uno.
 	public static Font obtener(int tamano) {
-		return new Font(FAMILIA_REAL, Font.PLAIN, EscalarVista.getEscalaX(EscalarVista.getEscalaY(tamano)));
+		return new Font(FAMILIA_REAL, Font.PLAIN, escalar(tamano));
 	}
 
 	// Único caso real con estilo distinto a PLAIN: el título de
 	// PnlGameOver ("GAME OVER") usa BOLD. Se expone el estilo como
 	// parámetro opcional en vez de forzarlo a PLAIN o duplicar la clase.
 	public static Font obtener(int tamano, int estilo) {
-		return new Font(FAMILIA_REAL, estilo, EscalarVista.getEscalaX(EscalarVista.getEscalaY(tamano)));
+		return new Font(FAMILIA_REAL, estilo, escalar(tamano));
 	}
 }
