@@ -49,61 +49,43 @@ public final class TextosInfo {
 
 	/* ===================== Introducción inicial ===================== */
 
+	// Introducción breve (CLAUDE.md §1.51): dos páginas con lo imprescindible
+	// para un jugador nuevo; el detalle está en "Cómo jugar". Las llamadas van
+	// en una sola línea discreta al final: no son una mecánica central.
 	public static String[] introTitulos() {
 		return new String[] {
 				t("ANTES DE EMPEZAR", "BEFORE YOU BEGIN"),
-				t("CÓMO SE JUEGA", "HOW IT WORKS"),
-				t("UN ÚLTIMO CONSEJO", "ONE LAST TIP") };
+				t("CÓMO SE JUEGA", "HOW IT WORKS") };
 	}
 
 	public static String[] introCuerpos() {
 		return new String[] {
-				t("<p><b>Five Doors at Freddy's</b> es un proyecto fan-made inspirado en el universo de "
-						+ "<i>Five Nights at Freddy's</i>.</p><br>"
-						+ "<p>No es el juego original ni pretende reproducir exactamente sus mecánicas. Ofrece una "
-						+ "experiencia diferente, con sus propios desafíos y una progresión que irás descubriendo "
-						+ "mientras juegas.</p>",
-						"<p><b>Five Doors at Freddy's</b> is a fan-made project inspired by the "
-						+ "<i>Five Nights at Freddy's</i> universe.</p><br>"
-						+ "<p>It is not the original game and does not attempt to reproduce its mechanics exactly. "
-						+ "It offers a different gameplay experience, with its own challenges and a progression "
-						+ "for you to discover as you play.</p>"),
-				t("<p>Pasas la noche en una oficina con dos puertas. Para superarla debes <b>encontrar todos los "
-						+ "coleccionables</b> de esa noche antes de quedarte sin baterías. Todo se juega con el "
-						+ "ratón (guía completa en <b>Cómo jugar</b>).</p>"
+				t("<p><b>Five Doors at Freddy's</b> es un proyecto <b>fan-made</b> inspirado en "
+						+ "<i>Five Nights at Freddy's</i>, con un gameplay distinto al original.</p><br>"
+						+ "<p>Te recomendamos llegar hasta la <b>Noche 5</b>: al final hay una sorpresa.</p>",
+						"<p><b>Five Doors at Freddy's</b> is a <b>fan-made</b> project inspired by "
+						+ "<i>Five Nights at Freddy's</i>, with gameplay different from the original.</p><br>"
+						+ "<p>We recommend reaching <b>Night 5</b>: there's a surprise at the end.</p>"),
+				t("<p><b>Objetivo:</b> encuentra todos los coleccionables de la noche antes de quedarte sin "
+						+ "baterías.</p><br>"
 						+ "<ul>"
-						+ "<li>Lleva el ratón a los bordes de la pantalla para mirar a cada lado. Junto a cada "
-						+ "puerta hay un botón <b>PUERTA</b> y otro <b>LUZ</b>.</li>"
-						+ "<li>Abre una puerta y enciende su luz para descubrir qué hay detrás.</li>"
-						+ "<li>Si aparece un animatrónico, pierdes una batería. Si aparece un objeto, "
-						+ "<b>haz clic en él</b> antes de que la puerta se cierre.</li>"
-						+ "<li>La barra inferior abre la tableta: noche, inventario y rendirse.</li>"
-						+ "</ul>"
-						+ "<p><b>LAS LLAMADAS</b><br>Durante algunas llamadas puedes recibir información importante "
-						+ "sobre el juego. Escucharlas es opcional: no necesitas prestarles atención para jugar.</p>"
-						+ "<p>La partida comenzará únicamente cuando la llamada termine o decidas colgar "
-						+ "(<b>COLGAR</b>).</p>",
-						"<p>You spend the night in an office with two doors. To survive it you must <b>find every "
-						+ "collectible</b> of that night before you run out of batteries. Everything is played with "
-						+ "the mouse (full guide in <b>How to Play</b>).</p>"
+						+ "<li>Lleva el ratón a los bordes para mirar a cada lado.</li>"
+						+ "<li>Abre una puerta con <b>PUERTA</b> y enciende <b>LUZ</b> para ver qué hay detrás.</li>"
+						+ "<li>¿Animatrónico? Pierdes una batería. ¿Objeto? <b>Haz clic en él</b> antes de que la "
+						+ "puerta se cierre.</li>"
+						+ "<li>La barra inferior abre la tableta con tu inventario.</li>"
+						+ "</ul><br>"
+						+ "<p><font color='#a0a0b4'>Las llamadas pueden darte pistas; escucharlas es opcional. "
+						+ "La noche empieza cuando terminan o al pulsar <b>COLGAR</b>.</font></p>",
+						"<p><b>Goal:</b> find every collectible of the night before you run out of batteries.</p><br>"
 						+ "<ul>"
-						+ "<li>Move the mouse to the edges of the screen to look to each side. Next to each door "
-						+ "there is a <b>DOOR</b> button and a <b>LIGHT</b> button.</li>"
-						+ "<li>Open a door and turn on its light to find out what is behind it.</li>"
-						+ "<li>If an animatronic shows up, you lose a battery. If an item shows up, "
-						+ "<b>click it</b> before the door closes.</li>"
-						+ "<li>The bottom bar opens the tablet: night, inventory and the option to surrender.</li>"
-						+ "</ul>"
-						+ "<p><b>PHONE CALLS</b><br>Some calls may contain important information about the game. "
-						+ "Listening is optional: you don't have to pay attention to them to play.</p>"
-						+ "<p>Gameplay will begin only after the call ends or you decide to hang up "
-						+ "(<b>MUTE CALL</b>).</p>"),
-				t("<p>Te recomendamos <b>superar la Noche 5</b>, aunque al principio parezca difícil.</p><br>"
-						+ "<p>Ten paciencia, aprende las mecánicas y no te rindas demasiado pronto.</p><br>"
-						+ "<p>Hay una sorpresa esperándote al final.</p>",
-						"<p>We recommend <b>completing Night 5</b>, even if it seems difficult at first.</p><br>"
-						+ "<p>Be patient, learn the mechanics and don't give up too soon.</p><br>"
-						+ "<p>There's a surprise waiting for you at the end.</p>") };
+						+ "<li>Move the mouse to the screen edges to look around.</li>"
+						+ "<li>Open a door with <b>DOOR</b> and turn on <b>LIGHT</b> to see what's behind it.</li>"
+						+ "<li>Animatronic? You lose a battery. Item? <b>Click it</b> before the door closes.</li>"
+						+ "<li>The bottom bar opens the tablet with your inventory.</li>"
+						+ "</ul><br>"
+						+ "<p><font color='#a0a0b4'>Calls may give you tips; listening is optional. "
+						+ "The night starts when the call ends or you press <b>MUTE CALL</b>.</font></p>") };
 	}
 
 	/* ===================== Cómo jugar (guía del menú) ===================== */
@@ -121,30 +103,30 @@ public final class TextosInfo {
 		return new String[] {
 				t("<p>El juego tiene <b>5 noches</b>. En cada una ganas cuando encuentras <b>todos sus "
 						+ "coleccionables</b> y pierdes si te quedas <b>sin baterías</b>.</p><br>"
-						+ "<table cellpadding='2'>"
-						+ "<tr><td>Noche 1</td><td>4 baterías</td><td>5 coleccionables</td></tr>"
-						+ "<tr><td>Noche 2</td><td>3 baterías</td><td>6 coleccionables</td></tr>"
-						+ "<tr><td>Noche 3</td><td>3 baterías</td><td>7 coleccionables</td></tr>"
-						+ "<tr><td>Noche 4</td><td>2 baterías</td><td>8 coleccionables</td></tr>"
-						+ "<tr><td>Noche 5</td><td>2 baterías</td><td>10 coleccionables</td></tr>"
-						+ "</table><br>"
+						+ "<p>"
+						+ "<b>Noche 1:</b> 4 baterías &middot; 5 coleccionables<br>"
+						+ "<b>Noche 2:</b> 3 baterías &middot; 6 coleccionables<br>"
+						+ "<b>Noche 3:</b> 3 baterías &middot; 7 coleccionables<br>"
+						+ "<b>Noche 4:</b> 2 baterías &middot; 8 coleccionables<br>"
+						+ "<b>Noche 5:</b> 2 baterías &middot; 10 coleccionables"
+						+ "</p><br>"
 						+ "<p>Al empezar cada noche suena una llamada: mientras dura, las puertas y las luces no "
 						+ "responden. Puedes cortarla con <b>COLGAR</b>.</p>"
 						+ "<p>Tu progreso se guarda solo. <b>Continuar</b> retoma tu noche actual y "
-						+ "<b>Opciones &gt; Noche personalizada</b> te deja jugar cualquier noche.</p>",
+						+ "<b>Opciones&nbsp;&gt;&nbsp;Noche&nbsp;personalizada</b> te deja jugar cualquier noche.</p>",
 						"<p>The game has <b>5 nights</b>. You win a night by finding <b>all of its "
 						+ "collectibles</b> and lose it if you run <b>out of batteries</b>.</p><br>"
-						+ "<table cellpadding='2'>"
-						+ "<tr><td>Night 1</td><td>4 batteries</td><td>5 collectibles</td></tr>"
-						+ "<tr><td>Night 2</td><td>3 batteries</td><td>6 collectibles</td></tr>"
-						+ "<tr><td>Night 3</td><td>3 batteries</td><td>7 collectibles</td></tr>"
-						+ "<tr><td>Night 4</td><td>2 batteries</td><td>8 collectibles</td></tr>"
-						+ "<tr><td>Night 5</td><td>2 batteries</td><td>10 collectibles</td></tr>"
-						+ "</table><br>"
+						+ "<p>"
+						+ "<b>Night 1:</b> 4 batteries &middot; 5 collectibles<br>"
+						+ "<b>Night 2:</b> 3 batteries &middot; 6 collectibles<br>"
+						+ "<b>Night 3:</b> 3 batteries &middot; 7 collectibles<br>"
+						+ "<b>Night 4:</b> 2 batteries &middot; 8 collectibles<br>"
+						+ "<b>Night 5:</b> 2 batteries &middot; 10 collectibles"
+						+ "</p><br>"
 						+ "<p>Each night starts with a phone call: while it plays, doors and lights do not "
 						+ "respond. You can cut it short with <b>MUTE CALL</b>.</p>"
 						+ "<p>Your progress is saved automatically. <b>Continue</b> resumes your current night and "
-						+ "<b>Options &gt; Custom Night</b> lets you play any night.</p>"),
+						+ "<b>Options&nbsp;&gt;&nbsp;Custom&nbsp;Night</b> lets you play any night.</p>"),
 				t("<ul>"
 						+ "<li><b>PUERTA</b> abre o cierra la puerta. <b>LUZ</b> enciende o apaga su luz.</li>"
 						+ "<li>Lo que hay detrás solo se revela con la puerta <b>abierta</b> y la luz "
@@ -209,7 +191,7 @@ public final class TextosInfo {
 						+ "<p>In the menus, <b>ESC</b> goes back to the previous screen.</p>"),
 				escapeDesbloqueado
 						? t("<p><b>Escape</b> es la modalidad que desbloqueaste al superar la Noche 5. Puedes "
-								+ "volver a jugarla desde <b>Opciones &gt; Noche personalizada &gt; ESCAPE</b>.</p><br>"
+								+ "volver a jugarla desde <b>Opciones&nbsp;&gt;&nbsp;Noche&nbsp;personalizada&nbsp;&gt;&nbsp;ESCAPE</b>.</p><br>"
 								+ "<ul>"
 								+ "<li><b>W A S D:</b> moverte. <b>Ratón:</b> mirar.</li>"
 								+ "<li><b>CTRL:</b> encender o apagar la linterna.</li>"
@@ -220,7 +202,7 @@ public final class TextosInfo {
 								+ "si te atrapan, pierdes una y también la llave. Los latidos te avisan cuando "
 								+ "hay un animatrónico cerca.</p>",
 								"<p><b>Escape</b> is the mode you unlocked by completing Night 5. You can play it "
-								+ "again from <b>Options &gt; Custom Night &gt; ESCAPE</b>.</p><br>"
+								+ "again from <b>Options&nbsp;&gt;&nbsp;Custom&nbsp;Night&nbsp;&gt;&nbsp;ESCAPE</b>.</p><br>"
 								+ "<ul>"
 								+ "<li><b>W A S D:</b> move. <b>Mouse:</b> look around.</li>"
 								+ "<li><b>CTRL:</b> turn the flashlight on or off.</li>"

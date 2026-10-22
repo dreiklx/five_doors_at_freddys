@@ -27,7 +27,6 @@ public class CargarImagenes {
 	public static ImageIcon camara;
 	public static ImageIcon puntoCamara;
 	
-	public static ImageIcon fondoJuego;
 	public static ImageIcon zonaTresIzq;
 	public static ImageIcon zonaTresDer;
 	public static ImageIcon barraTableta;
@@ -57,11 +56,7 @@ public class CargarImagenes {
 	public static ImageIcon bateria3;
 	public static ImageIcon bateria4;
 	public static ImageIcon mutecall;
-	public static ImageIcon inventario;
-	public static ImageIcon WIN;
 	public static ImageIcon fondoNegro;
-	public static ImageIcon gameOverFinal;
-	public static ImageIcon warning;
 
 	// Optimizacion de memoria investigada 2026-08-06 (el usuario reporto consumo excesivo en
 	// partidas largas -- "sospecho que la gran cantidad de gifs influye bastante"): gameOver,
@@ -107,12 +102,71 @@ public class CargarImagenes {
 		return estaticaRespaldo;
 	}
 
+	/*
+	 * Imágenes grandes que NO hacen falta para el selector de idioma ni el menú
+	 * (CLAUDE.md §1.52). Antes se cargaban en el bloque estático, antes de
+	 * mostrar la primera ventana (~550 ms medidos, FondoJuego.png sola ~300 ms).
+	 * Ahora: getter sincronizado que carga en el primer uso, y
+	 * precargarEnSegundoPlano() las adelanta en un hilo de baja prioridad
+	 * cuando el selector ya está en pantalla. Si alguien las pide antes de que
+	 * termine, espera solo lo que falte (mismo lock) y recibe la imagen ya
+	 * completa: new ImageIcon(URL) no vuelve hasta tener la imagen cargada.
+	 * "win.png" ya no se carga: ningún código la usa desde §1.11.
+	 */
+	private static ImageIcon fondoJuego, inventario, gameOverFinal, warning;
+
+	public static synchronized ImageIcon getFondoJuego() {
+		if (fondoJuego == null) {
+			fondoJuego = new ImageIcon(CargarImagenes.class.getResource("/images/fondos/FondoJuego.png"));
+		}
+		return fondoJuego;
+	}
+
+	public static synchronized ImageIcon getInventario() {
+		if (inventario == null) {
+			inventario = new ImageIcon(CargarImagenes.class.getResource("/images/fondos/inventario.png"));
+		}
+		return inventario;
+	}
+
+	public static synchronized ImageIcon getGameOverFinal() {
+		if (gameOverFinal == null) {
+			gameOverFinal = new ImageIcon(CargarImagenes.class.getResource("/images/fondos/GAME_OVER_.png"));
+		}
+		return gameOverFinal;
+	}
+
+	// Advertencia en inglés (la española es getAdvertenciaEspanol()).
+	public static synchronized ImageIcon getWarning() {
+		if (warning == null) {
+			warning = cargarImagenSegura("/images/fondos/warning_fdaf.png");
+		}
+		return warning;
+	}
+
+	private static boolean precargaIniciada = false;
+
+	// Se llama una vez, con el selector ya visible. Hilo daemon de prioridad
+	// mínima: no toca ningún componente Swing, solo crea las ImageIcon.
+	public static synchronized void precargarEnSegundoPlano() {
+		if (precargaIniciada) {
+			return;
+		}
+		precargaIniciada = true;
+		Thread hilo = new Thread(() -> {
+			getWarning();
+			getAdvertenciaEspanol();
+			getFondoJuego();
+			getInventario();
+			getGameOverFinal();
+		}, "Precarga-Imagenes");
+		hilo.setDaemon(true);
+		hilo.setPriority(Thread.MIN_PRIORITY);
+		hilo.start();
+	}
+
 	static {
-		WIN=new ImageIcon(CargarImagenes.class.getResource("/images/fondos/win.png"));
-		inventario = new ImageIcon(CargarImagenes.class.getResource("/images/fondos/inventario.png"));
 		fondoNegro = new ImageIcon(CargarImagenes.class.getResource("/images/fondos/fondo_negro.png"));
-		warning = cargarImagenSegura("/images/fondos/warning_fdaf.png");
-		gameOverFinal = new ImageIcon(CargarImagenes.class.getResource("/images/fondos/GAME_OVER_.png"));	    
 		juegoLuzIzq = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/OficinaLuzIzq.gif"));
 	    juegoLuzDer = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/OficinaLuzDer.gif"));
 	    // El archivo real en disco es "Abanico.gif" (A mayuscula) -- "abanico.gif" (minuscula)
@@ -141,7 +195,6 @@ public class CargarImagenes {
 	 	* Fondos
 	 	*/
 	
-		fondoJuego=new ImageIcon(CargarImagenes.class.getResource("/images/fondos/FondoJuego.png"));
  		zonaTresIzq=new ImageIcon(CargarImagenes.class.getResource("/images/fondos/left.png"));
  		zonaTresDer=new ImageIcon(CargarImagenes.class.getResource("/images/fondos/right.png"));
 	
@@ -197,20 +250,15 @@ public class CargarImagenes {
 	// Ruta del gif de introducción según la noche (índice 0-4). Si el
 		// archivo específico de esa noche no existe todavía, cae de vuelta al
 		// gif genérico -- nada se rompe mientras se agregan los 5 reales.
+		// Intros por idioma (CLAUDE.md §1.47): introNocheN_es.gif /
+		// introNocheN_en.gif, ya con su tarjeta "12:00 AM / 1ra Noche" o
+		// "1st Night" dibujada. Solo se carga la de la noche que se va a jugar.
 		public static String rutaIntroPorNoche(int indiceNoche) {
-			String[] rutas = {
-					"/gifs/fondos/introduccion/introNoche1.gif",
-					"/gifs/fondos/introduccion/introNoche2.gif",
-					"/gifs/fondos/introduccion/introNoche3.gif",
-					"/gifs/fondos/introduccion/introNoche4.gif",
-					"/gifs/fondos/introduccion/introNoche5.gif"
-			};
-
-			if (indiceNoche < 0 || indiceNoche >= rutas.length) {
+			if (indiceNoche < 0 || indiceNoche > 4) {
 				return "/gifs/fondos/empezar.gif";
 			}
-
-			String ruta = rutas[indiceNoche];
+			String sufijo = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES) ? "_en" : "_es";
+			String ruta = "/gifs/fondos/introduccion/introNoche" + (indiceNoche + 1) + sufijo + ".gif";
 			return (CargarImagenes.class.getResource(ruta) != null) ? ruta : "/gifs/fondos/empezar.gif";
 		}
 
@@ -225,7 +273,7 @@ public class CargarImagenes {
 		// los respaldos de gifs de §1.13), una vez por proceso.
 		private static ImageIcon advertenciaEspanol;
 
-		public static ImageIcon getAdvertenciaEspanol() {
+		public static synchronized ImageIcon getAdvertenciaEspanol() {
 			if (advertenciaEspanol == null) {
 				advertenciaEspanol = cargarImagenSegura("/images/fondos/advertencia_fdaf.png");
 			}
@@ -280,6 +328,12 @@ public class CargarImagenes {
 			return es != null ? es : panelDer;
 		}
 
+		// Rótulo de la cámara de la tableta, aparte del gif (CLAUDE.md §1.45).
+		public static ImageIcon getRotuloCamara() {
+			return etiquetaHud(ingles() ? "/images/hud/idioma/camera_disabled_en.png"
+					: "/images/hud/idioma/camara_desactivada_es.png");
+		}
+
 		public static ImageIcon getMuteCall() {
 			ImageIcon es = ingles() ? null : etiquetaHud("/images/hud/idioma/mutecall_es.png");
 			return es != null ? es : mutecall;
@@ -296,18 +350,77 @@ public class CargarImagenes {
 			return icono;
 		}
 
-		// Escala conservando la proporción para que quepa en maxAncho x
-		// maxAlto -- las etiquetas de texto no deben deformarse (el antiguo
-		// powerLeft.png se estiraba al tamaño de su label).
-		public static ImageIcon ajustarProporcional(ImageIcon original, int maxAncho, int maxAlto) {
-			if (original == null || original.getIconWidth() <= 0 || maxAncho <= 0 || maxAlto <= 0) {
-				return null;
+		// Coloca una etiqueta de texto (imagen) con la ALTURA DE MAYÚSCULA y la
+		// LÍNEA BASE dadas (px de pantalla), alineada a la izquierda en x
+		// (CLAUDE.md §1.48). Los PNG de cada idioma no tienen el mismo tamaño de
+		// letra (la "E" de "Energía restante" mide 36 px y la "P" de "Power
+		// left" 52 px en los recortes), así que encajarlas por ancho las dejaba
+		// de tamaños distintos; medir la primera letra las iguala, y alinear por
+		// la línea base hace que los descendentes ("g") no muevan el texto.
+		public static void colocarEtiqueta(javax.swing.JLabel etiqueta, ImageIcon imagen, int x, int yBase, double altoMayuscula) {
+			if (imagen == null || imagen.getIconHeight() <= 0) {
+				return;
 			}
-			double escala = Math.min((double) maxAncho / original.getIconWidth(),
-					(double) maxAlto / original.getIconHeight());
-			int ancho = Math.max(1, (int) Math.round(original.getIconWidth() * escala));
-			int alto = Math.max(1, (int) Math.round(original.getIconHeight() * escala));
-			return EscalarVista.getImagenEscalada(original, ancho, alto);
+			int[] letra = medirPrimeraLetra(imagen);
+			double escala = altoMayuscula / (letra[1] - letra[0] + 1);
+			int ancho = Math.max(1, (int) Math.round(imagen.getIconWidth() * escala));
+			int alto = Math.max(1, (int) Math.round(imagen.getIconHeight() * escala));
+			etiqueta.setText("");
+			etiqueta.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+			etiqueta.setVerticalAlignment(javax.swing.SwingConstants.TOP);
+			etiqueta.setIcon(EscalarVista.getImagenEscalada(imagen, ancho, alto));
+			etiqueta.setBounds(x, yBase - (int) Math.round((letra[1] + 1) * escala), ancho, alto);
 		}
+
+		// Reducción de una imagen grande a tamaño de icono por mitades sucesivas
+		// con interpolación bilineal (CLAUDE.md §1.52): resultado comparable a
+		// SCALE_SMOOTH pero en milisegundos. Solo para reducir, nunca ampliar.
+		public static ImageIcon reducirPorPasos(ImageIcon original, int ancho, int alto) {
+			int w = original.getIconWidth(), h = original.getIconHeight();
+			java.awt.image.BufferedImage actual = new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+			java.awt.Graphics2D g0 = actual.createGraphics();
+			g0.drawImage(original.getImage(), 0, 0, null);
+			g0.dispose();
+			do {
+				w = Math.max(ancho, w / 2);
+				h = Math.max(alto, h / 2);
+				java.awt.image.BufferedImage paso = new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+				java.awt.Graphics2D g = paso.createGraphics();
+				g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+				g.drawImage(actual, 0, 0, w, h, null);
+				g.dispose();
+				actual = paso;
+			} while (w > ancho || h > alto);
+			return new ImageIcon(actual);
+		}
+
+		private static final java.util.Map<ImageIcon, int[]> metricasLetra = new java.util.HashMap<>();
+
+		// {fila superior, fila inferior} de los píxeles opacos de las primeras
+		// columnas (la primera letra: "E", "P", "N"), en px de la imagen.
+		private static int[] medirPrimeraLetra(ImageIcon imagen) {
+			int[] cache = metricasLetra.get(imagen);
+			if (cache != null) {
+				return cache;
+			}
+			java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(imagen.getIconWidth(), imagen.getIconHeight(),
+					java.awt.image.BufferedImage.TYPE_INT_ARGB);
+			java.awt.Graphics g = bi.getGraphics();
+			g.drawImage(imagen.getImage(), 0, 0, null);
+			g.dispose();
+			int columnas = Math.max(4, bi.getWidth() / 14), arriba = bi.getHeight(), abajo = -1;
+			for (int x = 0; x < columnas; x++) {
+				for (int y = 0; y < bi.getHeight(); y++) {
+					if ((bi.getRGB(x, y) >>> 24) > 128) {
+						arriba = Math.min(arriba, y);
+						abajo = Math.max(abajo, y);
+					}
+				}
+			}
+			int[] r = (abajo < 0) ? new int[] { 0, bi.getHeight() - 1 } : new int[] { arriba, abajo };
+			metricasLetra.put(imagen, r);
+			return r;
+		}
+
 
 }

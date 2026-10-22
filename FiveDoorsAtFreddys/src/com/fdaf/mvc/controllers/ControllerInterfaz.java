@@ -173,12 +173,14 @@ public class ControllerInterfaz implements JuegoListener {
 		// "Noche N" / "Night N" como imagen localizada (misma fuente pixelada
 		// que "Energía restante"), sin deformar; el texto queda solo como
 		// respaldo si la imagen faltara (CLAUDE.md §1.40).
+		// Alineada a la izquierda con la batería y "Energía restante", debajo de
+		// la batería, misma altura de mayúscula para las 5 noches (§1.48).
 		JLabel lblNoche = pnlTableta.getLblNocheActual();
-		ImageIcon etiquetaNoche = CargarImagenes.ajustarProporcional(CargarImagenes.getEtiquetaNoche(numeroNoche),
-				lblNoche.getWidth(), lblNoche.getHeight());
+		ImageIcon etiquetaNoche = CargarImagenes.getEtiquetaNoche(numeroNoche);
 		if (etiquetaNoche != null) {
-			lblNoche.setText("");
-			lblNoche.setIcon(etiquetaNoche);
+			CargarImagenes.colocarEtiqueta(lblNoche, etiquetaNoche, EscalarVista.getEscalaX(EscalarVista.TABLETA_TEXTO_X),
+					EscalarVista.getEscalaY(EscalarVista.TABLETA_NOCHE_BASE),
+					EscalarVista.getEscalaY(EscalarVista.ALTO_MAYUSCULA_NOCHE));
 		} else {
 			lblNoche.setIcon(null);
 			lblNoche.setText((ingles ? "Night " : "Noche ") + numeroNoche);
@@ -190,7 +192,7 @@ public class ControllerInterfaz implements JuegoListener {
 		int anchoOficina = pnlJuego.getLblImgOficina().getWidth();
 		int altoOficina = pnlJuego.getLblImgOficina().getHeight();
 
-		this.gifOficinaNormal = new EscalarVista.GifEscalado(CargarImagenes.fondoJuego, anchoOficina, altoOficina);
+		this.gifOficinaNormal = new EscalarVista.GifEscalado(CargarImagenes.getFondoJuego(), anchoOficina, altoOficina);
 		this.gifOficinaLuzIzq = new EscalarVista.GifEscalado(CargarImagenes.juegoLuzIzq, anchoOficina, altoOficina);
 		this.gifOficinaLuzDer = new EscalarVista.GifEscalado(CargarImagenes.juegoLuzDer, anchoOficina, altoOficina);
 	}
@@ -1286,7 +1288,7 @@ public class ControllerInterfaz implements JuegoListener {
 		if (sonidoGameOver != null)
 			sonidoGameOver.stop();
 
-		pantallaGameOver.mostrar(CargarImagenes.gameOverFinal);
+		pantallaGameOver.mostrar(CargarImagenes.getGameOverFinal());
 
 		aplicarIdiomaGameOver(pantallaGameOver);
 

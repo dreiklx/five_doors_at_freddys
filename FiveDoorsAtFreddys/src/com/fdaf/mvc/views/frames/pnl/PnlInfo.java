@@ -310,6 +310,14 @@ public class PnlInfo extends JPanel {
 				}
 			}
 		});
+		// PnlInfo se reutiliza: si se sale con un clic, sin mouseExited el
+		// botón conservaría el resaltado la próxima vez que se abra (§1.49).
+		if (resaltarAlPasar) InteraccionBoton.restaurarAlOcultar(boton, () -> {
+			if (colorNormal[0] != null) {
+				boton.setForeground(colorNormal[0]);
+				colorNormal[0] = null;
+			}
+		});
 		// Mismo sonido de hover que el resto de los menús.
 		InteraccionBoton.aplicarHoverYSonido(boton);
 		return boton;

@@ -80,6 +80,16 @@ public class InteraccionBoton {
 				}
 			}
 		});
+		if (flecha != null || elementoAdicional != null) {
+			restaurarAlOcultar(boton, () -> {
+				if (flecha != null) {
+					flecha.setVisible(false);
+				}
+				if (elementoAdicional != null) {
+					elementoAdicional.setVisible(false);
+				}
+			});
+		}
 	}
 
 	// Controles de partida que no son JButton de menú (etiquetas, la barra de
@@ -97,6 +107,20 @@ public class InteraccionBoton {
 						&& (activo == null || activo.getAsBoolean())) {
 					reproducirSonidoHover();
 				}
+			}
+		});
+	}
+
+	// Restaura el aspecto normal de un control cuando deja de verse
+	// (CLAUDE.md §1.49). Al hacer clic en un botón que cambia de pantalla
+	// (vp.setContenido), el panel se retira con el cursor todavía encima y
+	// Swing nunca le envía mouseExited: el resaltado se quedaba puesto al
+	// volver. Si al volver el cursor sí está encima, el siguiente movimiento
+	// genera un mouseEntered normal y el resaltado vuelve a aplicarse.
+	public static void restaurarAlOcultar(JComponent componente, Runnable restaurar) {
+		componente.addHierarchyListener(e -> {
+			if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && !componente.isShowing()) {
+				restaurar.run();
 			}
 		});
 	}
@@ -126,8 +150,31 @@ public class InteraccionBoton {
 	// proyecto -- aplica el volumen vigente antes de sonar, así ningún
 	// llamador futuro puede volver a caer en el bug de volumen congelado.
 	public static void reproducirSonidoHover() {
-		SONIDO_HOVER.aplicarNivelGlobal(PreferenciasJuego.volumenGeneral);
-		SONIDO_HOVER.play();
+		// Fuera del hilo de Swing (CLAUDE.md §1.52): medido en Java 8, el
+		// segundo clip.stop() sobre este Clip puede bloquear 0.4-1.2 s mientras
+		// el dispositivo de audio de Windows termina de arrancar; hecho en el
+		// EDT congelaba el selector de idioma justo al pasar de una opción a la
+		// otra. Un único hilo propio; si ya hay una reproducción pendiente no se
+		// encola otra (el siguiente hover vuelve a sonar normalmente).
+		if (!HOVER_PENDIENTE.compareAndSet(false, true)) {
+			return;
+		}
+		HILO_SONIDO_HOVER.execute(() -> {
+			try {
+				SONIDO_HOVER.aplicarNivelGlobal(PreferenciasJuego.volumenGeneral);
+				SONIDO_HOVER.play();
+			} finally {
+				HOVER_PENDIENTE.set(false);
+			}
+		});
 	}
+
+	private static final java.util.concurrent.atomic.AtomicBoolean HOVER_PENDIENTE = new java.util.concurrent.atomic.AtomicBoolean();
+	private static final java.util.concurrent.ExecutorService HILO_SONIDO_HOVER = java.util.concurrent.Executors
+			.newSingleThreadExecutor(r -> {
+				Thread t = new Thread(r, "Sonido-Hover");
+				t.setDaemon(true);
+				return t;
+			});
 	
 }

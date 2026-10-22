@@ -95,6 +95,17 @@ public class CargarGifs {
 		}
 	}
 
+	// Libera el gif de esa ruta en cuanto deja de mostrarse (CLAUDE.md §1.47):
+	// flush() detiene su hilo "Image Animator" y descarta los cuadros
+	// decodificados. Para gifs grandes que solo se ven una vez (la intro de
+	// la noche), en vez de esperar a que la misma ruta se vuelva a cargar.
+	public static void liberar(String rutaClasspath) {
+		Image anterior = ultimaImagenPorRuta.remove(rutaClasspath);
+		if (anterior != null) {
+			anterior.flush();
+		}
+	}
+
 	public static ImageIcon cargarFresco(String rutaClasspath) {
 		return cargarFresco(rutaClasspath, null);
 	}

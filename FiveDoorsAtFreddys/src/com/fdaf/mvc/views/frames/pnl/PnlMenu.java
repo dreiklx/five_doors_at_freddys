@@ -221,6 +221,9 @@ public class PnlMenu extends JPanel {
 				boton.setForeground(COLOR_NAV_SECUNDARIA);
 			}
 		});
+		// Al abrir "Cómo jugar"/"Acerca del proyecto" el menú se retira sin
+		// mouseExited: sin esto el botón volvía violeta (§1.49).
+		com.fdaf.util.InteraccionBoton.restaurarAlOcultar(boton, () -> boton.setForeground(COLOR_NAV_SECUNDARIA));
 		pnlMenu.add(boton);
 		return boton;
 	}

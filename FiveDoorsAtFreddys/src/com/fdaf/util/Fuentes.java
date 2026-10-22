@@ -42,12 +42,4 @@ public class Fuentes {
 	// parámetro opcional en vez de forzarlo a PLAIN o duplicar la clase.
 	public static Font obtener(int tamano, int estilo) {
 		return new Font(FAMILIA_REAL, estilo, escalar(tamano));
-	}
-
-	// Tamaño exacto, sin escalar con la resolución: para texto que se dibuja
-	// en una imagen pequeña y luego se amplía como "pixel art" (rótulo de la
-	// cámara de la tableta, CLAUDE.md §1.42).
-	public static Font obtenerSinEscalar(int tamano, int estilo) {
-		return new Font(FAMILIA_REAL, estilo, tamano);
-	}
-}
+	}}

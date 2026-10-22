@@ -1688,7 +1688,7 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 
 **Archivos:** `TextosInfo.java`, `ControllerInterfaz.java`.
 
-### 1.40 Auditoría de `FDAF assets/FDAF HUD` e internacionalización de "Energía restante" y "Noche N", sesión 2026-10-22 (v2.6)
+### 1.40 Auditoría de `FDAF assets/FDAF HUD` e internacionalización de "Energía restante" y "Noche N", sesión 2026-10-22 (v2.6) — tamaño y posición corregidos en v2.7, ver §1.48
 
 **Carpeta revisada:** `C:\Users\dfarl\Desktop\FDAF assets\FDAF HUD` (existe en esa ruta; no está en OneDrive). 12 PNG creados por el usuario el 2026-10-22, ninguno estaba en el repo: `energiaRestante.png` ("Energía restante:"), `powerLeft.png` ("Power left:", versión nueva distinta del `hud/powerLeft.png` del repo), `noche1-5.png` ("Noche N") y `night1-5.png` ("Night N"). Todos: texto blanco en fuente pixelada sobre fondo transparente de ~2000×700 con mucho margen. Son variantes ES/EN del mismo juego de etiquetas; no hay duplicados ni versiones viejas entre ellos.
 
@@ -1702,7 +1702,7 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 
 **Archivos:** `CargarImagenes.java`, `EscalarVista.java` (`adaptarJuego`, `adaptarTablet`), `PnlJuego.java`, `ControllerInterfaz.java`, 12 PNG nuevos en `images/hud/idioma/`.
 
-### 1.41 Tarjeta "12:00 AM / 1st Night" de la intro de cada noche localizada, sesión 2026-10-22 (v2.6)
+### 1.41 Tarjeta "12:00 AM / 1st Night" de la intro de cada noche localizada, sesión 2026-10-22 (v2.6) — RETIRADA en v2.7: las intros nuevas ya traen la tarjeta localizada, ver §1.47
 
 **Hallazgo:** `introNoche1-5.gif` (20.4 s, 12-19 MB; mismos bytes que `FDAF assets/FDAF Empezar/empezarNoche1-5.gif`) terminan con una tarjeta negra "12:00 AM / 1st Night" ("2nd/3rd/4th/5th Night") dibujada dentro del gif, en inglés y con ordinal, desde ~10.8 s hasta el fundido de ~14.9-15.4 s; luego 5 s de negro con un reloj. Se veía igual en español. Metadatos de cuadros medidos con `GifMeta.java` (scratchpad).
 
@@ -1712,7 +1712,7 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 
 **Archivos:** `PnlIntroNoche.java` (nuevo), `ControllerMenu.java`.
 
-### 1.42 Botones y rótulos con texto incrustado: PUERTA/LUZ, COLGAR y "CÁMARA DESACTIVADA", sesión 2026-10-22 (v2.6)
+### 1.42 Botones y rótulos con texto incrustado: PUERTA/LUZ, COLGAR y "CÁMARA DESACTIVADA", sesión 2026-10-22 (v2.6) — en v2.7 la cámara pasa a §1.45 y LUZ se rehízo en §1.46
 
 **Hallazgos (revisión visual sistemática de todas las imágenes y de cuadros compuestos de todos los gifs del proyecto):** `ui/botones/pnlBotonesIzq/Der.fw.png` llevan "DOOR"/"LIGHT"; `hud/mutecall.png` lleva "MUTE CALL"; `gifs/fondos/camara.gif` (fondo de la tableta, 8 cuadros de estática) lleva "-CAMERA DISABLED- / AUDIO ONLY". Todos en inglés en ambos idiomas, sin variante española.
 
@@ -1752,6 +1752,143 @@ Todas con `-Duser.home` aislado (el `config.properties` real del jugador no se t
 - **No verificado:** interacción con ratón/teclado físicos (Robot no es viable en este entorno, §1.11); escucha humana del sonido; pantallas de Five Doors Escape (otro repositorio, sin cambios).
 
 **Versión:** `Version.MENOR` 5 → 6; este commit publica **v2.6** (§1.32).
+
+### 1.45 Cámara de la tableta: GIF limpio + rótulo aparte por idioma (reemplaza la solución de §1.42), sesión 2026-10-22 (v2.7)
+
+**Recursos nuevos del usuario** (`Desktop\FDAF assets\FDAF HUD`, 15:19-15:23): `camara.gif` (1600×900, 8 cuadros × 70 ms = 560 ms, misma estática que antes pero **sin texto**), `camaradesactivada.png` ("-CÁMARA DESACTIVADA- / SOLO AUDIO") y `cameradisabled.png` ("-CAMERA DISABLED- / AUDIO ONLY"), ambos 2169-2170×725 con fondo transparente; revisados visualmente.
+
+**Implementación:** el `camara.gif` limpio reemplaza al del repo en la misma ruta (`gifs/fondos/camara.gif`; un único gif para los dos idiomas). Los dos rótulos se recortaron con el MISMO rectángulo del original (x 4, y 155, 2160×390: unión de los contornos de ambos) y factor 0.35 → `images/hud/idioma/camara_desactivada_es.png` y `camera_disabled_en.png` (756×137, ~95-99 KB), así comparten lienzo y posición. `CargarImagenes.getRotuloCamara()` elige por idioma; `PnlCamaraTableta` (reescrita, mucho más simple) pinta el gif y encima el rótulo, en el rectángulo base x 468.6, y 51.2, 663.8×119.8: mismo alto (57-170) y centro que el texto que traía incrustado el gif anterior (medido con `Bbox.java` sobre un cuadro compuesto del gif viejo: x 448-1153, y 57-170), conservando la proporción del PNG. Se eliminó la solución de §1.42 (copiar estática y dibujar texto pixelado) y `Fuentes.obtenerSinEscalar`, que solo usaba ella.
+
+**Verificación (captura de render del panel real a 1920×1080):** ES y EN sobre un cuadro real del gif limpio; superposición del rótulo EN sobre el gif VIEJO para comprobar posición: misma altura y centro (la tipografía nueva es algo más estrecha, así que no coincide letra a letra, como era de esperar). Sin duplicados ni recortes.
+
+**Archivos:** `PnlCamaraTableta.java`, `PnlTableta.java`, `CargarImagenes.java`, `Fuentes.java`, `gifs/fondos/camara.gif` (reemplazado), 2 PNG nuevos.
+
+### 1.46 "LUZ" con la misma perspectiva que "LIGHT", sesión 2026-10-22 (v2.7)
+
+**Problema:** en §1.42 "LUZ" se escribió recto, pero el "LIGHT" original de cada panel está en perspectiva (la línea de base y la de arriba suben o bajan a lo largo de la palabra), así que "LUZ" no parecía pegado al panel. Además, el borrado por columnas dejó franjas verticales finas alrededor de "LUZ". "PUERTA" (sobre "DOOR", que en el original está recto) se dejó exactamente igual.
+
+**Medición (`LuzPerspectiva.java`, scratchpad):** bordes superior e inferior del texto "LIGHT" del panel ORIGINAL en su primera letra (L) y en la última (T), ignorando píxeles transparentes (un primer intento los contaba y daba medidas falsas): panel izquierdo L 263-284, T 258-278 (sube 5 px hacia la derecha); panel derecho L 258-278, T 263-283 (baja 5 px). Alto ~20-21 px en ambos extremos.
+
+**Corrección:** solo se regenera la franja de "LUZ" (filas ≥ 250 del panel; "PUERTA" está en las filas 118-152 y no se toca): relleno de fondo suavizado (media móvil de 9 columnas, respetando la transparencia del original) y "LUZ" (Arial Bold, color medio del texto original) mapeado columna a columna entre las dos rectas medidas, centrado en "LIGHT", con supermuestreo 4×4. Revisado en ampliación junto a los originales: "LUZ" sigue la misma inclinación que "LIGHT" en los dos paneles y se lee bien. Limitación: en el panel derecho la zona rellenada queda algo más lisa que la textura ruidosa del panel alrededor (visible solo en ampliación).
+
+**Archivos:** `images/hud/idioma/pnlBotonesIzq_es.png`, `pnlBotonesDer_es.png` (regenerados). El inglés sigue usando los originales.
+
+### 1.47 Intros nuevas de las 5 noches en ES/EN y temporizador con la duración real (reemplaza §1.41), sesión 2026-10-22 (v2.7)
+
+**Inventario de `Desktop\FDAF assets\FDAF Empezar`** (10 gifs, todos abiertos y compuestos cuadro a cuadro, no deducidos por nombre; todos 1600×900):
+
+| Archivo | Idioma / noche | Cuadros | Duración real | Peso | Contenido |
+|---|---|---|---|---|---|
+| `empezarNoche1.gif` | ES / 1 | 58 | 20.40 s | 14.1 MB | periódico "SE BUSCA PERSONAL / Pizzería de Freddy Fazbear" (nuevo, en español) → tarjeta "12:00 AM / 1ra Noche" → reloj 5 s |
+| `startNight1.gif` | EN / 1 | 59 | 20.45 s | 11.9 MB | idéntico byte a byte al `introNoche1.gif` que ya había: periódico "HELP WANTED" → "12:00 AM / 1st Night" → reloj 5 s |
+| `empezarNoche2-5.gif` | ES / 2-5 | 20 | 8.65 s c/u | 0.56 MB c/u | sin periódico: estática → tarjeta "2da/3ra/4ta/5ta Noche" 4 s → reloj 3 s |
+| `startNight2-5.gif` | EN / 2-5 | 20 | 8.65 s c/u | 0.50 MB c/u | igual con "2nd/3rd/4th/5th Night" |
+
+Las noches 2-5 duran exactamente lo mismo entre sí y en ambos idiomas (8650 ms, misma secuencia de retardos); la Noche 1 es la excepción (ES 20400 ms, EN 20450 ms: el gif inglés tiene un cuadro de 50 ms más). No hizo falta tocar ningún recurso.
+
+**Recursos en el proyecto:** `gifs/fondos/introduccion/introNoche{1-5}_{es,en}.gif`. `introNoche1.gif` se renombró (`git mv`) a `introNoche1_en.gif` (mismos bytes que `startNight1.gif`, sin duplicar); los antiguos `introNoche2-5.gif` (12-19 MB cada uno, periódico repetido en cada noche) se retiraron del repo porque las nuevas versiones los sustituyen. Total de la carpeta: de ~67 MB a ~30 MB. Originales del Escritorio sin tocar.
+
+**Código:**
+- `CargarImagenes.rutaIntroPorNoche(i)` elige `_es`/`_en` por `PreferenciasJuego.idiomaSeleccionado`; solo se carga el gif de la noche que se juega (como antes, con `CargarGifs.cargarFresco`), nunca los 10.
+- `ControllerMenu.iniciarSecuenciaIntro()`: el `Timer(20000)` fijo se reemplazó por `DuracionGif.leerMilisegundos(ruta, 20000)` (suma real de los retardos de cada cuadro, cacheada). Antes, la Noche 1 se cortaba 0.4 s antes del final y las noches 2-5 nuevas habrían esperado 11 s con el gif ya terminado (o en bucle). CTRL+S sigue saltando por el mismo `finalizarIntroYComenzarPartida()`.
+- Al terminar (natural o CTRL+S), `CargarGifs.liberar(ruta)` (nuevo) hace `flush()` del gif de la intro: su hilo "Image Animator" deja de decodificar detrás de la partida (antes seguía vivo hasta la siguiente carga de la misma ruta).
+- **Se retiró `PnlIntroNoche` (§1.41):** los gifs nuevos ya traen la tarjeta localizada ("1ra Noche", "2nd Night"...); superponer "Noche N" habría tapado el texto que preparó el usuario. La intro vuelve a usar `PnlAplicarImagen` simple.
+- Llamadas, inicio de la noche y resto del gameplay sin cambios.
+
+**Verificación (ejecución real, `PruebaIntros`, perfil aislado, las 10 intros):** cada noche usa su archivo e idioma; timer = 20400 / 20450 / 8650 ms; la partida se crea a los 8.73-8.79 s (noches 2-5) y 21.6 s (Noche 1: el temporizador arranca después de leer el gif de 12-14 MB y su duración en el hilo de Swing, ver §1.52); captura de la tarjeta de las 10 intros en vivo, todas correctas; hilos "Image Animator": 4 antes, 5 durante la intro y 4 un segundo después de empezar la partida (el de la intro se detiene).
+
+**Archivos:** `CargarImagenes.java`, `CargarGifs.java`, `ControllerMenu.java`, `PnlIntroNoche.java` (eliminado), gifs de `introduccion/` (5 ES + 4 EN nuevos, 1 renombrado, 4 retirados).
+
+### 1.48 "Energía restante"/"Power left" y "Noche N" con el mismo tamaño de letra y alineados con la batería, sesión 2026-10-22 (v2.7)
+
+**Causa medida (no supuesta):** en los recortes de §1.40, la primera mayúscula de `energia_restante_es.png` ("E") mide 36 px de alto y la de `power_left_en.png` ("P") 52 px; las "N" de `noche*_es.png` 64-69 px y las de `night*_en.png` 59-71 px (`Linea.java`, scratchpad). Es decir, los originales del usuario no tienen el mismo tamaño de letra, y como §1.40 encajaba cada imagen POR ANCHO en su caja, "Energía restante" (más larga y con letra más pequeña) quedaba ~35 % más chica que "Power left". "Noche N" se centraba en una caja de 200 px base, desalineado del resto de la columna (texto y batería alineados a la izquierda).
+
+**Corrección:** `CargarImagenes.colocarEtiqueta(label, imagen, x, yBase, altoMayuscula)` mide la primera letra de la imagen (filas opacas de sus primeras columnas, cacheado) y la escala para que su MAYÚSCULA mida lo pedido, la alinea a la izquierda en x y pone su LÍNEA BASE en yBase (los descendentes "g" no desplazan el texto). Las posiciones están juntas en `EscalarVista` (base 1600×900): oficina x 66, base 846, mayúscula 15 (justo encima de la batería en y 854); tableta x 1342, "Energía restante"/"Power left" base 383 (encima de la batería en y 393), "Noche N"/"Night N" base 474, mayúscula 24 (debajo de la batería, que termina en y 433). Mismos valores en ES y EN. Se eliminó `ajustarProporcional`, que ya no usa nadie. Las coordenadas del resto del inventario no se tocaron.
+
+**Verificación (render real de `ControllerInterfaz.init` a 1920×1080, `RenderHud`, 5 noches × 2 idiomas):** "Energía restante:" y "Power left:" con la misma altura de letra (18 px en pantalla) y la misma distancia a la batería en oficina y tableta; "Noche 1-5"/"Night 1-5" alineados a la izquierda con la batería y el texto superior, misma altura en las 5 noches; en la oficina "Energía restante:" termina a ~13 px de la barra de la tableta y en la tableta cabe dentro de la columna (justo).
+
+**Archivos:** `CargarImagenes.java`, `EscalarVista.java` (`adaptarJuego`, `adaptarTablet`, constantes nuevas), `ControllerInterfaz.java` (`actualizarTextosPartida`).
+
+### 1.49 Botones del menú que se quedaban resaltados al volver, sesión 2026-10-22 (v2.7)
+
+**Causa (reproducida):** al hacer clic en "Cómo jugar"/"Acerca del proyecto", `vp.setContenido(...)` retira el menú con el cursor todavía sobre el botón, y Swing no le envía `mouseExited` a un componente que deja de estar en pantalla: el color violeta del hover quedaba puesto al volver. El mismo mecanismo dejaba visible la flecha `>>` de los botones principales (Opciones, Nueva Partida...) y el resaltado del botón de salida de `PnlInfo` (que se reutiliza entre aperturas). No era un problema de listeners duplicados ni de visibilidad.
+
+**Corrección:** `InteraccionBoton.restaurarAlOcultar(componente, restaurar)` registra un `HierarchyListener` que, cuando el componente deja de mostrarse (`SHOWING_CHANGED` y `!isShowing()`), restaura su aspecto normal. Se usa en los botones secundarios de `PnlMenu` (color), en `aplicarHoverYSonido` (oculta flecha y elemento adicional) y en los botones de `PnlInfo` (color). Un listener por botón, registrado al crearlo. El hover y su sonido no cambian: si al volver el cursor sí está encima, el siguiente movimiento genera un `mouseEntered` normal y el botón se resalta de nuevo.
+
+**Verificación (`PruebaHoverVuelta`, simulación de eventos sobre el menú real):** 10 vueltas por Cómo jugar, Acerca del proyecto y Opciones. Con v2.6: 32 fallos (botón violeta y flecha visibles al volver). Con la corrección: 72/72; listeners de jerarquía 1→1 y de ratón 3→3 tras las 10 vueltas; un hover posterior sigue resaltando.
+
+**Archivos:** `InteraccionBoton.java`, `PnlMenu.java`, `PnlInfo.java`.
+
+### 1.50 "Cómo jugar" > Noches: números que parecían pegados, sesión 2026-10-22 (v2.7)
+
+**Causa (vista en captura 1:1):** la tabla de noches era una `<table cellpadding='2'>` de 3 columnas; el renderizador HTML de Swing apenas separa las celdas, así que se leía "Noche 14 baterías5 coleccionables" (el número de la noche pegado al de baterías). Además, "Opciones > Noche personalizada" podía partirse dejando "> Noche personalizada" al principio de línea.
+
+**Corrección (solo `TextosInfo`, ES y EN):** cada noche en una línea propia, con la etiqueta en negrita y separadores explícitos: "**Noche 1:** 4 baterías · 5 coleccionables" / "**Night 1:** 4 batteries · 5 collectibles" (fuente monoespaciada, así las columnas siguen alineadas). Las rutas de menú usan espacios no separables (`Opciones&nbsp;&gt;&nbsp;Noche&nbsp;personalizada`, también en la página de Escape). El tamaño de letra no cambió.
+
+**Verificación:** captura 1:1 de la página en ES y EN (las 5 noches claramente separadas); `PaginasInfo`: 0 desbordes en 1920×1080, 1920×1440 y 2520×1080 (un primer intento con un `<br>` extra desbordaba 2 px en 21:9 y se quitó).
+
+**Archivos:** `TextosInfo.java`.
+
+### 1.51 Introducción inicial mucho más corta (reemplaza el texto de §1.33 y §1.39), sesión 2026-10-22 (v2.7)
+
+**Antes:** 3 páginas, 215 palabras (ES) / 241 (EN): párrafos sobre qué es el proyecto, una lista larga de mecánicas, un bloque "LAS LLAMADAS" con título propio y una página de consejo. **Ahora:** 2 páginas, 114 / 112 palabras (medido con `ContarIntro`, texto visible sin HTML):
+1. **ANTES DE EMPEZAR / BEFORE YOU BEGIN** — fan-made inspirado en *Five Nights at Freddy's* con gameplay distinto + "llega hasta la Noche 5: al final hay una sorpresa".
+2. **CÓMO SE JUEGA / HOW IT WORKS** — "**Objetivo:**" en una frase; 4 viñetas cortas (mirar con el ratón en los bordes; PUERTA + LUZ para ver qué hay detrás; animatrónico = una batería, objeto = clic antes de que se cierre; barra inferior = tableta con el inventario); y al final, en gris y sin título, una sola línea: "Las llamadas pueden darte pistas; escucharlas es opcional. La noche empieza cuando terminan o al pulsar COLGAR." (EN: "...or you press MUTE CALL.").
+
+Se conservan los 5 puntos pedidos (fan-made distinto al original, mecánicas básicas, llamadas útiles pero opcionales, la noche empieza al terminar o colgar, recomendación de la Noche 5); la explicación completa sigue en "Cómo jugar". Navegación igual (Omitir / Siguiente / Anterior / Ir al menú), solo con una página menos.
+
+**Verificación:** capturas 1:1 de las 2 páginas en ES y EN; `PaginasInfo` 0 desbordes en las 3 resoluciones.
+
+**Archivos:** `TextosInfo.java` (`introTitulos`, `introCuerpos`).
+
+### 1.52 Rendimiento: el tirón del selector de idioma, arranque y preparación de la intro, sesión 2026-10-22 (v2.7)
+
+**Metodología (todo medido, arneses en el scratchpad, JDK 1.8.0_271, perfil aislado, misma máquina; "antes" = árbol exacto de v2.6):**
+- `PerfInicio`: reproduce `Main` (mismas propiedades y llamadas) y mide desde el arranque de la JVM cada fase, el primer pintado del selector, la respuesta del EDT durante 6 s (sonda cada 5 ms) y el heap tras GC.
+- `CuadrosMenu`: pinta el selector cada ~100 ms durante 12 s y cuenta los cambios reales de imagen del fondo animado (Menu.gif, 70 cuadros de 150 ms).
+- `PrimerHover`: tiempo en el EDT de 8 entradas del cursor alternando entre "Español" y "English" (despacho + repintado).
+- `CargaRecursos`, `DesgloseMenu`, `DesglosePnlMenu`, `ClipDesglose`, `CosteIntro`: desgloses de cada sospechoso.
+- Descartado con datos: el EDT no se bloquea en reposo (peor 5-11 ms en 6 s) y el fondo animado no pierde cuadros (≈88-90 cambios en 12 s, ningún hueco > ~200 ms), antes ni después. (Un primer intento de contar cuadros con un `ImageObserver` dio cifras absurdas y se descartó como método.)
+
+**Causa del tirón en el selector (encontrada):** el segundo `clip.stop()` sobre el `Clip` del sonido hover, en Java 8, puede bloquear **369-1213 ms** mientras el dispositivo de audio de Windows termina de arrancar tras el primer `start()` (`ClipDesglose`: no depende de `isRunning/isActive`, que siguen en verdadero al acabar). Como el hover sonaba en el EDT, pasar de una opción del selector a la otra congelaba la ventana: `PrimerHover` en v2.6 = 10-14 ms el primer hover y **544-1260 ms el segundo** (3 corridas). **Corrección:** `InteraccionBoton.reproducirSonidoHover()` reproduce en un hilo daemon propio ("Sonido-Hover"); si ya hay una reproducción pendiente no se encola otra. Después: todos los hovers 4-12 ms; `PruebaHover` sigue 56/56 en ES y EN.
+
+**Arranque (antes de que exista ninguna ventana):**
+- El bloque estático de `CargarImagenes` cargaba de forma síncrona imágenes que no usa el selector: FondoJuego.png ~300 ms, inventario ~77 ms, GAME_OVER_ ~76 ms, win ~47 ms, warning ~44 ms. Ahora `getFondoJuego()`, `getInventario()`, `getGameOverFinal()`, `getWarning()` (sincronizados, cargan en el primer uso) y `precargarEnSegundoPlano()`, lanzado con el selector ya creado: un hilo daemon de prioridad mínima que solo crea las `ImageIcon` (no toca componentes Swing); si alguien pide una antes de que termine, espera lo que falte por el mismo lock y recibe la imagen completa. `win.png` ya no se carga (ningún código la usa). `getAdvertenciaEspanol()` pasó a `synchronized`.
+- El logo NYDER (1254 px) se reducía a ~144 px con `SCALE_SMOOTH`: 140-176 ms dentro de `adaptarMenu`. Ahora `CargarImagenes.reducirPorPasos` (mitades sucesivas con interpolación bilineal): `adaptarMenu` baja de 164 a 31 ms; comparación visual lado a lado sin diferencias apreciables.
+- Lo que queda (~430 ms de `new PnlMenu`, primeras clases de Swing, fuentes) es inicialización normal y no se tocó.
+
+**Intro de la noche:** `DuracionGif` (§1.47) leía la duración con `ImageIO`, que para la intro de la Noche 1 (12-14 MB) bloqueaba el EDT **480-895 ms** al pulsar Nueva Partida/Continuar. Ahora recorre la estructura del gif y suma los retardos sin decodificar los datos de imagen (`ImageIO` queda como respaldo si el archivo no tiene la forma esperada): 8-15 ms. Validado contra `ImageIO` en los **32 gifs** del proyecto: misma duración en todos.
+
+**Antes → después (3 corridas cada uno, ms desde el arranque de la JVM):**
+
+| Medida | v2.6 | v2.7 |
+|---|---|---|
+| Bloque estático de `CargarImagenes` | 650-734 | 261-297 |
+| `new ControllerMenu()` termina | 1422-1560 | 969-973 |
+| Primer pintado del selector | 1744-1927 | 1276-1326 |
+| EDT con el selector en reposo (peor) | 6-9 | 6-11 |
+| 2.º hover en el selector (EDT) | 544-1260 | 4-12 |
+| Preparar intro Noche 1 (EDT) | ~0.5-0.9 s | 55 ms (lectura) + 15 ms (duración) |
+| Heap tras GC con el selector | 112-120 MB | 122-128 MB (una corrida 199 MB, probablemente la precarga a medio terminar) |
+
+El heap no baja: las mismas imágenes siguen cargándose, solo cambian de momento. No se cambió el tamaño de heap ni la forma de reproducir los gifs. Limitación: la medida "selector listo para interactuar" se aproxima con el primer pintado + respuesta del EDT; el tirón percibido por una persona no se pudo comprobar directamente.
+
+**Archivos:** `InteraccionBoton.java`, `CargarImagenes.java`, `ControllerMenu.java` (lanza la precarga), `EscalarVista.java` (logo), `DuracionGif.java`, `ControllerInterfaz.java`, `PnlTableta.java`, `PnlWarning.java` (getters).
+
+### 1.53 Pruebas de conjunto y publicación v2.7, sesión 2026-10-22
+
+Todas con perfil aislado (`-Duser.home`); el `config.properties` real del jugador no se tocó. Tipos de prueba: render real de paneles (capturas), simulación de eventos sobre los controladores reales, ejecución real con temporizadores y gifs reales, mediciones de tiempo; ninguna interacción con ratón/teclado físicos ni escucha humana del audio.
+- **Cámara (§1.45):** render ES/EN sobre el gif limpio; posición comprobada contra el texto del gif anterior.
+- **PUERTA/LUZ (§1.46):** ampliaciones de ambos paneles junto a los originales.
+- **Intros (§1.47):** `PruebaIntros`, las 10 en ejecución real: archivo, temporizador (20400/20450/8650 ms), paso a la partida, captura de la tarjeta y liberación del hilo del gif. `PruebaIntroLlamada` (Noche 5 EN): intro nueva + llamada que bloquea la puerta + fin natural único + puerta disponible después.
+- **Noche N y energía (§1.48):** `RenderHud`, 5 noches × 2 idiomas, oficina y tableta.
+- **Menú (§1.49):** `PruebaHoverVuelta` 72/72 (v2.6: 32 fallos), sin acumular listeners.
+- **Cómo jugar e introducción (§1.50-§1.51):** capturas 1:1 ES/EN; `PaginasInfo` 0 desbordes; `ContarIntro` 215/241 → 114/112 palabras.
+- **Rendimiento (§1.52):** tabla antes/después; `ValidarDuracion` 32/32.
+- **Regresión:** `PruebaHover` 56/56 ES y EN; `FlujoIdioma` ES y EN (selector → NYDER → advertencia del idioma → introducción de 2 páginas → menú `v 2.7`, cambio de idioma desde Opciones persistido); `MedirIdioma` 0 desbordes y textos en el idioma correcto.
+- **Compilación:** working tree y, antes del commit, el árbol exacto del índice (sin el trabajo ajeno), desde cero con JDK 1.8.0_271.
+
+**Versión:** `Version.MENOR` 6 → 7; este commit publica **v2.7** (§1.32).
 
 ---
 

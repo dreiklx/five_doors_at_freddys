@@ -36,7 +36,7 @@ public class PnlWarning extends JPanel {
 		javax.swing.ImageIcon imagen = (PreferenciasJuego.idiomaSeleccionado == Idioma.ESPANOL)
 				? CargarImagenes.getAdvertenciaEspanol() : null;
 		if (imagen == null) {
-			imagen = CargarImagenes.warning;
+			imagen = CargarImagenes.getWarning();
 		}
 		if (imagen != null) {
 			this.imagenAdvertencia = imagen.getImage();

@@ -59,6 +59,7 @@ public class ControllerMenu {
 	// Los usan tanto el flujo normal como los atajos de depuración.
 	private ControllerInterfaz partidaActiva;
 	private Timer timerIntroActivo;
+	private String rutaIntroActiva;
 
 	// "Warning activo" = true desde que arranca la secuencia, false
 	// desde el instante en que se muestra el menú -- sin importar si
@@ -134,6 +135,10 @@ public class ControllerMenu {
 		}
 
 		vp.init();
+
+		// Con la primera pantalla ya creada y visible, adelanta en segundo
+		// plano las imágenes grandes que se usarán más tarde (§1.52).
+		javax.swing.SwingUtilities.invokeLater(CargarImagenes::precargarEnSegundoPlano);
 	}
 	
 	// Presentación de NYDER (CLAUDE.md §1.29): va ANTES de la advertencia,
@@ -725,18 +730,22 @@ public class ControllerMenu {
 		String rutaIntro = CargarImagenes.rutaIntroPorNoche(PreferenciasJuego.nocheActual.ordinal());
 		
 		ImageIcon introFresca = com.fdaf.util.CargarGifs.cargarFresco(rutaIntro, CargarImagenes.getIntroduccionRespaldo());
-		
-		// La tarjeta final "12:00 AM / Nth Night" va en el idioma elegido
-		// (CLAUDE.md §1.41): PnlIntroNoche sustituye esa línea del gif.
-		JPanel panelIntro = new com.fdaf.mvc.views.frames.pnl.PnlIntroNoche(introFresca,
-				CargarImagenes.getEtiquetaNoche(PreferenciasJuego.nocheActual.ordinal() + 1));
+		rutaIntroActiva = rutaIntro;
+
+		// Cada gif ya trae su tarjeta en el idioma correcto (CLAUDE.md §1.47).
+		JPanel panelIntro = new PnlAplicarImagen(introFresca);
 		panelIntro.setBounds(0, 0,
 				EscalarVista.getEscalaX(1600),
 				EscalarVista.getEscalaY(900));
 
 		vp.setContenido(panelIntro);
 
-		timerIntroActivo = new Timer(20000, ev -> {
+		// Duración REAL del gif (suma de sus retardos, cacheada), no un valor
+		// fijo: Noche 1 dura 20.4 s (ES) / 20.45 s (EN) y las noches 2-5,
+		// 8.65 s. El antiguo Timer(20000) cortaba la Noche 1 0.4 s antes y
+		// dejaba las noches 2-5 esperando 11 s con el gif ya terminado.
+		int duracionMs = com.fdaf.util.DuracionGif.leerMilisegundos(rutaIntro, 20000);
+		timerIntroActivo = new Timer(duracionMs, ev -> {
 			((Timer) ev.getSource()).stop();
 			finalizarIntroYComenzarPartida();
 		});
@@ -745,7 +754,7 @@ public class ControllerMenu {
 	}
 
 	// Único punto real de "la intro terminó, empieza el juego" -- lo
-	// dispara tanto el timer natural de 20s como el atajo CTRL+S. Nunca
+	// dispara tanto el timer natural (duración real del gif) como el atajo CTRL+S. Nunca
 	// hay dos rutas distintas para esta transición.
 	private void finalizarIntroYComenzarPartida() {
 
@@ -753,6 +762,13 @@ public class ControllerMenu {
 			timerIntroActivo.stop();
 		}
 		timerIntroActivo = null;
+
+		// El gif de la intro ya no se ve: se libera para que su hilo de
+		// animación de AWT no siga decodificando detrás de la partida.
+		if (rutaIntroActiva != null) {
+			com.fdaf.util.CargarGifs.liberar(rutaIntroActiva);
+			rutaIntroActiva = null;
+		}
 
 		ControllerInterfaz interfaz = new ControllerInterfaz();
 		partidaActiva = interfaz;

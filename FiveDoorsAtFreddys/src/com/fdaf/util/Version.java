@@ -9,7 +9,7 @@ package com.fdaf.util;
 public final class Version {
 
 	public static final int MAYOR = 2;
-	public static final int MENOR = 6;
+	public static final int MENOR = 7;
 
 	private Version() {
 	}

@@ -37,6 +37,15 @@ import com.fdaf.mvc.views.frames.pnl.PnlVolumen;
 
 public class EscalarVista {
 
+	// Etiquetas de texto del HUD (imágenes "Energía restante"/"Power left" y
+	// "Noche N"/"Night N"), en coordenadas base 1600x900 (CLAUDE.md §1.48):
+	// borde izquierdo del texto, línea base y altura de mayúscula. Mismos
+	// valores para ES y EN, así el texto tiene el mismo tamaño aparente y la
+	// misma distancia a la batería en los dos idiomas.
+	public static final int OFICINA_TEXTO_X = 66, OFICINA_ENERGIA_BASE = 846;
+	public static final int TABLETA_TEXTO_X = 1342, TABLETA_ENERGIA_BASE = 383, TABLETA_NOCHE_BASE = 474;
+	public static final int ALTO_MAYUSCULA_ENERGIA = 15, ALTO_MAYUSCULA_NOCHE = 24;
+
 
 
 	public static ImageIcon getImagenEscalada(ImageIcon archivo, int ancho, int alto) {
@@ -313,7 +322,9 @@ public class EscalarVista {
 		lblLogo.setBounds(derecha - lado, abajo - lado, lado, lado);
 		ImageIcon logoOriginal = menu.tomarLogoNyderOriginal();
 		if (logoOriginal != null) {
-			lblLogo.setIcon(getImagenEscalada(logoOriginal, lado, lado));
+			// Reducción por pasos (§1.52): SCALE_SMOOTH de 1254 a ~144 px costaba
+			// 140-176 ms antes de que apareciera la ventana.
+			lblLogo.setIcon(CargarImagenes.reducirPorPasos(logoOriginal, lado, lado));
 			logoOriginal.getImage().flush();
 		}
 
@@ -355,12 +366,10 @@ public class EscalarVista {
 				tablet.getLblCopyBateria().getWidth(), tablet.getLblCopyBateria().getHeight()));
 		
 		
-		tablet.getLblCopyPowerLeft().setBounds(
-				getEscalaX(1326), getEscalaY(314),
-				getEscalaX(200), getEscalaY(55));
-		// Etiqueta localizada, sin deformar (CLAUDE.md §1.40).
-		tablet.getLblCopyPowerLeft().setIcon(CargarImagenes.ajustarProporcional(CargarImagenes.getEtiquetaEnergia(),
-				tablet.getLblCopyPowerLeft().getWidth(), tablet.getLblCopyPowerLeft().getHeight()));
+		// Etiqueta localizada: misma altura de mayúscula en ES y EN, alineada a
+		// la izquierda con la batería y con su línea base justo encima (§1.48).
+		CargarImagenes.colocarEtiqueta(tablet.getLblCopyPowerLeft(), CargarImagenes.getEtiquetaEnergia(),
+				getEscalaX(TABLETA_TEXTO_X), getEscalaY(TABLETA_ENERGIA_BASE), getEscalaY(ALTO_MAYUSCULA_ENERGIA));
 
 		JLabel nocheActual = tablet.getLblNocheActual();
 		tablet.getLblNocheActual().setBounds(
@@ -468,7 +477,7 @@ public class EscalarVista {
 				juego.getLblImgOficina().setBounds(getEscalaX(-300), getEscalaY(-83), getEscalaX(2200), getEscalaY(1020));
 				
 				juego.getLblImgOficina().setIcon(new EscalarVista.GifEscalado(
-						CargarImagenes.fondoJuego,
+						CargarImagenes.getFondoJuego(),
 						juego.getLblImgOficina().getWidth(),
 						juego.getLblImgOficina().getHeight()
 				));
@@ -499,12 +508,9 @@ public class EscalarVista {
 						juego.getLblPuertaIzq().getHeight()
 				));
 				
-				juego.getLblPowerLeft().setBounds(
-						getEscalaX(57), getEscalaY(808),
-						getEscalaX(205), getEscalaY(35));
-				// Etiqueta localizada, sin deformar (CLAUDE.md §1.40).
-				juego.getLblPowerLeft().setIcon(CargarImagenes.ajustarProporcional(CargarImagenes.getEtiquetaEnergia(),
-						juego.getLblPowerLeft().getWidth(), juego.getLblPowerLeft().getHeight()));
+				// Misma altura de mayúscula en ES y EN, alineada con la batería (§1.48).
+				CargarImagenes.colocarEtiqueta(juego.getLblPowerLeft(), CargarImagenes.getEtiquetaEnergia(),
+						getEscalaX(OFICINA_TEXTO_X), getEscalaY(OFICINA_ENERGIA_BASE), getEscalaY(ALTO_MAYUSCULA_ENERGIA));
 				
 				juego.getLblBateria().setBounds(
 						getEscalaX(67), getEscalaY(854),

@@ -51,10 +51,9 @@ public class PnlTableta extends JPanel {
 		setPreferredSize(new Dimension(1600, 900));
 		setLayout(null);
 		
-		// Rótulo de la cámara en el idioma elegido (CLAUDE.md §1.42); la
-		// tableta se crea con cada partida, cuando el idioma ya está fijado.
-		boolean ingles = com.fdaf.util.PreferenciasJuego.idiomaSeleccionado == com.fdaf.util.Idioma.INGLES;
-		panel = new PnlCamaraTableta(CargarImagenes.camara, ingles ? null : "-CÁMARA DESACTIVADA-", "SOLO AUDIO");
+		// Gif de cámara limpio + rótulo en el idioma elegido (CLAUDE.md §1.45);
+		// la tableta se crea con cada partida, cuando el idioma ya está fijado.
+		panel = new PnlCamaraTableta(CargarImagenes.camara, CargarImagenes.getRotuloCamara());
 		panel.setOpaque(false);
 		panel.setBounds(0, 0, 1600, 900);
 		add(panel);
@@ -72,7 +71,7 @@ public class PnlTableta extends JPanel {
 	
 		pbarRendirse.setBounds(1319,824,236,31);
 
-		pnlColeccionables = new PnlAplicarImagen(CargarImagenes.inventario);
+		pnlColeccionables = new PnlAplicarImagen(CargarImagenes.getInventario());
 		pnlColeccionables.setBounds(0, 0, 1600, 900);
 		pnlColeccionables.setOpaque(false);
 
