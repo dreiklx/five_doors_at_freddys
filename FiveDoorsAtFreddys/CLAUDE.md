@@ -1478,6 +1478,16 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 
 **Commiteado y pusheado a `five_doors_at_freddys`:** `Fuentes.java`, `EscalarVista.java` (`adaptarMenu`).
 
+### 1.26 Guitarra de Bonnie imposible de recoger en la puerta derecha (cambio (3) de `b1b6d10`), sesión 2026-10-22
+
+**Problema real, reproducido.** El compañero hizo que la guitarra se muestre como overlay grande (153×402 base, el tamaño exacto de la imagen nueva) en `x=275` (izquierda) / `x=1755` (derecha). Pero `mostrarIconoEnOverlay` ubica el overlay en coordenadas de **pantalla** en el instante de la revelación, y la cámara en ese instante está paneada del todo hacia el lado de la puerta (es el único estado en que su botón DOOR/LIGHT es visible). Base 1755 está fuera del lienzo base de 1600 → en 1920×1080 el overlay cae en `x=2107`. Además, después de revelar, el overlay solo se mueve junto con el paneo, y con la cámara ya al tope derecho no puede volver a entrar en pantalla. **Resultado: guitarra 0% visible → imposible hacer clic en sus 6s (`MS_COLECCIONABLE`) → coleccionable perdido**, y la noche exige `inventario.todosEncontrados()` para ganar.
+
+**Reproducción real (no deducida solo del código):** arnés con `ControllerInterfaz` + `ControllerCamara.init` reales, paneo real con `derecha(40)`/`izquierda(40)` (los mismos `Timer` que disparan las zonas de hover), luego `alRevelarColeccionable` real. Medido: derecha guitarra `overlay x=2107` → **0% visible**; izquierda guitarra 98%; cupcake en ambos lados 100%. Render `printAll` del `PnlJuego` confirmó que la colocación izquierda del compañero es intencional y se ve bien (guitarra apoyada en el marco de la puerta izquierda).
+
+**Corrección:** derecha `1755 → 1130` (base), que espeja la colocación izquierda dentro del marco de la puerta derecha (≈1108-1300 base con el paneo real). Re-medido: derecha 98% visible (el 2% restante es el borde inferior, igual que la izquierda original), render confirma la guitarra apoyada en el marco derecho. La izquierda y el resto del cambio del compañero no se tocaron. Las imágenes nuevas de coleccionables también se renderizaron en los 10 slots del inventario (`agregarAlInventario` real) -- se ven bien, sin distorsión apreciable; el detalle (`mostrarDetalleColeccionable`) ya conserva proporción.
+
+**Commiteado y pusheado a `five_doors_at_freddys`:** `ControllerInterfaz.java`.
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos

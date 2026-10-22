@@ -642,7 +642,12 @@ public class ControllerInterfaz implements JuegoListener {
 			}
 		} else {
 			if(altoBase>80) {
-			overlay.setBounds(EscalarVista.getEscalaX(1755), EscalarVista.getEscalaY(506),
+			// x=1130 (antes 1755): el overlay se ubica en coordenadas de PANTALLA en el
+			// instante de la revelación, con la cámara ya paneada a la derecha (único estado
+			// en que el botón de la puerta derecha es visible). 1755 caía fuera del lienzo
+			// base de 1600 -> guitarra 0% visible e imposible de recoger (CLAUDE.md §1.26).
+			// 1130 la deja dentro del marco de la puerta derecha, espejo de la izquierda.
+			overlay.setBounds(EscalarVista.getEscalaX(1130), EscalarVista.getEscalaY(506),
 					EscalarVista.getEscalaX(153), EscalarVista.getEscalaY(altoBase));
 			}else {
 				overlay.setBounds(EscalarVista.getEscalaX(1200), EscalarVista.getEscalaY(740),
