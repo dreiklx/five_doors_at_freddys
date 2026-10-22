@@ -130,9 +130,60 @@ public class ControllerMenu {
 		vp.init();
 	}
 	
-	private void mostrarAdvertenciaInicial() {
+	// Presentación de NYDER (CLAUDE.md §1.29): va ANTES de la advertencia,
+	// dentro de la misma secuencia de inicio (advertenciaActiva ya es true)
+	// y con el mismo animarFade/timerAdvertenciaActual -- nunca hay dos
+	// timers de la secuencia corriendo a la vez. ~3s en total.
+	private static final String RUTA_NYDER = "/images/nyder/NYDER.png";
+	private static final int NYDER_FADE_MS = 600;
+	private static final int NYDER_VISIBLE_MS = 1800;
+	private boolean presentacionNyderActiva = false;
+	private java.awt.Image imagenNyder;
 
+	private void mostrarAdvertenciaInicial() {
 		advertenciaActiva = true;
+		mostrarPresentacionNyder();
+	}
+
+	private void mostrarPresentacionNyder() {
+		java.net.URL recurso = getClass().getResource(RUTA_NYDER);
+		if (recurso == null) {
+			System.out.println("[RECURSO NO ENCONTRADO] " + RUTA_NYDER);
+			mostrarPantallaAdvertencia();
+			return;
+		}
+		presentacionNyderActiva = true;
+		imagenNyder = new javax.swing.ImageIcon(recurso).getImage();
+
+		com.fdaf.mvc.views.frames.pnl.PnlWarning pantalla =
+				new com.fdaf.mvc.views.frames.pnl.PnlWarning(imagenNyder, 0.55);
+		EscalarVista.adaptarWarning(vp, pantalla);
+		pantalla.setAlpha(0.0f);
+		vp.setContenido(pantalla);
+
+		animarFade(pantalla, 0.0f, 1.0f, NYDER_FADE_MS, () -> {
+			Timer esperar = new Timer(NYDER_VISIBLE_MS, e1 -> {
+				((Timer) e1.getSource()).stop();
+				animarFade(pantalla, 1.0f, 0.0f, NYDER_FADE_MS, this::finalizarPresentacionNyder);
+			});
+			esperar.setRepeats(false);
+			timerAdvertenciaActual = esperar;
+			esperar.start();
+		});
+	}
+
+	// Único cierre de la presentación (fade-out natural o CTRL+S): libera
+	// la imagen (solo se usa una vez por inicio) y arranca la advertencia.
+	private void finalizarPresentacionNyder() {
+		presentacionNyderActiva = false;
+		if (imagenNyder != null) {
+			imagenNyder.flush();
+			imagenNyder = null;
+		}
+		mostrarPantallaAdvertencia();
+	}
+
+	private void mostrarPantallaAdvertencia() {
 
 		com.fdaf.mvc.views.frames.pnl.PnlWarning pantalla = new com.fdaf.mvc.views.frames.pnl.PnlWarning();
 		EscalarVista.adaptarWarning(vp, pantalla);
@@ -198,6 +249,12 @@ public class ControllerMenu {
 		}
 		if (timerAdvertenciaActual != null && timerAdvertenciaActual.isRunning()) {
 			timerAdvertenciaActual.stop();
+		}
+		// Durante NYDER, CTRL+S salta solo la presentación: la advertencia
+		// se sigue mostrando completa, como antes.
+		if (presentacionNyderActiva) {
+			finalizarPresentacionNyder();
+			return;
 		}
 		finalizarAdvertenciaYMostrarMenu();
 	}

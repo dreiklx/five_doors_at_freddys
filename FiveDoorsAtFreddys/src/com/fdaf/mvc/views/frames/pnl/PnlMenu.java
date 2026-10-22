@@ -2,6 +2,7 @@ package com.fdaf.mvc.views.frames.pnl;
 
 import javax.swing.JPanel;
 import java.awt.Color;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
@@ -29,7 +30,8 @@ public class PnlMenu extends JPanel {
 	private JTextPane txtpnFiveDoorsAt;
 	private PnlConfirmacion pnlConfirmacion;
 	private JLabel lblVersion;
-	private JLabel lblCreditos;
+	private JLabel lblLogoNyder;
+	private ImageIcon logoNyderOriginal;
 
 	public PnlMenu() {
 		setPreferredSize(new Dimension(1600, 900));
@@ -132,13 +134,17 @@ public class PnlMenu extends JPanel {
 		lblVersion.setBounds(20, 865, 200, 25);
 		pnlMenu.add(lblVersion);
 
-		lblCreditos = new JLabel("©2026 Derek, Naygell, Ramsey, Elmer (UCR)");
-		lblCreditos.setForeground(Color.WHITE);
-		lblCreditos.setBackground(Color.WHITE);
-		lblCreditos.setFont(Fuentes.obtener(25));
-		lblCreditos.setHorizontalAlignment(SwingConstants.RIGHT);
-		lblCreditos.setBounds(900, 865, 680, 25);
-		pnlMenu.add(lblCreditos);
+		// Identidad de NYDER en la esquina inferior derecha, donde antes
+		// estaban los créditos con nuestros nombres (CLAUDE.md §1.30) --
+		// simétrica a la versión (esquina inferior izquierda). El icono se
+		// asigna ya escalado en EscalarVista.adaptarMenu.
+		lblLogoNyder = new JLabel();
+		lblLogoNyder.setBounds(1460, 768, 120, 120);
+		java.net.URL recursoLogo = PnlMenu.class.getResource("/images/nyder/NYDER-logo.png");
+		if (recursoLogo != null) {
+			logoNyderOriginal = new ImageIcon(recursoLogo);
+		}
+		pnlMenu.add(lblLogoNyder);
 	}
 
 	public void init(VistaPrincipal vp, PnlMenu menu) {
@@ -167,6 +173,12 @@ public class PnlMenu extends JPanel {
 	public void setBtnOpciones(JButton btnOpciones) { this.btnOpciones = btnOpciones; }
 	public JLabel getLblVersion() { return lblVersion; }
 	public void setLblVersion(JLabel lblVersion) { this.lblVersion = lblVersion; }
-	public JLabel getLblCreditos() { return lblCreditos; }
-	public void setLblCreditos(JLabel lblCreditos) { this.lblCreditos = lblCreditos; }
+	public JLabel getLblLogoNyder() { return lblLogoNyder; }
+	// Se consume una sola vez (EscalarVista.adaptarMenu): devuelve el icono
+	// original y suelta la referencia, para no retener el PNG de 1254px.
+	public ImageIcon tomarLogoNyderOriginal() {
+		ImageIcon original = logoNyderOriginal;
+		logoNyderOriginal = null;
+		return original;
+	}
 }

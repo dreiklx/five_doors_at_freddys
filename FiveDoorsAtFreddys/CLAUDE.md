@@ -1518,6 +1518,42 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 
 **Sin cambios de código en esta sección.**
 
+### 1.29 Presentación de NYDER antes de la advertencia inicial, sesión 2026-10-22
+
+**Pedido:** al abrir el juego, mostrar `NYDER.png` con entrada y salida graduales (~3s en total) **antes** de la advertencia inicial, reutilizando el fade existente, sin alterar la advertencia.
+
+**Recursos:** `src/com/fdaf/resources/images/nyder/` (aportados por el usuario, sin seguimiento hasta esta sesión): `NYDER.png` (2172×724, texto blanco + estrella violeta sobre transparente), `NYDER-logo.png` (1254×1254), `NYDER-star.png`, `icon_maskable.png`, `icon_rounded.png`. Se commitean solo los dos que se usan (`NYDER.png`, `NYDER-logo.png`); los otros 3 quedan sin seguimiento, como estaban.
+
+**Implementación (la más simple compatible con el flujo existente):**
+- `PnlWarning` ganó un segundo constructor `PnlWarning(Image, fraccionAncho)`: misma pantalla negra y mismo alpha que la advertencia, pero dibuja la imagen **centrada y conservando su proporción** (máx. 55% del ancho / 80% del alto, interpolación bicúbica). El constructor original y su dibujo a pantalla completa no cambiaron.
+- `ControllerMenu.mostrarAdvertenciaInicial()` ahora marca `advertenciaActiva=true` y llama a `mostrarPresentacionNyder()`: `animarFade` 0→1 en 600ms, `Timer` de 1800ms, `animarFade` 1→0 en 600ms (3.0s), y `finalizarPresentacionNyder()` libera la imagen (`flush()`, se usa una vez por inicio) y llama a `mostrarPantallaAdvertencia()` -- el cuerpo original de la advertencia, **sin cambios** (1s + 3s + 1s). Todo pasa por el mismo `timerAdvertenciaActual`, así que nunca hay dos timers de la secuencia corriendo a la vez.
+- `saltarAdvertencia()` (CTRL+S): durante NYDER salta solo la presentación y la advertencia se muestra completa; durante la advertencia, igual que antes.
+- El reinicio interno de proceso (`--reinicio-interno`, §1.20) sigue yendo directo al menú: NYDER aparece una sola vez por inicio normal. ESC no actúa en esta pantalla (igual que en la advertencia). Si `NYDER.png` faltara, se va directo a la advertencia.
+
+**Pruebas (arnés con el `ControllerMenu.init()` real, ventana real, `-Duser.home` aislado, muestreo cada 100ms del panel activo y su alpha por reflexión):**
+- Secuencia normal: NYDER alpha 0.52→1.00 (visible ~1.8s)→0.09, luego ADVERTENCIA 0→1.00 (3s)→0.25, luego `PnlMenu` con `advertenciaActiva=false`. NYDER nunca coincide con la advertencia.
+- CTRL+S a mitad del fade-in de NYDER: pasa directo a la advertencia, que corre completa una sola vez y luego el menú (confirma que no queda un timer viejo vivo).
+- Captura del panel a alpha 1.0: logo centrado, sin deformar, fondo negro.
+- Limitación: el "parpadeo"/suavidad se verificó por valores de alpha y capturas, no a ojo humano en la ventana real.
+
+**Archivos:** `PnlWarning.java`, `ControllerMenu.java`, `resources/images/nyder/NYDER.png`.
+
+### 1.30 Créditos con nombres retirados del menú y logo de NYDER en su lugar, sesión 2026-10-22
+
+**Qué se retiró:** únicamente `lblCreditos` de `PnlMenu` (`"©2026 Derek, Naygell, Ramsey, Elmer (UCR)"`, esquina inferior derecha), con su campo, getter/setter y su escalado en `EscalarVista.adaptarMenu`. No había otra referencia en el código (grep). `lblVersion` ("v 2.1", esquina inferior izquierda) y el resto del menú no se tocaron. Fuera del alcance y sin tocar: la sección "Créditos" de `README.md`.
+
+**Logo:** nuevo `JLabel lblLogoNyder` en la misma esquina inferior derecha que ocupaban los créditos, simétrico a la versión de la esquina opuesta: base 120×120 en (1460,768), es decir con 20px de margen derecho y 12px de margen inferior sobre el lienzo de 1600×900. Sobre el fondo real (`Menu.gif`) esa zona es oscura (debajo del rostro de Freddy), así que el logo blanco/violeta se lee bien sin tapar nada. `PnlMenu` carga `NYDER-logo.png` una vez; `adaptarMenu` calcula el lado con UN solo factor (`min(escalaX, escalaY)`, para que siga cuadrado en pantallas que no son 16:9), lo ancla a la esquina, asigna el icono ya escalado (`getImagenEscalada`, `SCALE_SMOOTH`) y libera el PNG original de 1254px (`tomarLogoNyderOriginal()` + `flush()`). `adaptarMenu` se ejecuta una sola vez por proceso.
+
+**Pruebas:**
+- Render del `PnlMenu` real sobre el primer cuadro real de `Menu.gif` (1920×1080): logo de 144×144 en (1753,921), nítido, sin deformar, alineado con la línea base de la versión; el arnés no encontró intersecciones con ningún otro componente visible.
+- Cálculo con la misma fórmula para 1280×720, 1366×768, 1600×900, 1920×1080, 2560×1440, 1280×1024 y 1920×1200: siempre cuadrado (96-192px), dentro de pantalla y lejos de la versión y de los botones (que están en la mitad izquierda).
+- Arranque real completo (`ControllerMenu.init()`, ventana real, `-Duser.home` aislado): NYDER → advertencia → menú; logo mostrándose con icono de 144px; ninguna etiqueta con los nombres; Opciones → Atrás dos veces vuelve al menú correctamente.
+- Compilación del árbol a commitear desde cero con JDK 1.8.0_271.
+
+**Interacción con el WIP ajeno de `PnlMenu.java`:** ese WIP cambiaba la línea `lblCreditos.setFont(...)`; al eliminarse la etiqueta, esa línea del WIP desaparece necesariamente (y con ella el riesgo de doble escalado señalado en §1.25). El otro cambio del WIP en ese archivo ("v 2.1"→"v 2.7") sigue intacto en el working tree y **no** se commitea.
+
+**Archivos:** `PnlMenu.java`, `EscalarVista.java` (`adaptarMenu`), `resources/images/nyder/NYDER-logo.png`.
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos

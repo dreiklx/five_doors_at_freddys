@@ -298,15 +298,24 @@ public class EscalarVista {
 				getEscalaX(lblFlechaConfirmacion.getWidth()), getEscalaY(lblFlechaConfirmacion.getHeight()));
 
 		JLabel lblVersion = menu.getLblVersion();
-		JLabel lblCreditos = menu.getLblCreditos();
-
 		menu.getLblVersion().setBounds(
 				getEscalaX(lblVersion.getX()), getEscalaY(lblVersion.getY()),
 				getEscalaX(lblVersion.getWidth()), getEscalaY(lblVersion.getHeight()));
 
-		menu.getLblCreditos().setBounds(
-				getEscalaX(lblCreditos.getX()), getEscalaY(lblCreditos.getY()),
-				getEscalaX(lblCreditos.getWidth()), getEscalaY(lblCreditos.getHeight()));
+		// Logo de NYDER (CLAUDE.md §1.30): lado con UN solo factor para que
+		// siga cuadrado en cualquier relación de aspecto, anclado a la misma
+		// esquina inferior derecha. Se escala una sola vez y se suelta el
+		// original de 1254px.
+		JLabel lblLogo = menu.getLblLogoNyder();
+		int lado = Math.min(getEscalaX(lblLogo.getWidth()), getEscalaY(lblLogo.getHeight()));
+		int derecha = getEscalaX(lblLogo.getX() + lblLogo.getWidth());
+		int abajo = getEscalaY(lblLogo.getY() + lblLogo.getHeight());
+		lblLogo.setBounds(derecha - lado, abajo - lado, lado, lado);
+		ImageIcon logoOriginal = menu.tomarLogoNyderOriginal();
+		if (logoOriginal != null) {
+			lblLogo.setIcon(getImagenEscalada(logoOriginal, lado, lado));
+			logoOriginal.getImage().flush();
+		}
 
 		// El título nunca pasaba por el escalado de bounds -- daba igual
 		// mientras la fuente no escalaba, pero desde que Fuentes escala con

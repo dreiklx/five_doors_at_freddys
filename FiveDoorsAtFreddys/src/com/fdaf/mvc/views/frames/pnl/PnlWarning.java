@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
 
 import javax.swing.JPanel;
 
@@ -31,15 +32,44 @@ public class PnlWarning extends JPanel {
 		}
 	}
 
+	// Variante para la presentación de NYDER (CLAUDE.md §1.29): misma
+	// pantalla negra y mismo fade por alpha que la advertencia, pero la
+	// imagen se dibuja centrada, conservando su proporción, ocupando como
+	// máximo "fraccionAncho" del ancho de la pantalla.
+	private double fraccionAncho = 0;
+
+	public PnlWarning(Image imagen, double fraccionAncho) {
+		this();
+		this.imagenAdvertencia = imagen;
+		this.fraccionAncho = fraccionAncho;
+	}
+
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		if (imagenAdvertencia != null) {
 			Graphics2D g2 = (Graphics2D) g.create();
 			g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-			g2.drawImage(imagenAdvertencia, 0, 0, getWidth(), getHeight(), this);
+			if (fraccionAncho > 0) {
+				dibujarCentrada(g2);
+			} else {
+				g2.drawImage(imagenAdvertencia, 0, 0, getWidth(), getHeight(), this);
+			}
 			g2.dispose();
 		}
+	}
+
+	private void dibujarCentrada(Graphics2D g2) {
+		int anchoImg = imagenAdvertencia.getWidth(this);
+		int altoImg = imagenAdvertencia.getHeight(this);
+		if (anchoImg <= 0 || altoImg <= 0) {
+			return;
+		}
+		double escala = Math.min(getWidth() * fraccionAncho / anchoImg, getHeight() * 0.8 / altoImg);
+		int ancho = (int) (anchoImg * escala);
+		int alto = (int) (altoImg * escala);
+		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+		g2.drawImage(imagenAdvertencia, (getWidth() - ancho) / 2, (getHeight() - alto) / 2, ancho, alto, this);
 	}
 
 	// 1.0 = totalmente visible, 0.0 = totalmente desvanecida.
