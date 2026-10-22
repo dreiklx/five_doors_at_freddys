@@ -1497,6 +1497,14 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 
 **Commiteado y pusheado a `five_doors_at_freddys`:** `ControllerMenu.java`, `CargarGifs.java`, `SonidosAmbientalesAleatorios.java`.
 
+### 2.47 Auditoría de Escape tras dos meses -- textura de jumpscare de Golden Freddy sin liberar, sesión 2026-10-22
+
+**Estado:** `five_doors_escape` sin commits nuevos desde `3ece8a7` (§2.46); `clean build` completo con JDK 21 → `BUILD SUCCESSFUL`. Auditoría del ciclo de vida de recursos de las 4 pantallas: todos los `Pixmap` (GIF de estática/ItsMe, viñeta, sangre) se liberan justo tras crear su `Texture`; `BootScreen`/`NightGameOverScreen`/`EscapeVictoryScreen` liberan batch/shapes/fuentes/sonido propio. **Único hallazgo real:** `texturaGoldenFreddyJumpscare` (creada con `new Texture(...)` en `show()`, §2.39) nunca se liberaba en `GameplayScreen.dispose()`. Impacto práctico bajo (cada `GameplayScreen` vive una sola vez por proceso y el proceso termina tras Game Over/victoria), pero era una fuga de textura GPU real. Corregido con una línea en `dispose()`.
+
+**Verificación en ejecución real** (`gradlew lwjgl3:run`, fullscreen de producción): instrumentación temporal que, a los 3s de JUGANDO, llama a los métodos reales `recogerLlave()` + `interactuarConPuertaSalida()` (camino real victoria → `game.setScreen` + `dispose()`). Log: cinemática → RUN con los 10912 colisionadores base → `dispose completado sin excepcion, escapado=true`, sin ninguna excepción. Instrumentación retirada (`git diff` final = 1 línea), proceso `Lwjgl3Launcher` huérfano cerrado explícitamente (gotcha conocido de `gradlew lwjgl3:run`).
+
+**Commiteado y pusheado a `five_doors_escape`:** `GameplayScreen.java`.
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos
