@@ -576,7 +576,16 @@ public class ControllerMenu {
 		interfaz.init(vp, menu, this);
 	}
 
+	// Se llama en cada visita a Opciones, pero la instancia "opciones" es
+	// persistente: registrar los listeners en cada visita los acumulaba
+	// (fuga documentada en CLAUDE.md §1.8, corregida en §1.27).
+	private boolean listenersOpcionesRegistrados = false;
+
 	public void opciones() {
+		if (listenersOpcionesRegistrados) {
+			return;
+		}
+		listenersOpcionesRegistrados = true;
 		opciones.getBtnAtras().addActionListener(e -> vp.setContenido(menu));
 		opciones.getBtnSalir().addActionListener(e -> System.exit(0));
 	}

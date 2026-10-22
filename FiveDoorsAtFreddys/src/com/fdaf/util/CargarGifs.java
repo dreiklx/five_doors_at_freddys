@@ -61,10 +61,6 @@ public class CargarGifs {
 
 	private static final Map<String, Image> ultimaImagenPorRuta = new HashMap<>();
 
-	// TEMPORAL: solo para reunir evidencia real antes de decidir el
-	// siguiente paso. Retirar una vez cerrada esta investigación.
-	private static int contadorLlamadas = 0;
-
 	public static ImageIcon cargarFresco(String rutaClasspath, ImageIcon respaldo) {
 		try (InputStream entrada = CargarGifs.class.getResourceAsStream(rutaClasspath)) {
 			if (entrada == null) {
@@ -92,9 +88,6 @@ public class CargarGifs {
 			// MANTENER_ANIMACION_ACTIVA arriba para la causa raiz completa.
 			Toolkit.getDefaultToolkit().prepareImage(imagenFresca, -1, -1, MANTENER_ANIMACION_ACTIVA);
 
-			contadorLlamadas++;
-			registrarMemoria(rutaClasspath);
-
 			return new ImageIcon(imagenFresca);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -104,22 +97,5 @@ public class CargarGifs {
 
 	public static ImageIcon cargarFresco(String rutaClasspath) {
 		return cargarFresco(rutaClasspath, null);
-	}
-
-	// TEMPORAL: memoria completa, no solo freeMemory() (que por sí solo
-	// puede verse engañosamente estable si el GC recién corrió, o
-	// engañosamente bajo si todavía no le tocaba correr). Los 3 valores
-	// juntos permiten distinguir "el GC no ha pasado todavía" de
-	// "hay más memoria usada de la que el GC puede recuperar".
-	private static void registrarMemoria(String ruta) {
-		Runtime rt = Runtime.getRuntime();
-		long libre = rt.freeMemory() / 1024 / 1024;
-		long total = rt.totalMemory() / 1024 / 1024;
-		long usada = total - libre;
-		long maxima = rt.maxMemory() / 1024 / 1024;
-
-		System.out.println(String.format(
-				"[MEMORIA] Llamada #%d (%s) | Usada: %dMB | Heap total: %dMB | Heap maximo: %dMB",
-				contadorLlamadas, ruta, usada, total, maxima));
 	}
 }

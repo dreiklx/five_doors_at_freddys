@@ -114,12 +114,12 @@ NOCHE_5(2, 10)
 
 **Estado final, resuelto:** `EscalarVista` revertida a su forma original (`getImageObserver()`), se mantuvo el caché+`flush()` de `CargarGifs` (inofensivo aunque no esté 100% probado como suficiente por sí solo) más instrumentación de memoria. Una prueba larga posterior (Noche1→Noche2) con esta configuración final produjo **33 llamadas registradas, memoria oscilando (evidencia de que el GC sí recupera), sin ningún `OutOfMemoryError`.** Se considera resuelto empíricamente, aunque `Image.flush()` tiene limitaciones documentadas para imágenes activamente animándose que no se demostraron del todo teóricamente. **Si el OOM reaparece en pruebas futuras, retomar la investigación desde aquí — el cambio del observador sigue estando descartado sin importar qué.**
 
-**Limpieza pendiente, no hecha todavía:** la instrumentación `[MEMORIA]`/`contadorLlamadas` en `CargarGifs.java` está marcada `TEMPORAL` en comentarios — debería retirarse en algún momento. El `println("[AMBIENTAL] Reproduciendo: ...")` en `SonidosAmbientalesAleatorios` también es un resto de diagnóstico pendiente de quitar.
+**Limpieza pendiente, no hecha todavía:** la instrumentación `[MEMORIA]`/`contadorLlamadas` en `CargarGifs.java` está marcada `TEMPORAL` en comentarios — debería retirarse en algún momento. El `println("[AMBIENTAL] Reproduciendo: ...")` en `SonidosAmbientalesAleatorios` también es un resto de diagnóstico pendiente de quitar. **[RETIRADA 2026-10-22, ver §1.27.]**
 
 ### 1.8 Deuda técnica conocida, NO corregida (baja prioridad)
 
 - `Sonido.java` nunca llama `clip.close()`, solo `.stop()` — línea de audio nativa no liberada explícitamente. Sin crash confirmado por esto.
-- `ControllerMenu.opciones()` reagrega listeners a `btnAtras`/`btnSalir` **cada vez** que se visita la pantalla de Opciones (la instancia `opciones` es persistente, nunca se recrea) — fuga real de listeners pequeña, causaría que cada clic dispare múltiples veces. **No corregido.**
+- `ControllerMenu.opciones()` reagrega listeners a `btnAtras`/`btnSalir` **cada vez** que se visita la pantalla de Opciones (la instancia `opciones` es persistente, nunca se recrea) — fuga real de listeners pequeña, causaría que cada clic dispare múltiples veces. **[CORREGIDO 2026-10-22, ver §1.27.]**
 
 ### 1.9 Gotchas de assets
 
@@ -129,8 +129,8 @@ NOCHE_5(2, 10)
 ### 1.10 Lo que falta para cerrar el Proyecto 1
 
 - **[ACTUALIZADO 2026-08-02, ver §2.13]** Implementar §7 del `Architecture.md` del lado Swing: al ganar Noche 5, escribir `handoff.json` y lanzar el proyecto LibGDX vía `ProcessBuilder`. **Implementado y verificado en ejecución real** -- ver §2.13 para el detalle completo. **[ACTUALIZADO 2026-08-05, ver §1.11]** El efecto de "glitch" durante el video de victoria ya NO es un placeholder -- implementado con un efecto agresivo real (parpadeo de color + estática + tearing + separación RGB), ver §1.11 punto 11. Pantalla completa para Escape, botón de salida manual, y la condición de victoria/salida dentro de la pizzería ya estaban resueltos del lado LibGDX (§2.13-§2.15).
-- Retirar instrumentación temporal (§1.7, §1.5 último punto).
-- Opcionalmente: corregir la fuga de listeners de `opciones()` (§1.8).
+- Retirar instrumentación temporal (§1.7, §1.5 último punto). **[Hecho, §1.27.]**
+- Opcionalmente: corregir la fuga de listeners de `opciones()` (§1.8). **[Hecho, §1.27.]**
 
 ### 1.11 Ronda de llamadas telefónicas, puertas/inventario del compañero, flujo de fin de noche y transición a Escape, sesión 2026-08-05
 
@@ -1487,6 +1487,15 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 **Corrección:** derecha `1755 → 1130` (base), que espeja la colocación izquierda dentro del marco de la puerta derecha (≈1108-1300 base con el paneo real). Re-medido: derecha 98% visible (el 2% restante es el borde inferior, igual que la izquierda original), render confirma la guitarra apoyada en el marco derecho. La izquierda y el resto del cambio del compañero no se tocaron. Las imágenes nuevas de coleccionables también se renderizaron en los 10 slots del inventario (`agregarAlInventario` real) -- se ven bien, sin distorsión apreciable; el detalle (`mostrarDetalleColeccionable`) ya conserva proporción.
 
 **Commiteado y pusheado a `five_doors_at_freddys`:** `ControllerInterfaz.java`.
+
+### 1.27 Cierre de dos deudas técnicas abiertas desde §1.7/§1.8, sesión 2026-10-22
+
+1. **Fuga de listeners de `ControllerMenu.opciones()` (§1.8).** Re-verificada contra el código actual: `botones()` llama `opciones()` en cada clic de "Opciones", y `opciones()` hacía `addActionListener` sobre `btnAtras`/`btnSalir` de la instancia persistente. **Medido por reflexión** (arnés que invoca `opciones()` 5 veces sobre el `ControllerMenu` real): HEAD = 5 listeners acumulados en cada botón; corregido con un flag de registro único = 1. Firma pública de `opciones()` intacta. Impacto real acotado (el proceso se reinicia cada noche, §1.18), pero dentro de una misma sesión de menú cada clic en "Atrás" disparaba N `setContenido`.
+2. **Instrumentación temporal retirada** (pendiente desde §1.7): `contadorLlamadas`/`registrarMemoria()` (`[MEMORIA]`, un `String.format` + 3 consultas a `Runtime` en CADA carga de gif) en `CargarGifs.java`, y el `println("[AMBIENTAL] ...")` de `SonidosAmbientalesAleatorios.java`. El caché `ultimaImagenPorRuta` + `flush()` y el observador `MANTENER_ANIMACION_ACTIVA` (correcciones reales de §1.7/§1.13) quedan intactos.
+
+**Verificación:** el árbol exacto a commitear (HEAD + estos 3 archivos, sin el WIP ajeno) compila desde cero con JDK 1.8.0_271 (único aviso preexistente de `Arbol.java`), y la prueba de humo en ejecución (paneo + revelación de coleccionables con gifs/sonidos reales, §1.26) pasa igual que antes.
+
+**Commiteado y pusheado a `five_doors_at_freddys`:** `ControllerMenu.java`, `CargarGifs.java`, `SonidosAmbientalesAleatorios.java`.
 
 ---
 

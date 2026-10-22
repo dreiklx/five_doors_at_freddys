@@ -111,7 +111,6 @@ public class SonidosAmbientalesAleatorios {
 
 	private void reproducirSonidoAleatorio() {
 		String ruta = elegirRutaPonderada();
-	    System.out.println("[AMBIENTAL] Reproduciendo: " + ruta);
 	    ultimaRutaReproducida = ruta;
 		sonidoActual = new Sonido(ruta);
 		sonidoActual.play();
