@@ -140,7 +140,7 @@ public class ControllerMenu {
 	// dentro de la misma secuencia de inicio (advertenciaActiva ya es true)
 	// y con el mismo animarFade/timerAdvertenciaActual -- nunca hay dos
 	// timers de la secuencia corriendo a la vez. ~3s en total.
-	private static final String RUTA_NYDER = "/images/nyder/NYDER.png";
+	private static final String RUTA_NYDER = "/images/fondos/NYDER-GAMES.png"; // §1.37
 	// 250 negro + 800 entrada + 1300 visible + 650 salida = 3.0s, contados
 	// desde el primer pintado real de la ventana (§1.31).
 	private static final int NYDER_NEGRO_MS = 250;

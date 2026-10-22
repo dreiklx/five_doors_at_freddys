@@ -1657,6 +1657,14 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 
 **Archivos:** `PnlMenu.java`, `EscalarVista.java` (`adaptarMenu`), `ControllerMenu.java`, `Version.java`.
 
+### 1.37 La presentación de inicio usa `NYDER-GAMES.png`, sesión 2026-10-22 (v2.5)
+
+**Pedido:** usar `NYDER-GAMES.png` en lugar de `NYDER.png` al inicio. **Recurso real verificado:** `resources/images/fondos/NYDER-GAMES.png` (sin seguimiento hasta este commit, 2172×724 con alfa; es el rediseño "NYDER GAMES", idéntico byte a byte al `nyder/NYDER.png` modificado en el working tree desde las 10:51). Se usa desde su ubicación real, sin moverlo ni duplicarlo: `ControllerMenu.RUTA_NYDER` = `/images/fondos/NYDER-GAMES.png`. Mismas dimensiones que el anterior, así que el dibujo centrado con proporción (§1.29) y la secuencia de fade (§1.31) no cambian. `nyder/NYDER.png` queda en el repo sin uso en código (versión publicada intacta; su modificación local sigue sin commitear, igual que antes).
+
+**Pruebas:** compilación desde cero del árbol exacto del commit con JDK 1.8.0_271; flujo real (selector → NYDER → advertencia → introducción → menú) comprobando que el panel de NYDER carga la imagen nueva (2172 px) y que el fade llega a alpha 1.0; menú con `v 2.5`.
+
+**Archivos:** `ControllerMenu.java`, `Version.java` (v2.4 → v2.5), `resources/images/fondos/NYDER-GAMES.png`.
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos
