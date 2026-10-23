@@ -2121,6 +2121,266 @@ ESC o ENTER la saltan desde el primer segundo. E no la salta, porque es la tecla
 
 **Publicación de §2.49 y §2.50:** Escape `a583cd7` (victoria) y `5f984bf` (derrota), verificados con `git ls-remote`. La documentación compartida y el catálogo salen en el commit **v2.10** de FDAF (`Version.MENOR` 9 → 10; FDAF no cambia de comportamiento en este commit).
 
+### 1.60 Rendirse: preparación real con barra retro segmentada, sesión 2026-10-23 (v2.11)
+
+**Pedido:** reemplazar la presentación de carga de Rendirse por una barra retro segmentada (diálogo clásico de escritorio: panel gris biselado, segmentos azul oscuro separados), **solo la barra**, sin "Loading..." ni "Cancel". El usuario mencionó una imagen de referencia adjunta que no llegó a la sesión; se diseñó a partir de su descripción.
+
+**Hallazgo:** antes no había ninguna fase de carga *previa* a la escena (los fotogramas se decodificaban sobre la marcha); la única "carga" visible era el "Cargando..." del reinicio del proceso al terminar (`ReiniciadorJuego`).
+
+**Implementación:**
+- `com.fdaf.util.BarraRetro` (nuevo): dibuja panel gris (192,192,192) con bisel de 2 px, una ranura hundida y segmentos azul (0,0,128) de ancho fijo con 2 px de separación y un brillo en la parte superior, sin antialias (nítida a cualquier resolución). Tamaño proporcional: 34 % del ancho de pantalla con tope de 520 px, alto = 11 % del ancho.
+- **Preparación previa real** en `CinematicaRendirse`: al completar la barra de Rendirse, un hilo `cinematica-rendirse-prep` (nunca el EDT) decodifica los primeros 8 fotogramas y abre el audio (`Sonido`). La barra muestra el progreso real (fotogramas + audio, que pesa como 4 fotogramas) sobre la oficina atenuada; la línea de tiempo de la escena arranca cuando termina. Si termina antes de 260 ms, la barra llena se ve hasta ese mínimo (evita un parpadeo, no alarga una carga real). Medido: 0.8-1.1 s con la CPU ocupada por un render de Blender en paralelo; 24 fotogramas llegaban a 1-3 s y no aportaban nada (el primero no se muestra hasta 2.2 s después), por eso quedaron 8.
+- **Pantalla de reinicio tras Rendirse:** `ReiniciadorJuego.reiniciar(vp, siFalla, true)` y `ControllerInterfaz.reiniciarJuegoCompleto(true)` muestran la misma barra en lugar del texto, llenándose con la espera **real** de 900 ms antes de relanzar. Ganar y perder siguen con el "Cargando..." de siempre.
+
+### 1.61 Rendirse v2: cámara más rápida y más presencia de Bonnie y Chica, sesión 2026-10-23 (v2.11)
+
+**Cámara (pedido: el giro lateral era demasiado lento).**
+- **Causa medida:** la mirada se interpolaba con un factor fijo por tick (`paneo += (objetivo - paneo) * 0.06` cada 33 ms). Eso equivale a una constante de tiempo de ~0.53 s: del centro al borde tardaba ~1.6 s, y además dependía de los fps.
+- **Ahora** (`moverMirada`): suavizado exponencial por tiempo real (`1 - e^(-dt/τ)`, independiente de los fps) más un tope de velocidad.
+  - Ratón: τ = 0.08 s, tope de 2.4 anchos de panorama/s.
+  - Guion automático: τ = 0.28 s, tope de 1.4/s.
+  - El recorrido completo se alcanza con el ratón al 8 % del borde de la ventana. El límite de giro sigue siendo el propio panorama (paneo en [0, 1]).
+  - Al dejar el ratón quieto 1.4 s (antes 1.8) el guion retoma desde donde quedó la mirada, sin salto.
+- **Medido** (`PruebaRendirse2 camara`, con la CPU cargada por un render en paralelo): del centro al borde, 95 % del recorrido en 283 ms (derecha) y 356 ms (izquierda), frente a ~1.6 s antes. Paso máximo entre fotogramas de unos 0.08-0.13 anchos.
+
+**Bonnie y Chica (pedido: verlas mucho más, con giros de cabeza inquietantes y movimientos irregulares).** Se regeneraron los 160 fotogramas con `tools/cinematics/surrender/direct_surrender.py` v2 (Blender 5.1, Cycles GPU, 32 muestras, 1800×600, ~25 min). Freddy, la duración, la banda sonora y el desenlace no cambian.
+- **Posición:** de ±60° a ±42° respecto al jugador, a 1.42 m. Con el paneo al centro los dos quedan a la vista en los bordes, y al girar hacia cada uno llena media pantalla.
+- **Giros de cabeza** (*Damped Track* hacia el jugador, influencia hasta 1.0): avanzan a tirones (avanza, se traba, retrocede un poco, completa). Bonnie en los fotogramas 18-40 y Chica en 44-64, antes y más largos que en v1 (50-78 / 72-100). Después, espasmos en los que la cabeza se suelta y vuelve (Bonnie 92-95 y 121-124; Chica 104-107 y 131-134).
+- **Tics del cuerpo:** giros bruscos de 3-5° y vuelta (Bonnie 70/110/140, Chica 82/118/143).
+- **Luz:** los focos se reapuntaron a sus nuevas posiciones, con un 25 % más de intensidad.
+- **Distorsión en el reproductor** (`pintarDistorsion`): en cada tic, ~150 ms de franjas horizontales desplazadas, siempre fuera de la franja central donde quedan las caras (35-62 % del alto), y un velo rojo al 7 %.
+- **Guion de mirada nuevo** (`GUION_PANEO`): centro → Bonnie cuando gira → Chica → centro, con miradas breves a cada espasmo y Freddy al frente para el final.
+- Los fotogramas v1 quedan archivados en `FDAF assets/_archive/old_versions/surrender_v1/`; el espejo `fdaf/videos/surrender/` y el script en `source_files/cinematics/surrender/` están actualizados. Mismo peso que antes (15 MB) y la misma memoria en ejecución: 8 fotogramas por delante decodificados en un hilo.
+- **Alternativas evaluadas:** en lugar de pre-renderizar se podría renderizar en tiempo real con LibGDX dentro de Swing (necesitaría un contexto OpenGL en la ventana de FDAF y acoplaría los dos proyectos) o usar *sprites* 2D animados de los personajes (perdería la cámara panorámica). Se mantuvo el pre-render: memoria acotada y la calidad de Cycles.
+
+**Pruebas:** capturas de 10 instantes en el juego, con el guion de mirada: Bonnie llena la mitad derecha mirando de frente, Chica la izquierda con la cabeza torcida, y la distorsión aparece en los tics sin tapar las caras. Fin natural a los 12.3 s después de la preparación (12.98 s en total). `PruebaRendirse` antigua: todo correcto salvo una comprobación que buscaba el texto "Cargando..." (cambio esperado: ahora hay barra retro, §1.60).
+
+### 1.62 Omitir manteniendo ESC (mecanismo universal, lado Swing), sesión 2026-10-23 (v2.11)
+
+**Pedido:** sustituir el salto inmediato (clic/ESC) por mantener una tecla ~1.2 s con un indicador circular; un toque no debe omitir. Mismo comportamiento en las 4 cinemáticas de los dos juegos (Escape: §2.51).
+
+`com.fdaf.util.OmisionMantenida` (nuevo): `KeyStroke` de ESC *pressed* y *released* en el `InputMap` del panel (la repetición automática del sistema solo vuelve a poner "apretada"); el progreso lo avanza el `Timer` de la propia cinemática con `actualizar(dt)` (sin hilos ni timers propios), se reinicia al soltar y dispara `alOmitir` **una sola vez**. Alternativa: mantener el ratón apretado sobre el propio indicador (esquina inferior derecha; no es un botón). Indicador: texto tenue "Mantén ESC para omitir" / "Hold ESC to skip" y un círculo que se completa. En Rendirse está activo desde la preparación hasta la estática; se quitó el salto por clic en cualquier parte.
+
+**Pruebas** (`PruebaRendirse2`, ventana fuera de pantalla, `-Duser.home` aislado): toque de 0.25 s no omite; mantener 0.7 s y soltar no omite y reinicia; mantener 1.5 s omite una vez; mantener ESC omite a los 1207 ms y seguir manteniéndolo no vuelve a disparar; mantener el ratón sobre el indicador omite a los 1211 ms; fin natural a los 12.38 s; en todos los casos no quedan hilos ni la capa.
+
+### 2.51 Omitir manteniendo ESC en las tres cinemáticas de Escape, sesión 2026-10-23
+
+`cinematics/OmitirCinematica` (nuevo), el mismo contrato que `OmisionMantenida` de FDAF (§1.62): mantener ESC ~1.2 s (o el botón izquierdo sobre el propio indicador, abajo a la derecha). Un toque no hace nada, soltar reinicia el progreso y `actualizar(dt)` devuelve true **una sola vez**. Dibuja un anillo que se completa y el texto `cinematic.skip` ("Manten ESC para omitir" / "Hold ESC to skip"; sin tilde, igual que los demás textos de Escape, porque la fuente por defecto de LibGDX no lo garantiza). Lo avanza el `render()` de cada escena: sin hilos ni timers.
+- **Introducción:** omitirla corta la narración (`sonidoEscape.stop(id)`) y pasa por `finalizarIntro()`, el mismo cierre que la reproducción completa: luces de juego, cámara en el inicio del jugador y pantalla de instrucciones (§2.52).
+- **Victoria y derrota:** sustituye al salto inmediato con ESC/ENTER. Llevan al mismo estado final que la reproducción completa (`EscapeVictoryScreen` con `escapado`; `resolverFinDeAtrapada` → `NightGameOverScreen`).
+- **Fuera de una cinemática, ESC no cambia:** en `JUGANDO` sigue abriendo la pausa (`isKeyJustPressed`). Una ESC que siga apretada al terminar una omisión no dispara la pausa ni cierra `EscapeVictoryScreen` (las dos usan "recién pulsada").
+
+### 2.52 Pantalla de instrucciones previa, con el mundo detenido, sesión 2026-10-23
+
+Nuevo estado `INSTRUCCIONES` entre la introducción y los corazones/"CORRE". Secuencia: carga → introducción (omitible) → instrucciones → corazones → CORRE → juego. Mientras dura no se llama a `engine.update` (IA y animaciones quietas), no se lee el movimiento ni la linterna, y la escena se dibuja con `sceneManager.update(0)` desde el punto de inicio del jugador, oscurecida. Panel centrado con:
+- los controles reales, verificados en el código: WASD, ratón, mantener SHIFT, CTRL (izquierdo o derecho), E y ESC;
+- el objetivo ("Encuentra la llave y busca la manera de escapar…"), sin decir dónde está la llave ni cuál es la salida;
+- "Presiona E o haz clic para comenzar". Hay una gracia de 0.35 s para que una tecla que venía apretada de la intro no la cierre sin querer.
+
+No se repite tras una pérdida de vida (la reaparición va directo a corazones → juego). Textos `instr.*` en ES/EN. El panel de ayuda breve del juego suma "SHIFT: Correr" (`help.sprint`).
+
+### 2.54 Sprint con SHIFT, sesión 2026-10-23
+
+`FirstPersonCameraController`: mantener SHIFT (izquierdo o derecho) multiplica la velocidad por `MULTIPLICADOR_SPRINT = 1.65` (3.5 → 5.78 m/s). Se normaliza antes de escalar, así que no se corre más rápido en diagonal. Sin resistencia ni cansancio (pedido explícito). El balanceo de cabeza ya escalaba con la distancia real recorrida, así que se acelera solo. El movimiento se resuelve en sub-pasos de 0.1 m (§2.53).
+
+**Pruebas (`PruebaMundo`, `GameplayScreen` real con `Gdx.input` simulado):**
+- Introducción: un toque de ESC de 0.3 s no la omite; mantenerla 1.3 s → `INSTRUCCIONES` con la narración cortada.
+- Instrucciones: Freddy no se mueve en 3 s y W no mueve al jugador; E → corazones → CORRE → `JUGANDO`.
+- Sprint: caminando 3.50 m/s y corriendo 5.78 m/s, medidos moviendo al jugador con las teclas. La diagonal W+D se midió con el controlador real: misma velocidad que en recto, caminando y corriendo.
+
+### 2.53 Auditoría de clipping: paredes junto a los marcos y movimiento en sub-pasos, sesión 2026-10-23
+
+**Síntoma reportado:** a veces se veía a través de las paredes y en algunos puntos uno podía pegarse al lateral de una puerta o meterse en la pared.
+
+**Causas investigadas:**
+- **`CollisionWorld`:** cajas AABB, resolución eje por eje (X y luego Z). No permite cortar esquinas en diagonal.
+- **Paredes:** son planos sin grosor. `LevelLoader` las convierte en celdas de 0.2 m sin erosión.
+- **Cámara:** plano cercano a 0.05 m, centrada en el jugador (semiancho 0.3); el balanceo solo desplaza 1.5 cm. Si la colisión es correcta, la cámara nunca llega a 0.05 m de una pared.
+- **Normales y caras:** el *culling* está desactivado en el mapa (bobinado invertido, ya documentado), así que no hay paredes "de una cara" que desaparezcan.
+- **Causa real:** `collectDoorZones` agrandaba la zona de cada puerta con `DOOR_CLEARANCE_MARGIN = 0.4` en los dos ejes, y las celdas de pared que la tocaban se borraban. A lo largo de la pared eso eliminaba 0.4-0.6 m de colisión a cada lado del marco, sin que la pared visible cambiara. El jugador podía meter el centro (la cámara) dentro de la pared y ver la otra habitación.
+
+**Corrección:**
+- El margen grande se aplica solo en el eje del grosor, para despejar las celdas del muro en el vano. A lo largo del ancho, `DOOR_WIDTH_MARGIN = 0.05`. La cortina de Pirate Cove conserva su zona ancha (solo bloquea al jugador).
+- El jugador se mueve en sub-pasos de como mucho 0.1 m (`resolverMovimientoEnPasos`). `resolveMovement` solo prueba el destino; con sprint y un frame largo el salto llegaba a 0.58 m, casi el ancho del jugador.
+
+**Medición antes/después** (misma prueba, `PruebaMundo bordes`: jugador en el vano, empujando a lo largo de la pared durante 2 s; la versión anterior se compiló desde `5f984bf` en un *worktree* aparte). Cuánto avanza el centro del jugador a lo largo de la pared, contra el semiancho del vano:
+
+| Puerta | Antes | Ahora | Semiancho del vano |
+|---|---|---|---|
+| puerta.005 | 0.58 m | 0.19 / 0.39 m | 0.46 |
+| puerta.001 | 0.58 m | 0.39 m | 0.46 |
+| puerta.004 | 0.64 m | 0.29 m | 0.46 |
+| Seguridad derecha | 0.64 m | 0.19 / 0.29 m | 0.44 |
+| Seguridad izquierda | — | 0.19 / 0.29 m | 0.44 |
+
+Antes el centro entraba 12-20 cm dentro de la pared; ahora nunca sale del vano. Los pasos siguen libres (las puertas se cruzan, §2.56).
+
+### 2.55 Mesa de Parts and Service retirada, sesión 2026-10-23
+
+La mesa que estorbaba al salir del depósito trasero (Parts and Service) es el nodo `MesaPartAndService_35` (1.27 × 2.14 m, 0.61 m de alto, en x -11.41..-10.14, z -5.82..-3.68), el único con el material `mesaPartAAndService`. Antes ocupaba el centro de la sala y dejaba un pasillo de 0.6 m. Se retira por datos: `pizzeria.json` → `"removeNodes": ["MesaPartAndService_35"]`. `LevelLoader.loadMapScene` vacía sus partes antes de generar colisiones, así que desaparecen la geometría y su collider sin tocar `pizzeria.glb`. Los estantes y el resto de la sala no cambian. Los animatrónicos no usan esa sala (está detrás de la puerta de salida, que solo se abre con la llave y los congela, §2.49). El recorrido de victoria sigue pasando: `PruebaVictoria`, 0 fallos.
+
+### 2.56 Puertas que se abren y se cierran de verdad, sesión 2026-10-23
+
+**Antes:** las hojas de las puertas interiores quedaban cerradas a la vista mientras su vano era atravesable: se pasaba *a través* de la puerta.
+
+`world/PuertasInteriores` (nuevo), con las puertas declaradas en `pizzeria.json`:
+- **Abatibles** (`puerta.001`–`005`): giran 88°. Para cada lado del vano se prueban las dos bisagras contra las colisiones reales y se elige la que deja libre el barrido de la hoja. Al abrir, va hacia el lado contrario de quien llega (como una puerta de vaivén).
+- **Corredizas** (`puerta Izquierda/Derecha`, las puertas de seguridad de la oficina): suben 1.9 m y bajan, como en FNAF. Se respetó esa mecánica en lugar de forzarles un giro.
+- **Funcionamiento:** cualquiera las abre a menos de 1.5 m del centro (jugador o animatrónicos, así ninguno las atraviesa cerradas). Se cierran 0.6 s después de que nadie esté a menos de 2.1 m. Apertura en 0.45 s y cierre en 0.75 s, con *smoothstep*.
+- **Colisión:** cerradas tienen un collider fino; al empezar a abrirse se retira (la hoja en movimiento no atrapa a nadie) y vuelve al terminar de cerrarse.
+- **Excepciones:** la puerta de salida sigue siendo un caso aparte (llave + cinemática, `SalidaExterior`). `puerta.003` queda detrás de Golden Freddy, cuyo collider ya bloqueaba ese vano; no se cambió.
+- **Sonidos sintetizados** (`tools/audio/synth_world_audio.py`): `interior_door_open/close.wav` y `security_door_slide.wav`.
+
+**Prueba** (`PruebaMundo puertas`, con las teclas reales): 6/6 puertas accesibles. Cada una arranca cerrada, llega a apertura 1.00 al cruzarla, se cruza de vuelta y vuelve a 0.00 al alejarse.
+
+### 2.57 Cortina de Pirate Cove animada cuando sale Foxy, sesión 2026-10-23
+
+**Hallazgo:** la cortina es una única malla sin animación (`CORTINA_37/Object_41`, 1528 triángulos, 924 vértices, 2.7 m de ancho en z, en x≈-8.5). No hay nodos separados ni un recurso aparte.
+
+`world/CortinaPirateCove` (nuevo): animación procedural por vértices en la CPU, **solo mientras se mueve** (`mesh.updateVertices`; en reposo no cuesta nada). Las dos mitades se recogen un 80 % contra sus extremos, con pliegues que se marcan al juntarse y un balanceo amortiguado más fuerte en la parte baja (tela suelta). Se abre en 0.65 s y se cierra en 1.4 s.
+
+**Secuencia:** Foxy pasa de `IdleState` a `ChaseState` estando dentro de la cueva → `abrir()`. Foxy recorre ~2 m hasta la cortina a 1.4 m/s, así que la cortina ya está abierta cuando la cruza (medido: termina de abrirse con Foxy en x=-9.8; la cortina está en -8.52). Cuando Foxy lleva 2.5 s a más de 1.5 m de la cortina, se cierra sola. Tras una atrapada todos vuelven a su sitio y se cierra al instante (`respawnJugador`). Un Foxy aturdido no la vuelve a abrir. La colisión no cambia: la zona de la cortina sigue bloqueando solo al jugador (Foxy y la IA pasan).
+
+**Prueba** (`PruebaMundo cortina` + 4 capturas): cerrada con Foxy quieto; abierta antes de que Foxy la cruce; cerrada sola 2.5 s después de que Foxy salió.
+
+### 2.58 Aturdir animatrónicos con destellos de la linterna, sesión 2026-10-23
+
+**Valores centralizados** en `assets/content/balance/flashlight.json` (`FlashlightBalance`, `ContentRegistry.getFlashlightBalance()`): Foxy 5 ciclos, Bonnie 10, Chica 10, 1.5 s cada uno; alcance del haz 11 m, semiángulo 22°, punto objetivo a 1.15 m (pecho). Freddy no tiene entrada: no se aturde y su IA no cambia.
+
+**Qué cuenta como un destello** (`world/AturdimientoLinterna`): un ciclo real encendido → apagado. Mientras la linterna está encendida se marca a cada animatrónico que el haz ilumina **de verdad**:
+- dentro del alcance y del cono respecto a la dirección de la cámara;
+- con línea de visión libre (`CollisionWorld.lineaDeVisionLibre`), así que iluminar la pared tras la que se esconde no cuenta.
+
+Al apagarla, cada animatrónico marcado suma **uno**. Mantenerla encendida sigue siendo un solo ciclo. No se cuentan fotogramas.
+
+**Contadores:** son independientes por animatrónico y acumulativos (no se pierden por dejar de iluminarlo un momento). Al llegar al umbral, el animatrónico queda aturdido y su contador vuelve a 0. Mientras está aturdido no acumula, así que no se lo puede encadenar indefinidamente. Tras una atrapada todos vuelven a su sitio y los contadores se reinician.
+
+**Integración con la IA:**
+- `AISystem` no actualiza la máquina de estados de un aturdido: no se mueve y no puede atrapar (el atrape vive en `ChaseState`).
+- El aturdimiento se evalúa **antes** de `engine.update`, así que gana a una atrapada que ocurriera en el mismo fotograma.
+- Al terminar recupera su orientación, limpia el detector de atascos y vuelve a "walk" si estaba persiguiendo.
+- Con la pausa, las cinemáticas, la victoria (IA congelada, §2.49) o la derrota no se actualiza.
+- No usa hilos: todo va en el bucle de juego.
+
+**Reacción** (sin HUD ni números): sacude la cabeza con una amplitud que se apaga, pasa a la animación `idle`, hay un chispazo de luz azulada de 0.22 s en la cabeza (una `PointLightEx` más; `numPointLights` pasa a 6) y suena `animatronic_stun.wav` (chispazo + servos que tartamudean, sintetizado).
+
+**Prueba** (`PruebaMundo aturdir`, linterna con CTRL simulado y apuntando con la cámara):
+- 2.5 s de linterna encendida sobre el objetivo = 1 ciclo; 3 ciclos apuntando fuera del haz = 0.
+- Foxy no se aturde con 4 ciclos y sí con el 5.º; Bonnie y Chica, con el 10.º; el contador vuelve a 0.
+- Durante ~1.5 s (1.48 s medidos desde la comprobación) el animatrónico no se mueve (0.000 m) ni atrapa al jugador pegado a él; después retoma la IA.
+- Detrás de una pared real (sin línea de visión): 0 destellos.
+
+### 2.59 Pantalla de carga de Escape, sesión 2026-10-23
+
+**Antes:** texto "Cargando... N%" sobre negro y, al llegar al 100 %, la pantalla congelada mientras se construía el nivel.
+
+**`BootScreen` reescrita:**
+- **Fondo:** el comedor visto desde el escenario (fotograma 1 del render de Rendirse, que usa los modelos de Escape), recortado, desenfocado, oscurecido, con viñeta y grano; acercamiento muy lento. No muestra la llave ni la salida.
+- **Título:** "FIVE DOORS / ESCAPE" en letras 3D (fuente integrada de Blender, DejaVu) con resplandor rojo y un parpadeo irregular leve de letrero viejo.
+- **Progreso:** barra fina con el progreso **real** de `AssetManager` (carga incremental en `update()`). Avanza suave hacia el valor real sin adelantarlo nunca ni retroceder. A su izquierda, un arco que gira muestra actividad aunque un archivo grande tarde.
+- **Consejo:** uno distinto en cada arranque (7 en ES/EN, `tip.1`–`tip.7`). No repite el anterior; se guarda en las preferencias propias de Escape (`five_doors_escape`), no en el progreso de FDAF. Todos describen comportamiento real (linterna, sonido espacial, mira + E, correr, perder la llave al ser atrapado, latidos por cercanía, omitir con ESC) sin revelar la ubicación de la llave ni la puerta de salida.
+- **Fase final:** al 100 % se dibuja un cuadro con "Preparando la pizzeria..." y recién en el siguiente se construye `GameplayScreen`. Ese tramo (2.4-2.5 s medidos) antes pasaba con la pantalla congelada en "100%".
+- **Recursos:** `ui/loading_title.png` (246 KB) y `ui/loading_background.jpg` (78 KB), generados con `tools/loading/build_loading_title.py` (Blender) y `make_loading_assets.py` (PIL).
+
+**Medido** (`PruebaCarga`, arranque real `FiveDoorsEscapeGame` → `BootScreen`):
+- Recursos cargados en 11.1-11.9 s y nivel preparado en 2.4-2.5 s, sin bloquear la pantalla durante la carga.
+- La barra nunca retrocede.
+- Capturas en ES y EN de la carga, la introducción con el indicador de omisión y las instrucciones.
+
+### 2.60 Rendimiento: frustum culling y precalentamiento de shaders, sesión 2026-10-23
+
+**Medición antes de optimizar** (`PruebaRendimiento`: `GameplayScreen` real, 1280×720, sin vsync, `glFinish` por cuadro, `GLProfiler`, 240 cuadros por zona en la RTX 4050): **1544 draw calls en todas las zonas**, también en Parts and Service, donde casi nada es visible, y 21-27 ms por cuadro (37-47 fps). Causa: `SceneManager`/`ModelBatch` no descartan nada fuera de cámara. Se dibujaban siempre, dos veces (pasada de sombras y pasada de color), el mapa entero, el exterior (con la salida cerrada), el auto y los cinco modelos con esqueleto, aunque estuvieran detrás de varias paredes.
+
+**`world/CullingEstatico`** (nuevo):
+- Cada `NodePart` estático tiene una esfera en el mundo, calculada una vez. Antes de cada render se apaga (`NodePart.enabled`) lo que queda fuera del frustum, con un margen de 2.5 m para que lo que está justo fuera de cuadro siga proyectando su sombra hacia adentro.
+- Los animatrónicos, la llave y Golden Freddy se prueban con una esfera de 1.6 m alrededor de su posición **actual** y se apagan enteros.
+- Los nodos animados (puertas, cortina, hoja de salida, hoja de emergencia, barrera) no se tocan.
+- Grupos: el exterior y el auto (este sin prueba de frustum, porque se mueve) quedan apagados hasta que se abre la puerta de salida.
+- Un único punto de enganche: el `SceneManager` de `GameplayScreen` es una subclase que llama a `culling.actualizar(camera)` en `render()`, así que vale para todos los estados (juego, cinemáticas, jumpscare).
+
+**Precalentamiento de shaders:** al final de `show()` se dibuja todo una vez en un *framebuffer* de 256×144 (570 ms, dentro de la fase "Preparando la pizzeria..."), para que los shaders PBR del exterior no se compilen al abrir la puerta de salida.
+
+**Resultado medido** (mismas zonas, misma máquina):
+
+| Zona | Antes | Después | Draw calls |
+|---|---|---|---|
+| Comedor | 24.5 ms (41 fps) | 13.2 ms (76 fps) | 1544 → 354 |
+| Parts and Service | 22.9 ms (44 fps) | 8.2 ms (122 fps) | 1544 → 131 |
+| Pirate Cove | 26.8 ms (37 fps) | 12.8 ms (78 fps) | 1544 → 249 |
+| Persecución (Freddy) | 21.5 ms (47 fps) | 11.4 ms (87 fps) | 1544 → 337 |
+| Estacionamiento | 21.4 ms (47 fps) | 8.5 ms (118 fps) | 1544 → 491 |
+| Cinemática de victoria | 24.4 ms (41 fps) | 13.2 ms (76 fps) | 1545 → 529 |
+
+Heap de Java usado tras GC: 16-20 MB en todas las zonas (los recursos viven en memoria nativa de OpenGL/OpenAL). Regresión tras el cambio: victoria completa y omitida, derrota (última vida, omitida, vida normal) y capturas de la derrota con los cuatro animatrónicos visibles.
+
+### 2.61 Estacionamiento con más detalle, auto completo e iluminación exterior, sesión 2026-10-23
+
+**Exterior (`build_exterior.py`, sección "detalle v2"):**
+- Suelo: charcos casi espejo con borde irregular, manchas de aceite en los espacios, parches de asfalto reparado y la calle con la textura `road_damaged`. También rejillas de desagüe (`metal_grate_rusty`), topes y una flecha pintada.
+- Fachada trasera: contenedor de basura (con collider, `exterior.json` → `dumpster` + `extraColliders`), cierre metálico "DELIVERIES" (`painted_metal_shutter`), ventanas, tuberías y respiraderos.
+- Alrededores: poste con cables, letrero "EMPLOYEE PARKING", cajas (`wooden_crate_02`, `plastic_crate_01`), papeles y vegetación (`shrub_03`, `weed_plant_02`, `nettle_plant`, `dead_tree_trunk_02`). Todo con licencia CC0 de Poly Haven; autores en `tools/cinematics/escape_victory/LICENSES.md`.
+- Calcomanías del suelo: sombras de contacto bajo los objetos y "charcos de luz" bajo cada farol. Los focos (`SpotLightEx`) no proyectan sombras en gdx-gltf 2.3.0 (ver §2.62), y estas calcomanías dan el contacto con el suelo que esas luces no producen.
+- Resultado: `exterior_parking.glb`, 15.1 MB, 270 mallas, 95 imágenes. Las texturas procedurales intermedias van a una carpeta temporal del sistema: antes se escribían en `assets/models/` y quedaban sueltas sin usarse.
+- El letrero de la pizzería tiene cuatro letras apagadas a propósito (`apagadas` en `build_exterior.py`).
+
+**Auto (`prep_car.py` → `assets/models/car_sedan.glb`, 0.4 MB):**
+- Detalles: matrículas "FAZ 1987", retrovisores, manijas, escape, limpiaparabrisas, espejo interior y sombra de contacto propia (`car_shadow`, se mueve con el auto).
+- Indicadores del tablero (`car_gauges`): panel delgado en la cara trasera del tablero, con una textura emisiva generada (dos esferas con marcas y aguja). `SalidaExterior` multiplica el emisivo por 0.8 al arrancar y por 0 al apagar. La primera versión era una caja de color plano que sobresalía del tablero, y en la cinemática se veía como una placa verde saturada detrás del volante (capturas `vic3` → `vic5`).
+
+**Luces:** faroles con intensidades 62/50/42 (el tercero parpadea) y cono de 72°/34°. Afuera, la luz direccional (luna) sube a 1.7, porque sus sombras son las únicas reales del exterior. El cielo tiene una luna de borde suave. Los faros del auto usan un cono de 34°/18°.
+
+**Diagnóstico falso descartado (arneses):** en las capturas del estacionamiento aparecían franjas claras bajo el auto y manchas de aceite gris claro. Pruebas hechas:
+- se descartaron la luna, la linterna, la niebla y el especular;
+- con la mancha opaca, el color era oscuro;
+- al leer los píxeles, el RGB era oscuro (6,5,4) y el alfa estaba entre 141 y 255.
+
+`Pixmap.createFromFrameBuffer` copia el **alfa de destino** del framebuffer. Las calcomanías mezcladas lo dejan por debajo de 1, y el visor de imágenes compone ese PNG sobre un fondo claro. En pantalla el alfa no se usa, así que **el juego se veía bien**. Las capturas de los arneses se aplanan a RGB antes de revisarlas (`aplanar.py` del scratchpad). Hay que tenerlo en cuenta en futuras revisiones visuales.
+
+**Rendimiento con el detalle v2** (mismo arnés de §2.60, ms por cuadro): estacionamiento 8.5 → 11.6-12.8 (692 draw calls), victoria 13.2 → 15.2-16.0, comedor 13.2 → 14.2, Parts and Service 8.2 → 8.1, Pirate Cove 12.8 → 10.8, persecución 11.4 → 12.2. Todas las zonas siguen muy por debajo de la línea base anterior al culling (21-27 ms). Las diferencias en las zonas interiores están dentro de la variación entre ejecuciones, porque el exterior está apagado mientras no se abre la salida.
+
+**Verificación:** `PruebaVictoria` completa, 0 fallos (dura 16.5 s, la victoria queda registrada). Capturas revisadas: puerta de salida, depósito, puerta de emergencia, estacionamiento, vista hacia la puerta con Freddy, puerta del conductor, interior con los indicadores encendidos, salida del auto y plano final con el letrero.
+
+### 2.62 Auditoría técnica de ambos proyectos, sesión 2026-10-23
+
+Datos medidos en esta sesión salvo donde se indica "cálculo". Coste: bajo (< 1 h), medio (una sesión), alto (varias). No se implementó nada de esta lista salvo lo marcado como hecho.
+
+**Prioridad alta**
+
+| # | Proyecto | Hallazgo | Recomendación | Coste | Riesgo |
+|---|---|---|---|---|---|
+| A1 | Escape | `freddy.glb` pesa 114.1 MB, de los que 110.3 MB son **nueve texturas PNG de 4096×4096**. Cálculo: en VRAM sin comprimir son 9 × 64 MB = 576 MB (≈ 768 MB con mipmaps), más que todo el resto de modelos juntos. Es el candidato principal para los 11-12 s de carga de recursos (`PruebaCarga`), pero no se midió su parte exacta. | Reducir a 2048² (÷4 en memoria) o 1024² las que no se ven de cerca, y pasar a JPEG las de color sin alfa. Medir antes y después con `PruebaCarga` y revisar el jumpscare de Freddy de cerca. | Bajo | Bajo |
+| A2 | Ambos | Las pruebas automáticas (arneses `Prueba*` de Escape, `regresion.sh` y los arneses Swing de FDAF) viven fuera de los repositorios, en el scratchpad de cada sesión. Cada sesión tiene que reconstruirlos, y no hay forma de que alguien más los ejecute. | Llevar los arneses estables a `tools/tests/` en cada repo, con un script de ejecución (`-Duser.home` aislado, ver §3). En Escape, como tarea Gradle con ventana oculta. | Medio | Bajo |
+
+**Prioridad media**
+
+| # | Proyecto | Hallazgo | Recomendación | Coste | Riesgo |
+|---|---|---|---|---|---|
+| M1 | Escape | `pizzeria.glb`: 1 618 244 vértices en 79 mallas (74.7 MB, de los que 12 MB son imágenes). Con el culling de §2.60 ya no se dibuja entero, pero sigue siendo el grueso de la pasada de sombras. | Decimar en Blender las mallas densas que no forman paredes (mobiliario, decoración). Hay que conservar las mallas que generan colisiones (`LevelLoader`) o volver a verificar `PruebaMundo bordes/puertas`. | Medio | Medio |
+| M2 | Escape | `audio/music/freddy_music_box.wav` (18.4 MB) se carga como `Sound` (todas las constantes `SONIDO_*` se encolan así), lo que lo decodifica entero en memoria. | Cargarlo como `Music` (streaming) o convertirlo a OGG. | Bajo | Bajo |
+| M3 | Escape | La preparación del nivel varía entre 4.0 y 9.2 s de una ejecución a otra con los mismos datos. El culling (170 ms) y el precalentamiento (570-664 ms) explican solo una parte. | Medir por fases dentro de `GameplayScreen.show()` (colisiones, escenas, luces) antes de optimizar nada. | Bajo | Bajo |
+| M4 | Escape | `GameplayScreen.java` tiene 3061 líneas (el 36 % del código de `core`). Las cinemáticas, las puertas, la cortina, el aturdimiento y el culling ya salieron a clases propias, pero el resto sigue ahí. | Extraer solo al tocar una zona (por ejemplo, el HUD o el flujo de vidas), nunca como refactor aparte. | Alto | Alto |
+| M5 | Escape | En el estacionamiento hay 692 draw calls (270 mallas y 95 imágenes en el exterior). | Unir en Blender las mallas estáticas que comparten material (vallas, topes, papeles, vegetación). | Medio | Bajo |
+
+**Prioridad baja**
+
+| # | Proyecto | Hallazgo | Recomendación | Coste | Riesgo |
+|---|---|---|---|---|---|
+| B1 | Escape | `golden_freddy.glb`: 254 mallas y 267k vértices, sin animación. | Unir mallas por material. Solo se ve en un evento, así que el beneficio es pequeño. | Bajo | Bajo |
+| B2 | Escape | Todo el audio está en WAV (41 MB en `assets/audio`). | OGG para música y ambientes largos. | Bajo | Bajo |
+| B3 | FDAF | `ControllerInterfaz.java` (1635 líneas) y `ControllerMenu.java` (908) concentran la lógica. Son frágiles ante ediciones parciales (§3, reglas 1-2). | No refactorizar sin una necesidad concreta. Seguir con bloques de reemplazo verificados. | Alto | Alto |
+| B4 | FDAF | Los recursos ocupan 266 MB, de los que 144 MB son audio WAV (`escape_transition_les_toreadors_remix.wav` pesa 53 MB). Java 8 / `javax.sound` no decodifica OGG ni MP3 sin bibliotecas externas. Los archivos grandes ya se reproducen en streaming (`Sonido`, camino `SourceDataLine`), así que no hay riesgo de OOM. | Si el tamaño del JAR importa, bajar la transición a 22 kHz o mono tras escucharla. | Bajo | Medio (calidad) |
+| B5 | Ambos | Las capturas de los arneses guardan el alfa del framebuffer y producen falsos defectos visuales (§2.61). | Aplanar a RGB al guardar en los arneses que se lleven al repo (A2). | Bajo | Ninguno |
+
+**Limitaciones conocidas (no se pueden resolver sin cambiar de biblioteca o de enfoque)**
+- gdx-gltf 2.3.0 solo proyecta sombras de luces direccionales (`DirectionalShadowLight`). Los faroles, los faros y la linterna (`SpotLightEx`) no hacen sombra. Mitigado con sombras de contacto y charcos de luz (§2.61).
+- FDAF reinicia relanzando el proceso (`ReiniciadorJuego`, `ProcessBuilder`). Depende de encontrar el ejecutable de Java y tiene un plan alternativo (`siFalla`). `LanzadorEscape` usa el mismo mecanismo.
+- `EscalarVista.java` (FDAF) está congelado (§1.7).
+- La imagen de referencia de la barra retro (§1.60) no llegó a la sesión. La barra se diseñó a partir de la descripción escrita.
+
+**Recursos:** todo lo añadido en esta sesión es CC0 (Poly Haven, autores en `LICENSES.md`) o se generó con scripts del repo (sonidos de `tools/audio/synth_world_audio.py`, pantalla de carga de `tools/loading/`, texturas procedurales del exterior y del auto). No se usó ningún recurso de procedencia dudosa.
+
+**Hecho en esta sesión a raíz de la auditoría:** culling y precalentamiento (§2.60), indicadores del auto rehechos, texturas temporales del exterior fuera de `assets/` y diagnóstico de las capturas (§2.61).
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos

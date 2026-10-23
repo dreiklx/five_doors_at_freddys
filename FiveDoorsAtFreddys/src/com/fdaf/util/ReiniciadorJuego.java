@@ -45,7 +45,17 @@ public class ReiniciadorJuego {
 	// comportamiento que tenia antes de existir este mecanismo (volver al
 	// menu dentro del proceso actual).
 	public static void reiniciar(VistaPrincipal vp, Runnable siFalla) {
-		mostrarPantallaDeCarga(vp);
+		reiniciar(vp, siFalla, false);
+	}
+
+	// barraRetro=true (solo Rendirse, CLAUDE.md §1.60): en lugar del texto "Cargando..." se muestra la barra retro
+	// segmentada, que se llena con la espera REAL antes de relanzar (ESPERA_ANTES_DE_CERRAR_MS); no se alarga nada.
+	public static void reiniciar(VistaPrincipal vp, Runnable siFalla, boolean barraRetro) {
+		if (barraRetro) {
+			mostrarBarraRetro(vp);
+		} else {
+			mostrarPantallaDeCarga(vp);
+		}
 
 		Timer t = new Timer(ESPERA_ANTES_DE_CERRAR_MS, null);
 		t.addActionListener(e -> {
@@ -58,6 +68,30 @@ public class ReiniciadorJuego {
 		});
 		t.setRepeats(false);
 		t.start();
+	}
+
+	private static void mostrarBarraRetro(VistaPrincipal vp) {
+		final long inicio = System.nanoTime();
+		JPanel pantalla = new JPanel() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected void paintComponent(java.awt.Graphics g) {
+				super.paintComponent(g);
+				float progreso = (System.nanoTime() - inicio) / 1_000_000f / ESPERA_ANTES_DE_CERRAR_MS;
+				BarraRetro.pintar((java.awt.Graphics2D) g, getWidth() / 2, getHeight() / 2, getWidth(), progreso);
+			}
+		};
+		pantalla.setBackground(Color.BLACK);
+		vp.setContenido(pantalla);
+		Timer repintado = new Timer(33, null);
+		repintado.addActionListener(e -> {
+			if (!pantalla.isShowing() || (System.nanoTime() - inicio) / 1_000_000L > ESPERA_ANTES_DE_CERRAR_MS + 200) {
+				repintado.stop();
+			}
+			pantalla.repaint();
+		});
+		repintado.start();
 	}
 
 	private static void mostrarPantallaDeCarga(VistaPrincipal vp) {

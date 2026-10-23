@@ -177,7 +177,7 @@ Ruta relativa a `src/com/fdaf/resources/` y a `FDAF assets/fdaf/`. «Derivado» 
 | `audio/sfx/heavy_breathing.wav` | `sounds/varios/respiracion_agitada.wav` | sfx | - | Respiracion tras sobrevivir un jumpscare | original |
 | `audio/music/escape_transition_les_toreadors_remix.wav` | `sounds/win/LesToreadorsRemix.wav` | musica | - | Musica de la transicion Noche 5 -> Escape | original |
 | `videos/victory.mp4` | `videos/ganar_fdaf.mp4` | video | - | Video de victoria (JavaFX) | original |
-| `videos/surrender/surrender_0001.jpg` … `surrender_0160.jpg` | (nuevo en v2.9) | video (secuencia) | - | Fotogramas de la cinematica de Rendirse (§1.59), panorama 1800×600 a 20 fps | derivado: render de Blender (`tools/cinematics/surrender/`, escena en `FDAF assets/source_files/cinematics/surrender/`) |
+| `videos/surrender/surrender_0001.jpg` … `surrender_0160.jpg` | (nuevo en v2.9) | video (secuencia) | - | Fotogramas de la cinematica de Rendirse (§1.59; v2 en v2.11, §1.61: Bonnie y Chica mas presentes, giros de cabeza a tirones), panorama 1800×600 a 20 fps | derivado: render de Blender (`tools/cinematics/surrender/direct_surrender.py`, escena en `FDAF assets/source_files/cinematics/surrender/`); los v1 en `_archive/old_versions/surrender_v1/` |
 | `audio/cinematics/surrender_mix.wav` | (nuevo en v2.9) | cinematica | - | Banda sonora de la cinematica de Rendirse (12.6 s) | derivado: mezcla de `power_down`, `freddy_footsteps`, `static` y `heavy_breathing` + efectos sintetizados (`mix_surrender_audio.py`) |
 
 Rutas construidas por código (no aparecen literales): `intros/night_%02d_intro_{en,es}.gif` (`CargarImagenes.rutaIntroPorNoche`), `ui/hud/night_%02d_{en,es}.png` (`getEtiquetaNoche`), `audio/phone_calls/night_%02d_call_{en,es}.wav` (`ControllerInterfaz.rutaLlamadaNocheActual`), `jumpscares/<animatronico>_jumpscare.gif` (`alRevelarAnimatronico`, nombre del enum en minúsculas). Todos los sonidos se piden a `Sonido` con la ruta relativa a `audio/`.
@@ -199,7 +199,7 @@ Sin cambios y fuera de este catálogo: `images/nyder/` (`NYDER.png` con cambios 
 
 ## Five Doors Escape — recursos en uso
 
-Ruta relativa a `five_doors_escape/assets/`. Los JSON de `content/` (definiciones de entidades y del mapa) y los `.properties` de `i18n/` conservan sus nombres: son identificadores de código.
+Ruta relativa a `five_doors_escape/assets/`. Los JSON de `content/` (definiciones de entidades y del mapa, `content/balance/flashlight.json` con el balance del aturdimiento, §2.58) y los `.properties` de `i18n/` conservan sus nombres: son identificadores de código.
 
 | Recurso | Nombre anterior | Tipo | Idioma | Uso en el juego | En FDAF assets |
 |---|---|---|---|---|---|
@@ -239,9 +239,15 @@ Ruta relativa a `five_doors_escape/assets/`. Los JSON de `content/` (definicione
 | `audio/sfx/car_engine_start.wav` | (nuevo, §2.49) | sfx | - | Arranque del motor y ralenti | `escape/audio/sfx/car_engine_start.wav`; sintetizado (`tools/cinematics/escape_victory/synth_victory_audio.py`) |
 | `audio/sfx/car_drive_away.wav` | (nuevo, §2.49) | sfx | - | El auto acelera y se aleja | `escape/audio/sfx/car_drive_away.wav`; sintetizado (`tools/cinematics/escape_victory/synth_victory_audio.py`) |
 | `audio/sfx/gate_barrier_raise.wav` | (nuevo, §2.49) | sfx | - | Barrera del porton subiendo | `escape/audio/sfx/gate_barrier_raise.wav`; sintetizado (`tools/cinematics/escape_victory/synth_victory_audio.py`) |
-| `models/exterior_parking.glb` | (nuevo, §2.49) | modelo | - | Exterior: fachada, estacionamiento, valla, porton, faroles, letrero (build_exterior.py) | `source_files/cinematics/escape_victory/`; terceros CC0 en su `LICENSES.md` |
-| `models/car_sedan.glb` | (nuevo, §2.49) | modelo | - | Auto de la huida (Car de Quaternius, CC0, adaptado con prep_car.py) | `source_files/cinematics/escape_victory/`; original `downloads/quaternius_car_original.glb` |
+| `models/exterior_parking.glb` | (nuevo, §2.49) | modelo | - | Exterior: fachada, estacionamiento, valla, porton, faroles, letrero; detalle v2 (§2.61): charcos, aceite, contenedor, cierre de carga, vegetacion, sombras de contacto (build_exterior.py) | `source_files/cinematics/escape_victory/`; terceros CC0 en su `LICENSES.md` |
+| `models/car_sedan.glb` | (nuevo, §2.49) | modelo | - | Auto de la huida (Car de Quaternius, CC0, adaptado con prep_car.py; detalle v2 §2.61: matriculas, retrovisores, indicadores emisivos, sombra de contacto) | `source_files/cinematics/escape_victory/`; original `downloads/quaternius_car_original.glb` |
 | `audio/sfx/defeat_drag.wav` | (nuevo, §2.50) | sfx | - | Tiron de arrastre por el piso | `escape/audio/sfx/defeat_drag.wav`; sintetizado (`tools/cinematics/escape_defeat/synth_defeat_audio.py`) |
 | `audio/sfx/defeat_body_thud.wav` | (nuevo, §2.50) | sfx | - | Golpe del cuerpo sobre el escenario | `escape/audio/sfx/defeat_body_thud.wav`; sintetizado (`tools/cinematics/escape_defeat/synth_defeat_audio.py`) |
 | `audio/sfx/defeat_servo.wav` | (nuevo, §2.50) | sfx | - | Servo del animatronico al inclinarse | `escape/audio/sfx/defeat_servo.wav`; sintetizado (`tools/cinematics/escape_defeat/synth_defeat_audio.py`) |
 | `audio/sfx/defeat_light_short.wav` | (nuevo, §2.50) | sfx | - | Cortocircuito del foco del escenario | `escape/audio/sfx/defeat_light_short.wav`; sintetizado (`tools/cinematics/escape_defeat/synth_defeat_audio.py`) |
+| `audio/sfx/interior_door_open.wav` | (nuevo, §2.56) | sfx | - | Puerta interior abatible abriendose | `escape/audio/sfx/interior_door_open.wav`; sintetizado (`tools/audio/synth_world_audio.py`) |
+| `audio/sfx/interior_door_close.wav` | (nuevo, §2.56) | sfx | - | Puerta interior abatible cerrandose | `escape/audio/sfx/interior_door_close.wav`; sintetizado (`tools/audio/synth_world_audio.py`) |
+| `audio/sfx/security_door_slide.wav` | (nuevo, §2.56) | sfx | - | Puertas corredizas de seguridad (suben y bajan) | `escape/audio/sfx/security_door_slide.wav`; sintetizado (`tools/audio/synth_world_audio.py`) |
+| `audio/sfx/animatronic_stun.wav` | (nuevo, §2.58) | sfx | - | Chispazo al aturdir a un animatronico con la linterna | `escape/audio/sfx/animatronic_stun.wav`; sintetizado (`tools/audio/synth_world_audio.py`) |
+| `ui/loading_background.jpg` | (nuevo, §2.59) | ui | - | Fondo de la pantalla de carga | `escape/ui/loading_background.jpg`; generado (`tools/loading/make_loading_assets.py`) |
+| `ui/loading_title.png` | (nuevo, §2.59) | ui | - | Titulo de la pantalla de carga | `escape/ui/loading_title.png`; generado (`tools/loading/build_loading_title.py`) |

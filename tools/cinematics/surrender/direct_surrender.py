@@ -19,8 +19,11 @@ ob = bpy.data.objects
 chica_root, bonnie_root, freddy_root = ob['ROOT_chica'], ob['ROOT_bonnie'], ob['ROOT_freddy']
 arm = {n: [o for o in ob if o.type == 'ARMATURE' and o.parent == ob['ROOT_' + n]][0] for n in ('chica', 'bonnie', 'freddy')}
 # Chica a la izquierda y Bonnie a la derecha del jugador (como en la referencia de FNAF 2), un poco adelantados
-chica_root.location = G(1.25, 0.56, -7.35)
-bonnie_root.location = G(-1.25, 0.56, -7.35)
+# v2 (2026-10-23): mas cerca y mas al centro (+-42 grados en vez de +-60): entran en el encuadre durante mucho mas
+# tiempo y se ven mas grandes. Chica sigue a la izquierda y Bonnie a la derecha del jugador.
+POS_CHICA, POS_BONNIE = (0.95, -7.0), (-0.95, -7.0)
+chica_root.location = G(POS_CHICA[0], 0.56, POS_CHICA[1])
+bonnie_root.location = G(POS_BONNIE[0], 0.56, POS_BONNIE[1])
 
 
 def extremos_z(root):
@@ -94,17 +97,35 @@ obj_cam = bpy.data.objects.new('mira_jugador', None); sc.collection.objects.link
 EJES = os.environ.get('EJES', 'TRACK_Z,TRACK_Z,TRACK_Z').split(',')
 
 
-def mirar(armobj, hueso, eje, f0, f1):
+def mirar(armobj, hueso, eje, claves):
+    """claves: [(frame, influencia), ...]. Con saltos constantes (interpolacion CONSTANT) en los tramos marcados con
+    un tercer valor True: el giro avanza a tirones, como un mecanismo que se traba."""
     pb = armobj.pose.bones[hueso]
     c = pb.constraints.new('DAMPED_TRACK'); c.target = obj_cam; c.track_axis = eje
-    c.influence = 0; c.keyframe_insert('influence', frame=f0)
-    c.influence = 0.85; c.keyframe_insert('influence', frame=f1)
+    for clave in claves:
+        c.influence = clave[1]; c.keyframe_insert('influence', frame=clave[0])
     return c
 
 
-mirar(arm['bonnie'], 'bip_head_bonnie.qc_skeleton', EJES[0], 50, 78)
-mirar(arm['chica'], 'Bone.003_Armature_7', EJES[1], 72, 100)
-mirar(arm['freddy'], 'j_head_04', EJES[2], 130, 152)
+# v2: giros antes, completos y a tirones (avanza, se traba, retrocede un poco, completa), con espasmos despues
+mirar(arm['bonnie'], 'bip_head_bonnie.qc_skeleton', EJES[0],
+      [(18, 0), (24, 0.35), (27, 0.33), (29, 0.62), (33, 0.55), (36, 0.98), (40, 1.0), (92, 1.0), (93, 0.7), (95, 1.0),
+       (121, 1.0), (122, 0.78), (124, 1.0)])
+mirar(arm['chica'], 'Bone.003_Armature_7', EJES[1],
+      [(44, 0), (49, 0.4), (52, 0.36), (54, 0.7), (57, 0.64), (60, 1.0), (64, 1.0), (104, 1.0), (105, 0.72), (107, 1.0),
+       (131, 1.0), (132, 0.8), (134, 1.0)])
+mirar(arm['freddy'], 'j_head_04', EJES[2], [(130, 0), (152, 0.85)])
+
+# tics del cuerpo: un giro brusco de pocos grados y vuelta (algo no funciona bien)
+def tic(raiz, f, grados):
+    base = raiz.rotation_euler.z
+    for ff, d in ((f - 1, 0), (f, grados), (f + 2, grados * 0.4), (f + 3, 0)):
+        raiz.rotation_euler.z = base + math.radians(d); raiz.keyframe_insert('rotation_euler', index=2, frame=ff)
+    raiz.rotation_euler.z = base
+for f, g in ((70, 5), (110, -4), (140, 3)):
+    tic(bonnie_root, f, g)
+for f, g in ((82, -5), (118, 4), (143, -3)):
+    tic(chica_root, f, g)
 
 # ojos brillantes (puntos emisivos) pegados a los huesos de los ojos de Freddy -- se encienden al final, como en FNAF
 mat = bpy.data.materials.new('ojo')
@@ -185,8 +206,8 @@ def luz(nombre, tipo, pos, energia, color, objetivo=None, tam=None, spot=None):
 
 LUNA = float(os.environ.get('LUNA', '260')); FOCO = float(os.environ.get('FOCO', '260'))
 luna = luz('luna', 'AREA', G(0, 2.75, -1.0), LUNA, (0.50, 0.62, 1.0), objetivo=G(0, 0, -1.0), tam=7)
-fc = luz('foco_chica', 'SPOT', G(2.2, 2.78, -4.6), FOCO, (1.0, 0.80, 0.58), objetivo=G(1.30, 1.7, -7.70), spot=(24, 0.45))
-fb = luz('foco_bonnie', 'SPOT', G(-2.2, 2.78, -4.6), FOCO, (1.0, 0.80, 0.58), objetivo=G(-1.30, 1.7, -7.70), spot=(24, 0.45))
+fc = luz('foco_chica', 'SPOT', G(2.0, 2.78, -4.6), FOCO * 1.25, (1.0, 0.80, 0.58), objetivo=G(POS_CHICA[0], 1.8, POS_CHICA[1]), spot=(26, 0.45))
+fb = luz('foco_bonnie', 'SPOT', G(-2.0, 2.78, -4.6), FOCO * 1.25, (1.0, 0.80, 0.58), objetivo=G(POS_BONNIE[0], 1.8, POS_BONNIE[1]), spot=(26, 0.45))
 # luz fria y tenue sobre el propio escenario, detras del jugador: es la que deja ver las caras cuando giran hacia el
 ESC = float(os.environ.get('ESC', '90'))
 escenario = luz('luz_escenario', 'AREA', G(0, 2.82, -8.9), ESC, (0.62, 0.70, 1.0), objetivo=G(0, 1.2, -6.8), tam=3.2)

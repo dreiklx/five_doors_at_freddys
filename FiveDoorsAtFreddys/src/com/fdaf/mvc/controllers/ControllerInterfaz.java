@@ -1413,10 +1413,15 @@ public class ControllerInterfaz implements JuegoListener {
 		// fin de noche puede colarse por debajo de la escena.
 		controllerJuego.setJuegoTerminado(true);
 		controllerJuego.cancelarRevelacionPendiente();
-		new com.fdaf.util.CinematicaRendirse().iniciar(vistaPrincipal, this::reiniciarJuegoCompleto);
+		new com.fdaf.util.CinematicaRendirse().iniciar(vistaPrincipal, () -> reiniciarJuegoCompleto(true));
 	}
 
 	public void reiniciarJuegoCompleto() {
+		reiniciarJuegoCompleto(false);
+	}
+
+	// barraRetro: solo despues de Rendirse (CLAUDE.md §1.60) -- la pantalla de reinicio usa la barra retro.
+	public void reiniciarJuegoCompleto(boolean barraRetro) {
 		if (controllerMenuPadre != null) {
 			controllerMenuPadre.limpiarPartidaActiva();
 		}
@@ -1425,7 +1430,7 @@ public class ControllerInterfaz implements JuegoListener {
 			if (controllerMenuPadre != null) {
 				controllerMenuPadre.reanudarMusicaMenu();
 			}
-		});
+		}, barraRetro);
 	}
 
 	// Dispara tras ganar la Noche 5 (Architecture.md #7): escribe el

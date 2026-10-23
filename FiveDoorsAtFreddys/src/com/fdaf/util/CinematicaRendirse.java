@@ -64,9 +64,20 @@ public class CinematicaRendirse {
 	private static final int FIN_ESTATICA_MS = FIN_FOTOGRAMAS_MS + 550;
 	private static final int FIN_TOTAL_MS = FIN_ESTATICA_MS + 1600;
 	private static final int FUNDIDO_ENTRADA_MS = 900;
-	private static final int SALTO_PERMITIDO_DESDE_MS = 400;
 	private static final int FOTOGRAMAS_POR_DELANTE = 8;
 	private static final int INTERVALO_REPINTADO_MS = 33;
+	/** Fotogramas que se decodifican ANTES de empezar (preparacion con la barra retro, §1.60). Pocos a proposito: el
+	 * primero no se muestra hasta 2.2 s despues (apagon + negro) y el hilo continuo tiene ese margen; con 24 la
+	 * preparacion medida llego a 1-3 s con la CPU cargada. */
+	private static final int FOTOGRAMAS_PRECARGA = 8;
+	/** Si la preparacion termina antes, la barra se ve llena este tiempo minimo: evita un parpadeo, no alarga una
+	 * carga real (con recursos listos la preparacion entera dura ~0.4-0.6 s, medido). */
+	private static final int BARRA_MINIMA_MS = 260;
+	/** Suavizado de la mirada (constantes de tiempo, s) y velocidad maxima de giro (anchos de panorama/s), §1.61. */
+	private static final float TAU_RATON = 0.08f;
+	private static final float TAU_GUION = 0.28f;
+	private static final float VELOCIDAD_MAX_RATON = 2.4f;
+	private static final float VELOCIDAD_MAX_GUION = 1.4f;
 
 	private final Random random = new Random();
 	private final ConcurrentHashMap<Integer, BufferedImage> cache = new ConcurrentHashMap<>();
@@ -85,14 +96,30 @@ public class CinematicaRendirse {
 	private float paneo = 0.5f;          // 0 = todo a la izquierda, 1 = todo a la derecha
 	private float paneoObjetivo = 0.5f;
 	private long ultimoMovimientoRatonNanos = Long.MIN_VALUE / 2;
+	private long ultimoTickNanos;
 
-	/** Mientras el jugador no mueva el raton, la mirada sigue la accion: Bonnie gira la cabeza a la derecha
-	 * (fotogramas 50-78), Chica a la izquierda (72-100) y Freddy termina delante (130-152). Pares
-	 * {fotograma, paneo}; entre ellos se interpola. */
-	private static final float[][] GUION_PANEO = { { 1, 0.5f }, { 34, 0.5f }, { 46, 1f }, { 74, 1f },
-			{ 84, 0f }, { 106, 0f }, { 120, 0.56f }, { 160, 0.56f } };
+	// Preparacion previa con la barra retro (§1.60): el hilo "cinematica-rendirse-prep" decodifica los primeros
+	// fotogramas y abre el audio; el Timer arranca la linea de tiempo cuando termina.
+	private volatile boolean preparando = true;
+	private volatile int precargados = 0;
+	private volatile boolean audioListo = false;
+	private volatile boolean preparacionLista = false;
+	private long inicioPreparacionNanos;
+	private long finPreparacionNanos;
+	private OmisionMantenida omision;
+
+	/** Mientras el jugador no mueva el raton, la mirada sigue la accion (escena v2, §1.61): Bonnie (derecha) gira la
+	 * cabeza a tirones en los fotogramas 18-40, Chica (izquierda) en 44-64; vuelven los espasmos de los dos y Freddy
+	 * termina delante (130-152). Con el paneo al centro los dos quedan a la vista en los bordes. Pares {fotograma,
+	 * paneo}; entre ellos se interpola. */
+	private static final float[][] GUION_PANEO = { { 1, 0.5f }, { 14, 0.5f }, { 22, 0.82f }, { 42, 0.82f },
+			{ 48, 0.18f }, { 68, 0.18f }, { 78, 0.5f }, { 90, 0.62f }, { 98, 0.62f }, { 102, 0.38f }, { 110, 0.38f },
+			{ 118, 0.52f }, { 160, 0.52f } };
+	/** Fotogramas con un tic de Bonnie o de Chica (direct_surrender.py): ahi la imagen tiene una rafaga breve de
+	 * distorsion por franjas que nunca tapa el centro de la cara. */
+	private static final int[] FOTOGRAMAS_TIC = { 70, 82, 92, 104, 110, 118, 121, 131, 140, 143 };
 	/** Tiempo que manda el raton despues de moverse antes de devolver la mirada al guion. */
-	private static final long RATON_MANDA_NANOS = 1_800_000_000L;
+	private static final long RATON_MANDA_NANOS = 1_400_000_000L;
 
 	/** Arranca la cinematica sobre lo que haya en pantalla. alTerminar se ejecuta una sola vez en el EDT. */
 	public void iniciar(VistaPrincipal vistaPrincipal, Runnable alTerminarCinematica) {
@@ -116,7 +143,9 @@ public class CinematicaRendirse {
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				if (panel.getWidth() > 0) {
-					paneoObjetivo = Math.max(0f, Math.min(1f, (float) e.getX() / panel.getWidth()));
+					// el recorrido completo se alcanza antes del borde de la ventana (8 % de margen por lado)
+					float x = (float) e.getX() / panel.getWidth();
+					paneoObjetivo = Math.max(0f, Math.min(1f, (x - 0.08f) / 0.84f));
 					ultimoMovimientoRatonNanos = System.nanoTime();
 				}
 			}
@@ -125,52 +154,99 @@ public class CinematicaRendirse {
 			public void mouseDragged(MouseEvent e) {
 				mouseMoved(e);
 			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				saltar();
-			}
 		};
 		panel.addMouseListener(raton);
 		panel.addMouseMotionListener(raton);
-		panel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "saltar");
-		panel.getActionMap().put("saltar", new AbstractAction() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public void actionPerformed(java.awt.event.ActionEvent e) {
-				saltar();
-			}
-		});
+		// Omitir: mantener ESC ~1.2 s (o el raton sobre el indicador). Un toque no hace nada (§1.62).
+		omision = OmisionMantenida.instalar(panel, this::terminar);
 		// Capa por encima de cualquier contenido (tableta u oficina): no toca los paneles del juego.
 		vp.getLayeredPane().add(panel, JLayeredPane.POPUP_LAYER);
 		panel.requestFocusInWindow();
 
-		audio = new Sonido(RUTA_AUDIO);
-		audio.play();
-		inicioNanos = System.nanoTime();
-
-		cargador = new Thread(this::cargarFotogramas, "cinematica-rendirse");
-		cargador.setDaemon(true);
-		cargador.start();
+		inicioPreparacionNanos = System.nanoTime();
+		ultimoTickNanos = inicioPreparacionNanos;
+		Thread prep = new Thread(this::preparar, "cinematica-rendirse-prep");
+		prep.setDaemon(true);
+		prep.start();
 
 		timer = new Timer(INTERVALO_REPINTADO_MS, e -> {
+			long ahora = System.nanoTime();
+			float dt = Math.min(0.1f, (ahora - ultimoTickNanos) / 1e9f);
+			ultimoTickNanos = ahora;
+			if (omision.actualizar(dt) || terminado) {
+				return;
+			}
+			if (preparando) {
+				if (preparacionLista && (ahora - inicioPreparacionNanos) / 1_000_000L >= BARRA_MINIMA_MS) {
+					arrancarLineaDeTiempo();
+				}
+				panel.repaint();
+				return;
+			}
 			int t = transcurridoMs();
 			if (t >= FIN_TOTAL_MS) {
 				terminar();
 				return;
 			}
 			fotogramaPedido = fotogramaEn(t);
-			boolean mandaRaton = System.nanoTime() - ultimoMovimientoRatonNanos < RATON_MANDA_NANOS;
-			float objetivo = mandaRaton ? paneoObjetivo : paneoGuion(t);
-			paneo += (objetivo - paneo) * (mandaRaton ? 0.06f : 0.09f);   // giro lento, como dentro de una cabeza pesada
+			moverMirada(t, dt, ahora);
 			panel.repaint();
 		});
 		timer.start();
 	}
 
+	/** Hilo de preparacion: primeros fotogramas + apertura del audio. Nunca en el EDT. */
+	private void preparar() {
+		for (int f = 1; f <= FOTOGRAMAS_PRECARGA && !terminado; f++) {
+			cache.put(f, decodificar(f));
+			precargados = f;
+		}
+		Sonido s = new Sonido(RUTA_AUDIO);
+		if (terminado) {
+			s.cerrar();
+			return;
+		}
+		audio = s;
+		audioListo = true;
+		finPreparacionNanos = System.nanoTime();
+		preparacionLista = true;
+	}
+
+	/** Fraccion real de la preparacion: fotogramas decodificados y audio abierto (el audio pesa como 4 fotogramas). */
+	private float progresoPreparacion() {
+		return (precargados + (audioListo ? 4f : 0f)) / (FOTOGRAMAS_PRECARGA + 4f);
+	}
+
+	private void arrancarLineaDeTiempo() {
+		preparando = false;
+		log("preparacion " + (finPreparacionNanos - inicioPreparacionNanos) / 1_000_000L + " ms");
+		audio.play();
+		inicioNanos = System.nanoTime();
+		cargador = new Thread(this::cargarFotogramas, "cinematica-rendirse");
+		cargador.setDaemon(true);
+		cargador.start();
+	}
+
+	private static void log(String mensaje) {
+		System.out.println("[RENDIRSE] " + mensaje);
+	}
+
+	/** Mirada (§1.61): suavizado exponencial por tiempo real (independiente de los fps) con velocidad maxima. El
+	 * raton responde rapido (tau 0.07 s); el guion, mas pausado. Al dejar de mover el raton, el guion retoma desde
+	 * donde quedo la mirada, sin salto. El limite de giro es el propio panorama (paneo en [0, 1]). */
+	private void moverMirada(int t, float dt, long ahora) {
+		boolean mandaRaton = ahora - ultimoMovimientoRatonNanos < RATON_MANDA_NANOS;
+		float objetivo = mandaRaton ? paneoObjetivo : paneoGuion(t);
+		float tau = mandaRaton ? TAU_RATON : TAU_GUION;
+		float vmax = mandaRaton ? VELOCIDAD_MAX_RATON : VELOCIDAD_MAX_GUION;
+		float paso = (objetivo - paneo) * (1f - (float) Math.exp(-dt / tau));
+		float limite = vmax * dt;
+		paneo += Math.max(-limite, Math.min(limite, paso));
+		paneo = Math.max(0f, Math.min(1f, paneo));
+	}
+
 	private int transcurridoMs() {
-		return (int) ((System.nanoTime() - inicioNanos) / 1_000_000L);
+		return preparando ? 0 : (int) ((System.nanoTime() - inicioNanos) / 1_000_000L);
 	}
 
 	private static float paneoGuion(int t) {
@@ -217,16 +293,29 @@ public class CinematicaRendirse {
 				}
 				continue;
 			}
-			try (InputStream in = CinematicaRendirse.class.getResourceAsStream(String.format(RUTA_FOTOGRAMAS, siguiente))) {
-				BufferedImage img = in == null ? null : ImageIO.read(in);
-				cache.put(siguiente, img != null ? img : new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB));
-			} catch (Exception e) {
-				cache.put(siguiente, new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB));
-			}
+			cache.put(siguiente, decodificar(siguiente));
+		}
+	}
+
+	private static BufferedImage decodificar(int fotograma) {
+		try (InputStream in = CinematicaRendirse.class.getResourceAsStream(String.format(RUTA_FOTOGRAMAS, fotograma))) {
+			BufferedImage img = in == null ? null : ImageIO.read(in);
+			return img != null ? img : new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+		} catch (Exception e) {
+			return new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
 		}
 	}
 
 	private void pintar(Graphics2D g, int w, int h) {
+		boolean ingles = PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES;
+		if (preparando) {
+			// La oficina queda atenuada debajo y la barra retro muestra la preparacion real.
+			g.setColor(new Color(0f, 0f, 0f, 0.45f));
+			g.fillRect(0, 0, w, h);
+			BarraRetro.pintar(g, w / 2, h / 2, w, progresoPreparacion());
+			omision.pintar(g, w, h, ingles);
+			return;
+		}
 		int t = transcurridoMs();
 		if (t < FIN_APAGON_MS) {
 			// La oficina (o la tableta) sigue debajo y se apaga a tirones: oscuridad creciente con parpadeos.
@@ -250,8 +339,8 @@ public class CinematicaRendirse {
 		} else {
 			pintarFrase(g, w, h);
 		}
-		if (t > 1000 && t < FIN_ESTATICA_MS) {
-			pintarAyudaSalto(g, w, h);
+		if (t < FIN_ESTATICA_MS) {
+			omision.pintar(g, w, h, ingles);
 		}
 	}
 
@@ -270,6 +359,7 @@ public class CinematicaRendirse {
 			int temblorY = (int) Math.round(Math.sin(t / 700.0) * h * 0.004);
 			g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 			g.drawImage(img, -desplazamiento, temblorY, anchoEscalado, h, panel);
+			pintarDistorsion(g, img, w, h, f, -desplazamiento, temblorY, anchoEscalado, escala);
 		}
 		// Lineas de interferencia sueltas, como en las alucinaciones de FNAF 2.
 		if (random.nextFloat() < 0.35f) {
@@ -284,6 +374,32 @@ public class CinematicaRendirse {
 			g.setColor(new Color(0f, 0f, 0f, 1f - (float) dentro / FUNDIDO_ENTRADA_MS));
 			g.fillRect(0, 0, w, h);
 		}
+	}
+
+	/** Rafaga de distorsion (~150 ms) en cada tic de Bonnie o Chica: 2-3 franjas horizontales desplazadas, siempre
+	 * fuera de la franja central donde quedan las caras (35 %-62 % del alto), mas un velo rojo muy tenue. */
+	private void pintarDistorsion(Graphics2D g, BufferedImage img, int w, int h, int f, int x0, int y0, int anchoEscalado, double escala) {
+		boolean enTic = false;
+		for (int tic : FOTOGRAMAS_TIC) {
+			if (f >= tic && f <= tic + 2) {
+				enTic = true;
+				break;
+			}
+		}
+		if (!enTic) {
+			return;
+		}
+		int franjas = 2 + random.nextInt(2);
+		for (int i = 0; i < franjas; i++) {
+			int alto = h / 30 + random.nextInt(h / 18);
+			int y = random.nextBoolean() ? random.nextInt(Math.max(1, (int) (h * 0.35f) - alto)) : (int) (h * 0.62f) + random.nextInt(Math.max(1, (int) (h * 0.38f) - alto));
+			int dx = (random.nextBoolean() ? 1 : -1) * (w / 90 + random.nextInt(w / 45));
+			int sy0 = (int) ((y - y0) / escala);
+			int sy1 = (int) ((y + alto - y0) / escala);
+			g.drawImage(img, x0 + dx, y, x0 + dx + anchoEscalado, y + alto, 0, Math.max(0, sy0), img.getWidth(), Math.min(img.getHeight(), sy1), panel);
+		}
+		g.setColor(new Color(0.6f, 0f, 0f, 0.07f));
+		g.fillRect(0, 0, w, h);
 	}
 
 	/** Bordes de la cabeza del traje: oscuridad alrededor de dos aberturas de ojos que se solapan. Se genera una vez. */
@@ -317,22 +433,6 @@ public class CinematicaRendirse {
 		g.setFont(new Font(Font.MONOSPACED, Font.PLAIN, Math.max(14, h / 40)));
 		g.setColor(new Color(200, 200, 200));
 		g.drawString(frase, w / 60, h / 22);
-	}
-
-	private void pintarAyudaSalto(Graphics2D g, int w, int h) {
-		boolean ingles = PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES;
-		String texto = ingles ? "Click or ESC to skip" : "Clic o ESC para saltar";
-		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-		g.setFont(Fuentes.obtener(Math.max(12, h / 55)));
-		FontMetrics fm = g.getFontMetrics();
-		g.setColor(new Color(1f, 1f, 1f, 0.45f));
-		g.drawString(texto, w - fm.stringWidth(texto) - w / 50, h - h / 30);
-	}
-
-	private void saltar() {
-		if (transcurridoMs() >= SALTO_PERMITIDO_DESDE_MS) {
-			terminar();
-		}
 	}
 
 	/** Unico cierre: detiene audio, timer e hilo, suelta los fotogramas y entrega el control (una sola vez). */
