@@ -2016,6 +2016,111 @@ Todas con perfil aislado (`-Duser.home`); el `config.properties` real no se toc�
 - `config.properties` real intacto.
 - **No verificado:** escucha humana de la mezcla ni ratón físico.
 
+### 2.49 Victoria de Escape con salida física: depósito, puerta de emergencia, estacionamiento y auto, sesión 2026-10-23
+
+**Pedido:** que el jugador salga físicamente de la pizzería (abrir la salida con la llave, cruzar al exterior, llegar a un estacionamiento, subir a un auto y escapar), no una luz blanca con texto. Sustituye la propuesta A/B/C de §4.2 (se hizo la C).
+
+**Hallazgos que condicionaron el diseño (medidos, no supuestos):**
+- La puerta de salida (`puerta_41` → hoja `Object_60`, 0.91 × 1.85 m en x≈-8.87) no da al exterior: da a un **depósito trasero** cerrado. Su pared oeste es la fachada del edificio y es **gruesa** (cara exterior x=-12.61, interior x=-11.897), y un estante la tapaba casi entera.
+- Al oeste del edificio hay espacio libre; lo bloqueaban las 4 **paredes límite sintéticas** de `LevelLoader` (1.5 m de grosor).
+- La caja del jugador (0.3, 0.9, 0.3) va centrada en los ojos (y=1.6) y llega a 2.5 m: un dintel de 1.85 m también bloquea.
+
+**Recorrido final:**
+1. **Puerta de salida (E con la llave):** ya no termina la partida. La hoja gira 92° hacia el depósito en 1.6 s, con un primer tirón corto (el cerrojo cede) y luego el giro pesado. Sonido `exit_door_unlock.wav`. Se retiran los colliders de su hueco, también los del dintel y de las celdas del borde (sin eso el paso medido era de 0.6 m, justo el ancho del jugador). Desde aquí **los animatrónicos dejan de cazar**: se quita `AISystem` y se fuerza su "idle". Así la victoria y una atrapada nunca se solapan. La tensión la llevan el sonido y Freddy.
+2. **Depósito:** oscuro, con el letrero **EXIT** rojo encendido en la pared oeste (luz puntual roja).
+3. **Puerta de emergencia (E en la barra antipánico):** se abre hacia afuera de golpe, con rebote (`emergency_door_open.wav`). En ese momento el mundo pasa a "exterior":
+   - cielo nocturno generado (degradado, estrellas, luna velada);
+   - niebla abierta (7-46 m) y sombras recentradas sobre el estacionamiento;
+   - faroles encendidos (uno parpadea) y ambiente nocturno en bucle (`night_parking_lot.wav`);
+   - la pared límite oeste se retira y la sur se recorta; la valla pasa a ser el límite.
+4. **Estacionamiento** (≈14 × 17 m), con:
+   - asfalto, vereda con cordón amarillo, líneas y fachada de ladrillo con parapeto;
+   - valla con portón y barrera levadiza;
+   - 3 faroles, un auto tapado, tachos, bolsas, cajas, caja eléctrica, cámara, reflector y aire acondicionado;
+   - letrero de dos caras "FREDDY FAZBEAR'S PIZZA" con letras quemadas, calle con línea discontinua y siluetas de edificios con alguna ventana encendida.
+
+   Freddy aparece de pie en la puerta de emergencia cuando el jugador ya está a más de 3 m afuera y mirando hacia otro lado (nunca a la vista). Su caja musical, que suena desde él, lo delata.
+5. **Auto (E en la manija del conductor) → `CinematicaVictoria`, 16.5 s, saltable con ESC/ENTER desde 1 s:**
+   - 0-1.3 s: se acerca y abre la puerta (-64°).
+   - 1.3-2.9 s: entra y se sienta.
+   - 2.9-3.6 s: cierra la puerta y el ambiente queda amortiguado.
+   - 3.6-5.0 s: respiración y burro de arranque; el motor prende y se encienden los faros (2 focos y emisivo).
+   - 5.4-7.4 s: gira la cabeza hacia la pizzería y Freddy está en la puerta; latido y risa lejana.
+   - 7.4-11.4 s: arranca; la barrera se levanta (`gate_barrier_raise.wav`), cruza el portón por una curva de 5.5 m y entra en la calle. Las ruedas giran según la distancia real.
+   - 11.4-16.5 s: corte a una cámara fija en la calle; el auto pasa (faros, después luces traseras) y se aleja; la cámara termina en el letrero de la pizzería con empuje lento; negro.
+
+   Barras de cine y "ESC: saltar". Al terminar o al saltarla se detienen los sonidos de la cinemática, se marca `escapado` (único registro de la victoria) y se pasa a `EscapeVictoryScreen` de siempre.
+
+**Construcción:**
+- `pizzeria.glb` **no se modifica en disco**. `SalidaExterior.prepararMapa()`, antes de `buildStaticColliders`, convierte en degenerados (índices repetidos) los triángulos verticales de las dos caras de la pared oeste del depósito en z∈[-7.31, -2.81] (16) y los del estante (180). Las tapas de la pared se conservan. En su lugar se dibuja un panel propio con el **mismo material** (`main_material`), el hueco de 0.95 × 2.05 m y el túnel a través de los 0.71 m de pared. Las celdas de colisión de las tapas que caen en el túnel se retiran (juntaban y=0 e y=2.96 en una celda de altura completa).
+- Disposición única en `assets/content/maps/exterior.json` (`ExteriorDefinition`, `ContentRegistry.getExteriorDefinition`). La leen tanto el juego (colisiones, cámaras, luces) como `tools/cinematics/escape_victory/build_exterior.py` (Blender 5.1), que construye `models/exterior_parking.glb` en coordenadas del juego (9.3 MB; texturas a 1k solo para suelo/ladrillo/vereda, el resto a 512/256; con todo a 1k pesaba 46 MB). Nodos animados: `emergency_door_leaf` (pivote en la bisagra) y `gate_barrier_arm`.
+- Auto `models/car_sedan.glb`: Car de Quaternius (CC0) adaptado con `prep_car.py`: escala, puerta del conductor separada con su bisagra, ruedas con eje propio, interior básico y materiales nocturnos.
+- Recursos externos, autores y licencias en `tools/cinematics/escape_victory/LICENSES.md` (todo CC0: Poly Haven y Quaternius); originales en `FDAF assets/source_files/cinematics/escape_victory/downloads/`.
+- Sonidos nuevos sintetizados con `synth_victory_audio.py` (sin audio externo); se reutilizan `heavy_breathing`, `heartbeat_fast` y `freddy_laugh`.
+- Código:
+  - `world/SalidaExterior` (mapa, colisiones, puertas, barrera, auto, luces, cielo, niebla);
+  - `cinematics/CinematicaVictoria`;
+  - `GameplayScreen`: estado `VICTORIA_CINEMATICA`, `iniciarSalida`, `abrirPuertaEmergencia`, `subirAlAuto`, `congelarAnimatronicos`, Freddy en la puerta, ambiente y texto de ayuda por objeto (`claveTexto`);
+  - `CollisionWorld.getStaticColliders()`, `LevelLoader.getParedesLimite()`;
+  - `BootScreen` carga exterior, auto y sonidos con la partida: no hay carga al abrir la puerta;
+  - `pbrConfig.numSpotLights` pasa de 1 a 6.
+- Textos nuevos en `i18n` (ES/EN): `exit.push`, `car.enter`, `cinematic.skip`.
+
+**Pruebas (arneses en el scratchpad, `-Duser.home` aislado, ventana oculta, `Gdx.input` envuelto para no capturar el ratón real):**
+- `PruebaVictoria` (`GameplayScreen` real; el jugador se mueve con el `CollisionWorld` real): 19/19 en ES y EN.
+  - Sin llave la puerta bloquea; con llave se abre.
+  - Se cruza el depósito; la puerta de emergencia cerrada bloquea; la barra es el objetivo de E y la abre.
+  - Se llega a la puerta del conductor rodeando el auto; Freddy ya está en la puerta.
+  - No se atraviesan la valla oeste, la valla norte, la valla del patio, la barrera del portón ni el auto.
+  - La manija es el objetivo de E; la cinemática dura 16.5 s y termina en `EscapeVictoryScreen` con `escapado`.
+  - Modo saltar: ESC a los 2 s → `EscapeVictoryScreen` en el mismo cuadro.
+  - 23 capturas revisadas: puerta abriéndose, depósito con el EXIT, salida, estacionamiento, Freddy en la puerta visto desde el auto, interior del auto, barrera levantándose, calle y letrero.
+- `PruebaArranque` (`FiveDoorsEscapeGame` → `BootScreen` → `GameplayScreen` real): carga completa con los recursos nuevos y una atrapada normal (vida 1 de 3) sigue igual: JUMPSCARE → ESTATICA → CORAZONES_RESPAWN → JUGANDO con 2 vidas, sin cinemática.
+- Errores reales encontrados y corregidos durante las pruebas:
+  - la hoja de la puerta de salida seguía bloqueando por el dintel;
+  - la pared resultó gruesa;
+  - el estante era más profundo de lo medido;
+  - las tapas de la pared generaban celdas de altura completa;
+  - el letrero se leía al revés;
+  - el volante tapaba el parabrisas al bajar la cámara.
+- **No verificado:** teclado y ratón físicos, escucha humana de los sonidos sintetizados, ni el rendimiento en otra GPU (en la RTX 4050 la cinemática se simuló a ~80 fps sin vsync).
+
+**Limitaciones conocidas:** el auto es *low poly* (estilo del modelo CC0); el interior es básico (asientos, tablero, volante); los faroles no proyectan sombras (las luces sin sombra atravesarían paredes, por eso se encienden recién con la puerta de emergencia). El túnel de la puerta usa el material de pared con UV propias, así que su patrón no continúa exactamente el de la pared original.
+
+
+### 2.50 Derrota definitiva de Escape: "La última función", sesión 2026-10-23
+
+**Pedido:** una secuencia de terror propia al perder la última vida, distinta del jumpscare y de las pérdidas normales; con ritmo, cámara, animatrónicos y un desenlace claro. Se evaluaron las direcciones de §4.3 y las del pedido (A arrastre, B cámaras de seguridad, C protagonizada por el animatrónico). Se eligió combinar A y C: usa la animación real de caminar de los cuatro, mueve la cámara de verdad y no repite la tableta de FDAF con estática encima (el riesgo de B).
+
+**Cuándo se activa:** solo cuando el jugador es atrapado con `vidasRestantes == 1`. El jumpscare (1 s) es el de siempre. En lugar de `ESTATICA` pasa a `DERROTA_CINEMATICA` y al terminar llama al mismo `resolverFinDeAtrapada()` de siempre (pierde la llave, limpia Golden Freddy, descuenta la vida → `NightGameOverScreen`). Con vidas de sobra no cambia nada: jumpscare → estática → corazones → reaparición.
+
+**Secuencia (12.3 s, `cinematics/CinematicaDerrota`):**
+- **0-1 s:** negro; respiración entrecortada (`heavy_breathing`) y latido (`heartbeat_normal` en bucle).
+- **1-5.3 s:** abre los ojos (párpados que se abren desde arriba y abajo) **en el piso**. El animatrónico que lo atrapó camina delante con su animación `walk` y lo **arrastra por el pasillo del comedor** hacia el escenario. Es un carril entre mesas en x=-1.9, de z=0.8 a -5.9, verificado con el mapa de colisión real. El avance es a tirones (0.62 m por paso, cada 0.86 s), con `defeat_drag.wav` en cada tirón. La cámara va a 0.30 m del suelo, ladeada, mirando a la espalda del culpable. Los otros dos testigos miran desde el pasillo transversal (z=-2.7). La linterna quedó tirada al principio del carril, apuntando hacia el escenario, y parpadea hasta apagarse. Hay un parpadeo a mitad de camino.
+- **5.3-6 s:** negro; lo suben al escenario (`defeat_body_thud.wav`).
+- **6-10.6 s:** boca arriba en el escenario, rodeado por los cuatro (el culpable delante, dos a los lados y el cuarto detrás), bajo un único foco que falla. El culpable se inclina sobre él hasta llenar el cuadro (`defeat_servo.wav`).
+- **10.6-11.3 s:** el foco revienta (`defeat_light_short.wav`); oscuridad, solo un brillo rojo en los ojos del culpable. Se calla la caja musical de Freddy y **el latido se detiene**.
+- **11.3-12.3 s:** negro → `NightGameOverScreen`.
+
+ESC o ENTER la saltan desde el primer segundo. E no la salta, porque es la tecla de juego y podía estar apretada en el momento de morir. Al terminar o al saltarla se detienen sus sonidos y se retiran sus dos luces (foco y ojos). `pbrConfig.numSpotLights` pasa de 6 a 7 por el foco.
+
+**Datos:** coordenadas en `pizzeria.json` / `MapDefinition` (`defeatLane*`, `defeatWitness*`, `defeatStage*`). Sonidos nuevos sintetizados con `tools/cinematics/escape_defeat/synth_defeat_audio.py` (sin audio externo). No se usó ningún modelo ni animación externa: bastaron las animaciones `idle`/`walk` ya retargeteadas de los cuatro (§2.x de animaciones).
+
+**Pruebas (`PruebaDerrota`, arranque real `FiveDoorsEscapeGame` → `BootScreen` → `GameplayScreen`, ventana oculta, `-Duser.home` aislado):**
+- Última vida con Freddy como culpable: JUMPSCARE → DERROTA_CINEMATICA → `NightGameOverScreen` a los 12.29 s.
+- Última vida con Bonnie: igual, 12.29 s.
+- Saltar con ESC a los 2 s: `NightGameOverScreen` de inmediato.
+- Atrapada normal con 3 vidas (Chica): JUMPSCARE → ESTATICA → CORAZONES_RESPAWN, sin cinemática.
+- 26 capturas revisadas (arrastre con los testigos, escenario con el culpable encima, ojos rojos).
+- Problema real corregido con capturas: la primera versión del plano del escenario miraba casi vertical y solo mostraba techo.
+
+**No verificado:** escucha humana de la mezcla y teclado físico.
+
+**Limitación:** no hay una animación de "arrastrar" ni de "inclinarse". El arrastre se resuelve con la caminata real y la cámara a tirones, y la inclinación es un acercamiento del modelo (con la pose `idle`, que tiene los brazos abiertos).
+
+
+**Publicación de §2.49 y §2.50:** Escape `a583cd7` (victoria) y `5f984bf` (derrota), verificados con `git ls-remote`. La documentación compartida y el catálogo salen en el commit **v2.10** de FDAF (`Version.MENOR` 9 → 10; FDAF no cambia de comportamiento en este commit).
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos
@@ -2035,7 +2140,7 @@ Todas con perfil aislado (`-Duser.home`); el `config.properties` real no se toc�
 
 ## 4. Diseños pendientes de aprobación — NO implementados (propuestos 2026-10-22)
 
-> **Superado (2026-10-23):** el usuario rechazó estas propuestas por demasiado sencillas y pidió cinemáticas reales. Rendirse se implementó como "dentro del traje" (§1.59), no como R1. La victoria de Escape va por la dirección C (exterior, estacionamiento y auto) y la derrota definitiva por una escena propia; ver la sección de cada una en §2. Se conserva el texto como registro de lo que se propuso.
+> **Superado (2026-10-23):** el usuario rechazó estas propuestas por demasiado sencillas y pidió cinemáticas reales. Rendirse se implementó como "dentro del traje" (§1.59), no como R1. La victoria de Escape se hizo con la dirección C (exterior, estacionamiento y auto, §2.49) y la derrota definitiva como "La última función" (§2.50). Se conserva el texto como registro de lo que se propuso.
 
 Ninguna de estas cinemáticas existe en el código. Son propuestas para que el usuario elija; no implementar ninguna sin su aprobación explícita. Los recursos se citan por su nombre actual (§1.54, §2.48).
 
