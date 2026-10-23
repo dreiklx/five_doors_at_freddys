@@ -81,7 +81,7 @@ public class TransicionEscape {
 		// Arranca justo aqui, en el mismo instante en que empieza el glitch de colores (pedido
 		// explicito del usuario) -- nunca se detiene durante toda la secuencia (glitch + pantallas
 		// de carga negra + toda la partida de Escape), salvo que el jugador vuelva al menu antes.
-		sonidoTransicionEscape = new Sonido("win/LesToreadorsRemix.wav");
+		sonidoTransicionEscape = new Sonido("music/escape_transition_les_toreadors_remix.wav");
 		sonidoTransicionEscape.play();
 		iniciarEsperaRisaFreddy();
 
@@ -91,7 +91,7 @@ public class TransicionEscape {
 				new Color(120, 0, 255), Color.WHITE, Color.BLACK
 		};
 		ImageIcon estaticaGlitch = com.fdaf.util.CargarGifs.cargarFresco(
-				"/gifs/fondos/Static.gif", CargarImagenes.getEstaticaRespaldo());
+				"/backgrounds/static.gif", CargarImagenes.getEstaticaRespaldo());
 
 		JPanel pnlGlitch = new JPanel() {
 			@Override

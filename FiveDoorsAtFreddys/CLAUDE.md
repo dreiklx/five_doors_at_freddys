@@ -1505,6 +1505,14 @@ Prueba directa a nivel de source nativo, la más fuerte disponible sin escuchar 
 
 **Commiteado y pusheado a `five_doors_escape`:** `GameplayScreen.java`.
 
+### 2.48 Reorganización de los recursos de Escape con la misma convención que FDAF, sesión 2026-10-22
+
+Misma regla que §1.54 (inglés `snake_case`, carpetas por función, idioma `_en`/`_es` al final; §3 regla 10). Estructura nueva de `five_doors_escape/assets/`: `audio/music/` (`freddy_music_box`, `victory_circus`), `audio/sfx/` (latidos `heartbeat_normal/fast`, `flashlight_click`, `item_pickup`, `door_locked_rattle`, `jumpscare_scream`, `static`, `heavy_breathing`, `freddy_laugh`, `golden_freddy_glitch/scream/robot_voice`), `audio/voice/` (`escape_intro_narration_{en,es}`), `effects/` (`static.gif`, `golden_freddy_its_me.gif`), `jumpscares/` (`golden_freddy_jumpscare.png`), `ui/` (`heart_full/empty.png`), `models/` (`freddy`, `bonnie`, `chica`, `foxy`, `golden_freddy`, `key`, `pizzeria` `.glb`), y sin cambios `content/` (JSON de definición: sus nombres son identificadores de código, p. ej. `llave`, `pizzeria`) e `i18n/`. 28 archivos movidos con `git mv`, ninguno retirado. Cinco son idénticos byte a byte a recursos de FDAF y llevan el mismo nombre nuevo para que la relación sea evidente (`jumpscare_scream`, `static.wav`/`static.gif`, `heavy_breathing`, `freddy_laugh` = `freddy_laugh_01` de FDAF).
+
+**Referencias:** 21 constantes/literales en `GameplayScreen` y `EscapeVictoryScreen` y los 7 `modelPath` de `content/` (`BootScreen` usa las constantes de `GameplayScreen`; no había ninguna ruta construida por código). Tabla completa en `docs/catalogo_recursos.md` del repo FDAF.
+
+**Verificación:** `gradlew clean lwjgl3:jar` correcto; el jar contiene los 28 recursos con su nombre nuevo y 0 entradas bajo `sounds/`, `gifs/` o `textures/`. Ejecución real de la distribución local (`lwjgl3:installDist`) con `-Duser.home` aislado durante 70 s: mapa cargado (10912 colisionadores, el valor de siempre), 5 animatrónicos y la llave, GIF de estática (8 cuadros) e IT'S ME (11 cuadros), risa de Freddy al mostrar RUN; 0 excepciones. La pantalla de victoria (`victory_circus.wav`) no se alcanzó en esa corrida: su ruta se comprobó en el jar.
+
 ### 1.28 Estabilidad de memoria re-verificada, distribución portable reconstruida y probada, y hallazgo (no corregido) de intermitencia del video de victoria, sesión 2026-10-22
 
 **1. Prueba de estrés real de una noche larga (FDAF, `-Xmx256m`).** Arnés sobre `ControllerInterfaz`/`ControllerCamara` reales, 200 ciclos de puerta (abrir → luz → revelar animatrónico/coleccionable/batería → apagar → liberar → cerrar), con GIFs de puerta y de jumpscare, fade desde negro, respiración y sonidos reales. Medición cada 40 ciclos tras forzar GC (`jmap -histo:live` para `DirectClip`): heap vivo 68→104-134MB (oscila, sin tendencia), hilos 16→24-28, **"Image Animator" se estabiliza en 11** (uno por GIF distinto, por el caché `ultimaImagenPorRuta`+`flush()` de §1.7) y **`Clip` vivos 3-4**. Sin fuga ni acumulación con el código actual (incluido el cambio del compañero).
@@ -1890,6 +1898,88 @@ Todas con perfil aislado (`-Duser.home`); el `config.properties` real del jugado
 
 **Versión:** `Version.MENOR` 6 → 7; este commit publica **v2.7** (§1.32).
 
+### 1.54 Reorganización de los recursos de FDAF: estructura por función y nombres en inglés `snake_case`, sesión 2026-10-22 (v2.8)
+
+**Convención elegida (regla permanente, ver §3 regla 10):** archivos y carpetas de recursos en inglés, `snake_case`, minúsculas, sin espacios ni acentos; formato `<sujeto>_<descripcion>[_<estado>][_<idioma>].<ext>`; idioma siempre como sufijo final `_en`/`_es`; secuencias con 2 dígitos (`night_01`, `knock_01`); estados como palabras (`_open/_closed`, `_on/_off`, `_locked`). Se eligió inglés porque los nombres ya mezclaban ambos idiomas (`powerLeft`, `pasos_freddy`, `JumpscareBonnie`) y los recursos de la parte 3D y los del usuario ya usaban inglés (`camera_disabled_en`, `escape_en`). Las clases, paquetes y variables Java NO se renombraron (siguen en español, como el resto del código).
+
+**Estructura nueva de `FiveDoorsAtFreddys/src/com/fdaf/resources/`** (raíz del classpath, ver `.classpath`):
+
+| Carpeta | Contenido |
+|---|---|
+| `audio/ambience/` | ambiente de la oficina, zumbido, estática del menú |
+| `audio/music/` | música del menú, LesToreadors de la transición a Escape |
+| `audio/sfx/` | hover/error de botones, puerta, luces, coleccionable, grito de jumpscare, nariz, respiración |
+| `audio/game_over/` | apagón, Freddy acechando, pasos, estática final |
+| `audio/random/` | sonidos ambientales aleatorios (`knock_01`...) |
+| `audio/phone_calls/` | `phone_pickup.wav`, `night_NN_call_{en,es}.wav` |
+| `backgrounds/` | oficina, luces, ventilador, bordes, menú, Game Over, negro, estática |
+| `branding/` | `nyder_games_splash.png`, `nyder_logo.png`, `game_icon.png` |
+| `collectibles/` (+ `locked/`) | 10 coleccionables y sus siluetas `_locked` |
+| `doors/` | puertas abiertas/cerradas y sus animaciones `_opening`/`_closing` |
+| `intros/` | `night_NN_intro_{en,es}.gif`, `intro_fallback.gif` |
+| `jumpscares/` | `<animatronico>_jumpscare.gif`, `freddy_power_out_jumpscare.gif` |
+| `ui/hud/` | `battery_0-4`, `power_left_{en,es}`, `night_NN_{en,es}` |
+| `ui/office/` | paneles PUERTA/LUZ, botones de puerta y luz, barra de la tableta, MUTE CALL/COLGAR |
+| `ui/tablet/` | estática de la cámara, rótulo `camera_disabled_{en,es}`, punto rojo, inventario, transiciones |
+| `ui/screens/` | `warning_{en,es}.png` |
+| `videos/` | `victory.mp4` |
+| `images/nyder/` | SIN TOCAR: `NYDER.png` (modificado en local por otra persona) y 3 PNG sin seguimiento ajenos |
+
+**Cambios:** 139 archivos movidos con `git mv` (contenido idéntico; historial conservado). 12 sin ningún uso retirados del repositorio tras confirmar que no tienen referencias directas ni construidas por código y copiarlos a `FDAF assets/_archive/fdaf_repo_unused/` (§1.55): `450.png`, `Cusor.png`, `FNAFtitle.png`, `powerLeft.png` (reemplazado en §1.40), `win.png` (sin uso desde §1.11), `phoneguy_espanol/ingles.wav` (reemplazados en §1.11), `win/circus.wav`, `introduccion/AbrirTablet.gif`, `cerrarTablet_generado.gif`, `random/risa_niña.wav` y `random/robotvoice.wav` (ambos excluidos a propósito del grupo de sonidos aleatorios, §1.5). La tabla completa nombre anterior → nombre nuevo está en `docs/catalogo_recursos.md` (§1.56).
+
+**Referencias actualizadas:** todas las rutas literales (12 clases, generado desde la tabla de correspondencias), y a mano las construidas por código: `Sonido` ahora resuelve contra `/audio/` (antes `/sounds/`); coleccionables con prefijo `/` (antes `/images/`) y rutas `collectibles/...` en `TipoColeccionable`; llamadas `phone_calls/night_%02d_call_%s.wav`; jumpscares `"/jumpscares/" + nombre.toLowerCase(Locale.ROOT) + "_jumpscare.gif"`; intros `/intros/night_%02d_intro%s.gif`; etiquetas `/ui/hud/night_%02d_%s.png`. Queda una ruta vieja solo en `CargarSonido` (`/resources/sounds/putdown.wav`): clase sin ningún uso cuya ruta ya estaba rota antes; no se tocó.
+
+**Verificación (`VerificarRecursos`, scratchpad):** recorre todos los literales de recursos de las clases y además genera las rutas dinámicas (5 intros × 2 idiomas sin caer al respaldo, 5 etiquetas × 2 idiomas, 5 llamadas × 2 idiomas invocando el método real, 4 jumpscares, 10 coleccionables + siluetas, getters localizados) y las busca en el classpath compilado: **192 rutas OK, 0 fallos**; los 139 archivos del árbol están referenciados (los únicos sin referencia son los 4 de `images/nyder/`, ajenos). Más pruebas de ejecución en §1.58.
+
+### 1.55 Reorganización de `Desktop\FDAF assets` como espejo de los dos repositorios, sesión 2026-10-22 (v2.8)
+
+**Objetivo:** que cada recurso del juego tenga, en `FDAF assets`, una copia con el MISMO nombre y la MISMA ruta relativa que en el repositorio, y que el original del que se derivó (si es distinto) quede al lado y sea fácil de encontrar.
+
+**Estructura resultante:**
+
+| Carpeta | Contenido |
+|---|---|
+| `fdaf/` | espejo exacto de `FiveDoorsAtFreddys/src/com/fdaf/resources/` (139 archivos, idénticos por `cmp`) + originales `*_original.*` |
+| `escape/` | espejo exacto de `five_doors_escape/assets/` salvo `models/` (21 archivos, idénticos por `cmp`) |
+| `source_files/3d_models/` | la antigua `3D Models/` movida ENTERA sin tocar su interior (`Blender_WIP`, `LibGDX_Ready`, `Golden Freddy`...; los `.blend` enlazan texturas con rutas relativas `//..\Freddy\...`). Los `.glb` de Escape son idénticos a los de `LibGDX_Ready`/`Golden Freddy`/`llave.glb`, así que no se duplicaron en `escape/models/` |
+| `source_files/sound_library/` | sonidos de biblioteca sin uso en el juego (antes `FDAF Sounds` y wav sueltos), con nombres `snake_case` |
+| `_reference/fnaf_assets_enterest/` | el pack de terceros "FNAF ASSETS REORGANIZED BY ENTEREST", movido entero sin tocar |
+| `_archive/fdaf_repo_unused/` | los 12 recursos retirados del repo en §1.54 |
+| `_archive/old_versions/` | versiones viejas: `game_icon_v1-4`, `tablet_open/close_v1`, `night_intros_backup_2026-09-11.zip` |
+
+**Originales (`*_original.*`, junto al derivado):** etiquetas del HUD `power_left_{en,es}`/`night_NN_{en,es}` (recortadas y escaladas en §1.40), rótulos `camera_disabled_{en,es}` (§1.45), los 4 coleccionables reemplazados por el compañero (cupcake, guitar, hook, mic, normal y `locked`), `golden_freddy_glitch_original` y `golden_freddy_robot_voice_original` (antes de la normalización de §2.42). Así nunca se pierde la fuente de alta resolución al volver a generar una variante.
+
+**Cómo se hizo:** `OrganizarAssets.java` (scratchpad del 2026-10-22) con modo `simular` (escribe el plan sin tocar nada) y `aplicar`. Reglas: archivo del escritorio idéntico byte a byte a uno del juego → se mueve al espejo con el nombre del juego; original distinto declarado a mano (`originales.tsv`) → se mueve al lado con sufijo `_original`; recurso del juego sin copia en el escritorio → se copia desde el repo; el resto → `sound_library` o `_archive`. Nunca sobrescribe (aborta si el destino existe). 228 operaciones: 149 movidas dentro de `FDAF assets` y 79 copias desde los repos. **Nada se borró:** el único archivo nuevo es el manifiesto `FDAF assets/_manifiesto_reorganizacion_2026-10-22.tsv` (operación, origen, destino de cada una, suficiente para deshacerlo). Solo se eliminaron carpetas que quedaron vacías.
+
+**Verificación:** 1013 archivos después = 933 antes + 79 copias + 1 manifiesto; espejos `fdaf/` (139) y `escape/` (21) comparados con `cmp` contra los repos: idénticos.
+
+### 1.56 Catálogo de recursos de los dos juegos, sesión 2026-10-22 (v2.8)
+
+`docs/catalogo_recursos.md` (raíz del repo `five_doors_at_freddys`, 230 líneas; copia en `FDAF assets/CATALOGO_RECURSOS.md`, más `FDAF assets/README.md` que explica la carpeta). Contiene: la convención de nombres (§3 regla 10); la correspondencia repo ↔ `FDAF assets`; una tabla por juego con nombre nuevo, nombre anterior, tipo, idioma, uso en el juego y origen (`_original` si existe); los 12 recursos retirados con su motivo; y los cinco recursos compartidos entre FDAF y Escape (idénticos byte a byte, mismo nombre en los dos). Se generó desde las tablas de correspondencias usadas para los `git mv` (no a mano), así que coincide con lo que hay en disco. **Mantenimiento:** se actualiza en el mismo commit que añada, renombre o retire un recurso.
+
+### 1.57 Guitarra que tapaba la barra de la tableta y micrófono casi invisible en las puertas, sesión 2026-10-22 (v2.8)
+
+**Causas medidas (no supuestas)** con `OverlayPuertas` (scratchpad): `ControllerInterfaz.init` real, paneo real con `derecha(40)`/`izquierda(40)` hasta el tope de cada puerta, `alRevelarColeccionable` real y captura del `PnlJuego` a 1920×1080.
+- **Guitarra (§1.26):** overlay de 153×402 base con la esquina en y=506, así que su borde inferior bajaba hasta y=908 base (pantalla: 183×482 en (330,607)). La barra de la tableta está en y=808 base (pantalla (345,969) 960×66). El overlay está por encima de todo en z-order (`setComponentZOrder(overlay, 0)` sobre `pnlComponentes`), y su caja, aunque transparente, recibe los clics: en la puerta izquierda capturaba los 168×66 px del extremo izquierdo de la barra, donde un clic recogía la guitarra en vez de abrir la tableta. En la derecha no cruzaba la barra (que termina en x=1088 base).
+- **Micrófono:** no estaba "detrás" de nada (el overlay siempre va encima): `freddy_microphone.png` mide 667×374 y el micrófono ocupa solo x 272-487, y 56-337 (7 % del lienzo); estirado a 80×80 quedaba de ~26×60 px base, deformado y oscuro sobre la puerta oscura. El resto de coleccionables no tienen margen (salvo el garfio, poco).
+
+**Corrección (`ControllerInterfaz`):** `alRevelarColeccionable` recorta el margen transparente de la imagen antes de escalarla (`recortarMargenTransparente`; no cambia nada en las imágenes sin margen). La guitarra mantiene su proporción y su centro horizontal (x 275/1130 + 76.5) pero mide 108×285 base y su borde inferior queda en y=795, por encima de la barra. El micrófono usa 80 de ancho y el alto de su proporción real (80×104 base) y crece hacia arriba para no bajar hacia la barra. Los demás coleccionables y la batería conservan exactamente su caja anterior (350,710 / 1200,740, 80×80 y 80×45). Se eliminó el modo `identificacion == 02` de `mostrarEnOverlay`, que ya no se usaba; `mostrarIconoEnOverlay` recibe ancho y alto.
+
+**Verificación:** `OverlayPuertas`, los 10 coleccionables × 2 puertas: 100 % visibles, **0 puntos de la barra de la tableta capturados por el overlay** (muestreo cada 4 px con `getDeepestComponentAt`), ninguno solapa el panel PUERTA/LUZ, y **recogida real** con un `MOUSE_CLICKED` despachado al componente que está en el centro del objeto: el contador de encontrados sube en los 20 casos y el overlay se oculta. Capturas de la guitarra y el micrófono en ambas puertas: la guitarra queda apoyada en el marco sin tocar la barra; el micrófono se reconoce (rejilla y mango). No verificado con ratón físico.
+
+### 1.58 Pruebas de la reorganización y publicación v2.8, sesión 2026-10-22
+
+Todas con perfil aislado (`-Duser.home`); el `config.properties` real no se tocó. JDK 1.8.0_271, arneses en el scratchpad (`regresion.sh`).
+- **Compilación:** working tree y, antes del commit, el árbol exacto del índice extraído con `git checkout-index` (sin el WIP ajeno), desde cero.
+- **Rutas (`VerificarRecursos`):** 192 OK, 0 fallos en el working tree y en el árbol del índice (único recurso sin referencia: `images/nyder/NYDER.png`, sin uso desde §1.37).
+- **Puertas (`OverlayPuertas`, §1.57):** 20/20.
+- **Regresión, ES y EN:** `PruebaHover` 56/56; `PruebaHoverVuelta` 72/72; `FlujoIdioma` (selector → NYDER → advertencia del idioma → introducción → menú `v 2.8`, cambio de idioma persistido); `MedirIdioma` 0 desbordes; `PruebaIntros` las 10 intros con su archivo nuevo (`night_NN_intro_{es,en}.gif`), temporizador 20400/20450/8650 ms y liberación del hilo del gif; `RenderHud` noches 1/3/5 (etiquetas `ui/hud/*`, rótulo de cámara); `PaginasInfo` 0 problemas; `PruebaIntroLlamada` (Noche 5 EN: puerta bloqueada durante la llamada, fin natural único, puerta disponible después).
+- **Escape:** ver §2.48 (jar y ejecución real de la distribución local).
+- **FDAF assets:** espejos `fdaf/` (139) y `escape/` (21) idénticos a los repos por `cmp` tras los cambios; catálogo idéntico a su copia.
+- **No verificado:** ratón/teclado físicos ni escucha humana; el render fuera de pantalla de la tableta no llega a pintar el gif de la cámara (igual en v2.6, es carga asíncrona del gif, no una regresión).
+
+**Versión:** `Version.MENOR` 7 → 8; este commit publica **v2.8** (§1.32).
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos
@@ -1903,3 +1993,63 @@ Todas con perfil aislado (`-Duser.home`); el `config.properties` real del jugado
 7. **En el Proyecto 2, respetar `Architecture.md` v1.0 como contrato** — no introducir abstracciones nuevas sin que una necesidad real ya identificada las justifique (§3.1 del propio documento). No expandir el alcance del MVP (§2.2, lista de exclusiones) sin aprobación explícita del usuario.
 8. **El usuario prefiere iteración incremental con verificación en cada paso**, tanto en el Proyecto 1 (rondas de auditoría→propuesta→implementación→confirmación) como en el plan del Proyecto 2 (no avanzar de paso sin confirmar el anterior). Mantener ese ritmo — no adelantar varios pasos a la vez.
 9. **Versión (desde 2026-10-22, §1.32):** todo commit publicado de `five_doors_at_freddys` sube `MENOR` en `com.fdaf.util.Version` (v2.1→v2.2→…→v2.100→v3.1). Única fuente de verdad: esa clase.
+10. **Recursos (desde 2026-10-22, §1.54-§1.56):** todo archivo de imagen, audio, vídeo, gif o modelo de ambos juegos se nombra en inglés `snake_case` (`<sujeto>_<descripcion>[_<estado>][_<idioma>]`, idioma `_en`/`_es` al final, secuencias con 2 dígitos) y va en la carpeta de su FUNCIÓN (`audio/`, `backgrounds/`, `ui/...`, `models/`...), nunca por formato. Al añadir, renombrar o retirar un recurso: (1) actualizar `docs/catalogo_recursos.md` del repo (y su copia en `FDAF assets/CATALOGO_RECURSOS.md`); (2) dejar el archivo preparado para el juego con el MISMO nombre y ruta relativa en `FDAF assets/` y, si viene de un original distinto (recorte, perspectiva, normalización), conservar el original al lado con sufijo `_original`; (3) comprobar con una verificación de rutas que el código lo encuentra (también las rutas construidas por código). No mover ni renombrar lo interno de `FDAF assets/source_files/3d_models/` (los `.blend` enlazan texturas con rutas relativas) ni de `_reference/`.
+
+---
+
+## 4. Diseños pendientes de aprobación — NO implementados (propuestos 2026-10-22)
+
+Ninguna de estas cinemáticas existe en el código. Son propuestas para que el usuario elija; no implementar ninguna sin su aprobación explícita. Los recursos se citan por su nombre actual (§1.54, §2.48).
+
+### 4.1 Cinemática al rendirse (FDAF, 3-8 s)
+
+**Flujo actual:** mantener la barra Rendirse ~2.5 s → `ControllerCamara.rendirse()` → `detenerSonidosJuego()` → `reiniciarJuegoCompleto()` (pantalla "Cargando..." y relanzamiento del proceso, §1.18). El progreso no cambia. No hay ningún efecto entre completar la barra y la pantalla de carga.
+
+**Requisitos comunes a las tres:** saltable con clic, ESC o CTRL+S desde el primer instante; nunca más de 8 s; sin texto largo; se reproduce dentro del proceso actual y el reinicio ocurre al terminar (o al saltarla). Como el proceso se reinicia después de cada rendición, "no molestar si se repite" no puede depender de memoria en ejecución: se resuelve haciéndola corta y saltable (opcionalmente, una versión de ~2 s a partir de la segunda vez guardando un contador en `config.properties`, lo que añadiría un campo nuevo a la configuración del jugador).
+
+| | R1 — Apagón voluntario | R2 — Fin de turno | R3 — Te están mirando |
+|---|---|---|---|
+| Experiencia | La oficina parpadea y se apaga con `power_down.wav`; en la oscuridad solo se ven unos ojos en una puerta; texto pequeño "Te rendiste" / "You gave up"; fundido a negro. ~4 s | La tableta se cierra sola, la cámara vuelve al centro, suena un sello y aparece una tarjeta de fichaje "SALIDA 2:13 AM"; fundido. ~4 s | Ráfaga de estática (`static.gif` + `static.wav`, 1 s); al volver, Freddy está en el marco de la puerta mirando en silencio 2 s; corte a negro. ~4 s |
+| Reutilizable | `backgrounds/office.png`, `audio/game_over/power_down.wav`, el fundido de `iniciarFadeDesdeNegro`, los ojos del primer cuadro de `freddy_power_out_jumpscare.gif` | `ui/tablet/tablet_close.gif`, el paneo de `ControllerCamara`, el fundido existente | `backgrounds/static.gif`, `audio/game_over/static.wav`, las imágenes de `doors/` |
+| Nuevo | 2 cadenas ES/EN | Imagen de la tarjeta (ES/EN), sonido de sello, una hora simulada (el juego no tiene reloj) | Una imagen de Freddy asomado al marco (no existe; los gifs de jumpscare no sirven como pose quieta) |
+| Complejidad | Baja: un panel con `Timer` y `paintComponent`, mismo patrón que el glitch de `TransicionEscape` | Media | Media (por el arte nuevo) |
+| Riesgos | Que parezca una derrota; se evita con el texto y sin grito | Inventar una hora que contradiga la tarjeta "12:00 AM" de la intro | Parecerse a un jumpscare normal y asustar al rendirse, que no es lo que el jugador espera |
+
+**Recomendación:** R1. Solo usa recursos que ya están en el repo, comunica bien "me fui", dura poco y su lenguaje (el apagón) ya es parte del juego.
+
+### 4.2 Cinemática de victoria de Escape (10-20 s)
+
+**Flujo actual:** con la llave, E sobre la puerta de salida → `interactuarConPuertaSalida()` → `EscapeVictoryScreen` (pantalla negra con "ESCAPASTE"/"YOU ESCAPED", `victory_circus.wav` en bucle, ESC para salir).
+
+| | A — Sencillo | B — Exterior | C — Estacionamiento y auto |
+|---|---|---|---|
+| Experiencia | La puerta de salida gira y se abre, la cámara avanza hacia el umbral mientras el latido se calma; una luz blanca inunda la pantalla; aparece "ESCAPASTE" y entra `victory_circus.wav`; antes del blanco, por un instante, los animatrónicos quietos en el pasillo mirando. ~12 s | Igual que A, pero la cámara cruza la puerta: noche, fachada de la pizzería, letrero; la cámara se aleja y en una ventana se ve a Freddy. ~15 s | Sales al estacionamiento, caminas hasta un auto, se cierra la puerta, arranca el motor y por el retrovisor se ve a los animatrónicos en la entrada; las luces del auto se alejan. ~18-20 s |
+| Reutilizable | `pizzeria.glb` (la hoja de la puerta de salida es un nodo propio, `Object_60` de `puerta.005_46`, que se puede rotar en código), los 5 modelos y sus poses, el sistema de tomas de la cinemática inicial (§2.27, §2.44), `victory_circus.wav`, `heartbeat_*` | Todo lo de A | Todo lo de A |
+| Nuevo | Nada obligatorio (opcional: un sonido de puerta abriéndose) | Exterior completo: fachada, suelo, cielo nocturno, letrero. `pizzeria.glb` es un interior de Sketchfab (el techo hubo que añadirlo a mano, §2.21); no se ha comprobado si sus paredes tienen cara exterior, lo probable es que se vean huecas desde fuera | Exterior de B + modelo de auto (no hay ninguno en `source_files/3d_models` ni en `_reference/`) + estacionamiento, luces y animación de conducción; licencias de los modelos nuevos |
+| Complejidad | Baja-media | Alta (arte 3D e iluminación exterior distinta) | Muy alta |
+| Riesgos | Bajos: geometría ya conocida; hay que congelar a los guardias (patrón de `posicionarModelosParaCinematica`) | Paredes sin cara exterior, cielo `IBLBuilder` de interior, rendimiento | Todos los de B, más la animación del auto y mucho tiempo de arte |
+
+**Recomendación honesta:** A. Se puede construir con lo que ya existe y da el cierre que hoy falta (se pasa de la puerta a una pantalla negra). B y C solo valen la pena si se consiguen modelos exteriores y de auto con licencia adecuada; C es la de mayor impacto y también la de mayor riesgo, y no recomendaría empezarla sin esos modelos.
+
+### 4.3 Cinemática de derrota definitiva de Escape
+
+**Flujo actual:** cada atrapada → `iniciarJumpscare` (cámara pegada al animatrónico, `jumpscare_scream.wav`, 1 s) → `ESTATICA` (`static.gif` + `static.wav`, 5 s) → `resolverFinDeAtrapada()`: si quedan vidas, corazones y reaparición; si era la última, `NightGameOverScreen` (Reintentar / Salir).
+
+**Regla para las tres:** las atrapadas que no son la última NO cambian (jumpscare + estática + corazones, ~8 s; hay que poder volver a jugar rápido). Solo la última sustituye la estática por la cinemática, que debe poder saltarse (clic, ESC o E) tras el primer segundo y terminar en el `NightGameOverScreen` actual.
+
+| | D1 — Arrastrado | D2 — Una nueva atracción | D3 — Cámaras de seguridad |
+|---|---|---|---|
+| Experiencia | Tras el jumpscare la cámara cae al suelo, el animatrónico que te atrapó queda de pie sobre ti, la linterna rueda y parpadea hasta apagarse, se oye un arrastre; negro. ~6 s | Corte a una toma fija del escenario a oscuras: los animatrónicos en su sitio y, entre ellos, un traje nuevo inmóvil; texto "Nueva atracción" / "New attraction". ~7 s | La imagen se vuelve una cámara de seguridad (grano, punto REC, rótulo de cámara): tomas fijas de la oficina vacía y del pasillo mientras los animatrónicos vuelven a sus puestos; la última toma se corta con estática. ~8 s |
+| Reutilizable | El modelo y la posición del que atrapó, la cámara y la linterna (`SpotLightEx`), `heavy_breathing.wav`, `static.wav` | Modelos y escenario del mapa, sistema de tomas | Sistema de tomas de la cinemática inicial, `static.gif`; de FDAF, el punto REC (`ui/tablet/camera_rec_dot.gif`) y el estilo de la tableta, que une los dos juegos |
+| Nuevo | Un sonido de arrastre | Un traje/modelo adicional (no existe) | Un overlay 2D de grano (parecido a la viñeta existente) y llevar a los guardias a su spawn durante la toma |
+| Complejidad | Baja-media | Media-alta (modelo nuevo) | Media |
+| Riesgos | Que la cámara atraviese geometría al caer (comprobar con `CollisionWorld`, como en §2.43) | Depende de un modelo que no existe; el tono es más oscuro y conviene confirmarlo con el usuario | Tomas con la línea de visión tapada (usar `lineaDeVisionLibre`, §2.43) |
+
+**Recomendación:** D3, porque reutiliza casi todo, conecta visualmente Escape con la tableta de FDAF y deja claro que la partida terminó sin repetir el jumpscare. D1 es la alternativa más barata si se prefiere algo más físico.
+
+### 4.4 Orden recomendado
+
+1. **R1 (rendirse, FDAF):** la más pequeña, sin recursos nuevos, sobre un flujo que ya termina en un reinicio.
+2. **D3 o D1 (derrota definitiva, Escape):** se ve en cada partida perdida y reutiliza la cámara y las tomas existentes.
+3. **A (victoria, Escape):** cierra la experiencia con recursos existentes.
+4. **B o C:** solo después, y solo si se consiguen modelos exteriores y de auto con licencia.

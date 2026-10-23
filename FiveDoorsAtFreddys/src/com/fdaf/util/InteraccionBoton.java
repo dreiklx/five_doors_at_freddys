@@ -28,7 +28,7 @@ public class InteraccionBoton {
 	// (ver CLAUDE.md). Marcar 'reutilizable=true' no introduce una fuga nueva -- sigue siendo una
 	// unica instancia acotada (nunca se crean mas), igual que los demas sonidos reutilizables ya
 	// establecidos del proyecto (luces, llamada, ambiente de oficina).
-	private static final Sonido SONIDO_HOVER = new Sonido("botones/botones_menu.wav", true);
+	private static final Sonido SONIDO_HOVER = new Sonido("sfx/button_hover.wav", true);
 	private static final int MARGEN_FLECHA = 6;
 
 	// Sobrecargas existentes: delegan a la única implementación real, sin

@@ -29,7 +29,7 @@ public class VistaPrincipal extends JFrame {
 	 */
 	public VistaPrincipal() {
 		setTitle("Five Doors At Freddy's");
-		setIconImage(Toolkit.getDefaultToolkit().getImage(VistaPrincipal.class.getResource("/images/hud/fdaf_icon.png")));
+		setIconImage(Toolkit.getDefaultToolkit().getImage(VistaPrincipal.class.getResource("/branding/game_icon.png")));
 		setUndecorated(true);
 		setExtendedState(Frame.MAXIMIZED_BOTH);
 		setResizable(false);

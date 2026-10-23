@@ -145,7 +145,7 @@ public class ControllerMenu {
 	// dentro de la misma secuencia de inicio (advertenciaActiva ya es true)
 	// y con el mismo animarFade/timerAdvertenciaActual -- nunca hay dos
 	// timers de la secuencia corriendo a la vez. ~3s en total.
-	private static final String RUTA_NYDER = "/images/fondos/NYDER-GAMES.png"; // §1.37
+	private static final String RUTA_NYDER = "/branding/nyder_games_splash.png"; // §1.37
 	// 250 negro + 800 entrada + 1300 visible + 650 salida = 3.0s, contados
 	// desde el primer pintado real de la ventana (§1.31).
 	private static final int NYDER_NEGRO_MS = 250;
@@ -404,7 +404,7 @@ public class ControllerMenu {
 		private void iniciarEstaticaMenu() {
 
 			if (sonidoEstaticaMenu == null) {
-				sonidoEstaticaMenu = new Sonido("fondo/static_menu.wav");
+				sonidoEstaticaMenu = new Sonido("ambience/menu_static.wav");
 			}
 
 			if (timerTopeEstaticaMenu != null && timerTopeEstaticaMenu.isRunning()) {
@@ -434,7 +434,7 @@ public class ControllerMenu {
 		}
 	
 	private void ponerMusicaMenu() {
-	    musicaMenu = new Sonido("fondo/musica_fondo_menu.wav");
+	    musicaMenu = new Sonido("music/menu_music.wav");
 	    musicaMenu.loop();
 	    musicaMenu.subirVolumen(3.5f);
 	}
@@ -653,7 +653,7 @@ public class ControllerMenu {
 
 		pantallaNochePersonalizada.getBtnEscape().addActionListener(e -> {
 			if (!PreferenciasJuego.escapeDesbloqueado) {
-				new Sonido("botones/error_al_presionar_boton.wav").play();
+				new Sonido("sfx/button_error.wav").play();
 				mostrarMensajeEscapeBloqueado();
 				return;
 			}

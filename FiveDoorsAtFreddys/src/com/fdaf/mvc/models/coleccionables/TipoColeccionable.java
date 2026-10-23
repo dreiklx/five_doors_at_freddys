@@ -7,25 +7,25 @@ package com.fdaf.mvc.models.coleccionables;
 // necesita conocer descripciones individuales.
 public enum TipoColeccionable {
 
-	PELUCHE_FREDDY("coleccionables/peluche_freddy.png", "coleccionables/bloqueados/peluche_freddy_bloq.png",
+	PELUCHE_FREDDY("collectibles/freddy_plush.png", "collectibles/locked/freddy_plush_locked.png",
 			"El peluche original de Freddy Fazbear.", "The original Freddy Fazbear plushie."),
-	CUPCAKE("coleccionables/cupcake.png", "coleccionables/bloqueados/cupcake_bloq.png",
+	CUPCAKE("collectibles/cupcake.png", "collectibles/locked/cupcake_locked.png",
 			"El famoso cupcake parlante de la pizzería.", "The pizzeria's famous talking cupcake."),
-	MICROFONO_FREDDY("coleccionables/microfono_freddy.png", "coleccionables/bloqueados/microfono_freddy_bloq.png",
+	MICROFONO_FREDDY("collectibles/freddy_microphone.png", "collectibles/locked/freddy_microphone_locked.png",
 			"El micrófono que Freddy usa en el escenario.", "The microphone Freddy uses on stage."),
-	GUITARRA_BONNIE("coleccionables/guitarra_bonnie.png", "coleccionables/bloqueados/guitarra_bonnie_bloq.png",
+	GUITARRA_BONNIE("collectibles/bonnie_guitar.png", "collectibles/locked/bonnie_guitar_locked.png",
 			"La guitarra roja de Bonnie the Bunny.", "Bonnie the Bunny's red guitar."),
-	GARFIO_FOXY("coleccionables/garfio_foxy.png", "coleccionables/bloqueados/garfio_foxy_bloq.png",
+	GARFIO_FOXY("collectibles/foxy_hook.png", "collectibles/locked/foxy_hook_locked.png",
 			"El garfio característico del capitán Foxy.", "Captain Foxy's signature hook."),
-	PELUCHE_BONNIE("coleccionables/peluche_bonnie.png", "coleccionables/bloqueados/peluche_bonnie_bloq.png",
+	PELUCHE_BONNIE("collectibles/bonnie_plush.png", "collectibles/locked/bonnie_plush_locked.png",
 			"Un peluche de Bonnie the Bunny.", "A Bonnie the Bunny plushie."),
-	PELUCHE_CHICA("coleccionables/peluche_chica.png", "coleccionables/bloqueados/peluche_chica_bloq.png",
+	PELUCHE_CHICA("collectibles/chica_plush.png", "collectibles/locked/chica_plush_locked.png",
 			"Un peluche de Chica the Chicken.", "A Chica the Chicken plushie."),
-	PELUCHE_FOXY("coleccionables/peluche_foxy.png", "coleccionables/bloqueados/peluche_foxy_bloq.png",
+	PELUCHE_FOXY("collectibles/foxy_plush.png", "collectibles/locked/foxy_plush_locked.png",
 			"Un peluche del zorro pirata Foxy.", "A plushie of Foxy the Pirate Fox."),
-	PELUCHE_GOLDEN_FREDDY("coleccionables/peluche_golden_freddy.png", "coleccionables/bloqueados/peluche_golden_freddy_bloq.png",
+	PELUCHE_GOLDEN_FREDDY("collectibles/golden_freddy_plush.png", "collectibles/locked/golden_freddy_plush_locked.png",
 			"El esquivo peluche de Golden Freddy.", "The elusive Golden Freddy plushie."),
-	BALLOONBOY("coleccionables/juguete_balloonboy.png", "coleccionables/bloqueados/juguete_balloonboy_bloq.png",
+	BALLOONBOY("collectibles/balloon_boy_toy.png", "collectibles/locked/balloon_boy_toy_locked.png",
 			"El juguete de Balloon Boy.", "The Balloon Boy toy.");
 
 	private final String archivoDesbloqueado;

@@ -80,7 +80,8 @@ public class Sonido {
 
 		try {
 
-			URL url = getClass().getResource("/sounds/" + archivo);
+			// Raíz de todos los sonidos (CLAUDE.md §1.54): resources/audio/.
+			URL url = getClass().getResource("/audio/" + archivo);
 
 			if (url == null) {
 				return;

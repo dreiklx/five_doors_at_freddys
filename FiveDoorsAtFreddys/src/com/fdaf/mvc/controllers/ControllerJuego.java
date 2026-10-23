@@ -48,21 +48,21 @@ public class ControllerJuego {
 	public void abrirIzquierda() {
 
 		if (juegoTerminado) {
-			new Sonido("botones/error_al_presionar_boton.wav").play();
+			new Sonido("sfx/button_error.wav").play();
 			return;
 		}
 
 		if (llamadaActiva) {
-			new Sonido("botones/error_al_presionar_boton.wav").play();
+			new Sonido("sfx/button_error.wav").play();
 			return;
 		}
 
 		if ("izq".equals(ladoRevelandoActual)) {
-			new Sonido("botones/error_al_presionar_boton.wav").play();
+			new Sonido("sfx/button_error.wav").play();
 			return;
 		}
 
-		new Sonido("puertas/puerta.wav").play();
+		new Sonido("sfx/door.wav").play();
 
 		if (!puertaIzqAbierta) {
 
@@ -89,21 +89,21 @@ public class ControllerJuego {
 	public void abrirDerecha() {
 
 		if (juegoTerminado) {
-			new Sonido("botones/error_al_presionar_boton.wav").play();
+			new Sonido("sfx/button_error.wav").play();
 			return;
 		}
 
 		if (llamadaActiva) {
-			new Sonido("botones/error_al_presionar_boton.wav").play();
+			new Sonido("sfx/button_error.wav").play();
 			return;
 		}
 
 		if ("der".equals(ladoRevelandoActual)) {
-			new Sonido("botones/error_al_presionar_boton.wav").play();
+			new Sonido("sfx/button_error.wav").play();
 			return;
 		}
 
-		new Sonido("puertas/puerta.wav").play();
+		new Sonido("sfx/door.wav").play();
 
 		if (!puertaDerAbierta) {
 
@@ -142,17 +142,17 @@ public class ControllerJuego {
 	public void revelarIzquierda() {
 
 		if (juegoTerminado) {
-			new Sonido("botones/error_al_presionar_boton.wav").play();
+			new Sonido("sfx/button_error.wav").play();
 			return;
 		}
 
 		if (llamadaActiva) {
-			new Sonido("botones/error_al_presionar_boton.wav").play();
+			new Sonido("sfx/button_error.wav").play();
 			return;
 		}
 
 		if ("izq".equals(ladoRevelandoActual)) {
-			new Sonido("botones/error_al_presionar_boton.wav").play();
+			new Sonido("sfx/button_error.wav").play();
 			return;
 		}
 
@@ -167,7 +167,7 @@ public class ControllerJuego {
 		}
 
 		luzIzqEncendida = true;
-		sonidoLuzIzq = new Sonido("botones/luces_encendidas.wav");
+		sonidoLuzIzq = new Sonido("sfx/lights_on.wav");
 		sonidoLuzIzq.loop();
 
 		if (listener != null) listener.alEncenderLuz("izq");
@@ -180,17 +180,17 @@ public class ControllerJuego {
 	public void revelarDerecha() {
 
 		if (juegoTerminado) {
-			new Sonido("botones/error_al_presionar_boton.wav").play();
+			new Sonido("sfx/button_error.wav").play();
 			return;
 		}
 
 		if (llamadaActiva) {
-			new Sonido("botones/error_al_presionar_boton.wav").play();
+			new Sonido("sfx/button_error.wav").play();
 			return;
 		}
 
 		if ("der".equals(ladoRevelandoActual)) {
-			new Sonido("botones/error_al_presionar_boton.wav").play();
+			new Sonido("sfx/button_error.wav").play();
 			return;
 		}
 
@@ -205,7 +205,7 @@ public class ControllerJuego {
 		}
 
 		luzDerEncendida = true;
-		sonidoLuzDer = new Sonido("botones/luces_encendidas.wav");
+		sonidoLuzDer = new Sonido("sfx/lights_on.wav");
 		sonidoLuzDer.loop();
 
 		if (listener != null) listener.alEncenderLuz("der");
@@ -338,13 +338,13 @@ public class ControllerJuego {
 			puertaIzqAbierta = false;
 			luzIzqEncendida = false;
 			detenerSonidoLuzIzq();
-			new Sonido("puertas/puerta.wav").play();
+			new Sonido("sfx/door.wav").play();
 		} else if ("der".equals(lado)) {
 			puertaPendienteDer = null;
 			puertaDerAbierta = false;
 			luzDerEncendida = false;
 			detenerSonidoLuzDer();
-			new Sonido("puertas/puerta.wav").play();
+			new Sonido("sfx/door.wav").play();
 		}
 
 		ladoRevelandoActual = null;

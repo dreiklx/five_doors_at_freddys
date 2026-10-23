@@ -105,7 +105,7 @@ public class ControllerInterfaz implements JuegoListener {
 	// (una por animatronico sobrevivido), y sin esta bandera el clip se cerraba solo tras la
 	// PRIMERA reproduccion natural (bug real: "la respiracion deja de sonar tras algunos
 	// jumpscares", investigado 2026-08-09).
-	private Sonido respiracion = new Sonido("varios/respiracion_agitada.wav", true);
+	private Sonido respiracion = new Sonido("sfx/heavy_breathing.wav", true);
 	private com.fdaf.util.SonidosAmbientalesAleatorios sonidosAmbientales = new com.fdaf.util.SonidosAmbientalesAleatorios();
 	public ControllerInterfaz() {
 		pnlJuego = new PnlJuego();
@@ -128,7 +128,7 @@ public class ControllerInterfaz implements JuegoListener {
 		inicializarEstadoInventario();
 		conectarClicsInventario();
 		
-		sonidoJuego1 = new Sonido("fondo/sonido_ambiente_oficina.wav");
+		sonidoJuego1 = new Sonido("ambience/office_ambience.wav");
 		sonidoJuego1.loop();
 
 		// sonidosAmbientales (los sonidos ALEATORIOS de ambiente -- golpes, susurros, risas
@@ -140,7 +140,7 @@ public class ControllerInterfaz implements JuegoListener {
 		// de la oficina, no "sonidos aleatorios" que puedan competir con la llamada.
 
 		timerSonido = new Timer(3000, e -> {
-			sonidoJuego2 = new Sonido("fondo/sonido_fondo_oficina.wav");
+			sonidoJuego2 = new Sonido("ambience/office_hum.wav");
 			sonidoJuego2.loop();
 			sonidoJuego2.subirVolumen(-9.0f);
 			});
@@ -249,12 +249,13 @@ public class ControllerInterfaz implements JuegoListener {
 	// 2026-08-05: "no quiero logica duplicada... quiero que el sistema quede escalable por
 	// noche e idioma"). PreferenciasJuego.nocheActual.ordinal() ya es la fuente de verdad de
 	// "noche actual" en todo el proyecto (ver alGanar()) -- una 6ta noche solo necesitaria
-	// agregar el archivo "noche6_es.wav"/"noche6_en.wav" bajo resources/sounds/phoneguy/, sin
+	// agregar "night_06_call_es.wav"/"night_06_call_en.wav" bajo resources/audio/phone_calls/, sin
 	// tocar ninguna linea de codigo aqui.
 	private String rutaLlamadaNocheActual() {
 		int numeroNoche = PreferenciasJuego.nocheActual.ordinal() + 1;
 		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
-		return "phoneguy/noche" + numeroNoche + (ingles ? "_en" : "_es") + ".wav";
+		// audio/phone_calls/night_NN_call_{en,es}.wav (CLAUDE.md §1.54).
+		return String.format("phone_calls/night_%02d_call_%s.wav", numeroNoche, ingles ? "en" : "es");
 	}
 
 	private void iniciarLlamada() {
@@ -262,7 +263,7 @@ public class ControllerInterfaz implements JuegoListener {
 		llamadaColgada = false;
 		controllerJuego.setLlamadaActiva(true);
 
-		sonidoLlamada = new Sonido("phoneguy/contestar_telefono.wav");
+		sonidoLlamada = new Sonido("phone_calls/phone_pickup.wav");
 		sonidoLlamada.play();
 
 		// aoparece cuando empieza la llamada.
@@ -493,7 +494,7 @@ public class ControllerInterfaz implements JuegoListener {
 				//ESTO ES PARA REPRODUCIR GIFS DE LAS PUERTAS 
 				// NO BORRAR
 				reproducirGifPuertaUnaVez("izq", pnlJuego.getLblPuertaIzq(),
-						"/images/puertas/pIZQ-ABRIR.gif", CargarImagenes.puertaIzq1);
+						"/doors/door_left_opening.gif", CargarImagenes.puertaIzq1);
 				
 
 				
@@ -504,7 +505,7 @@ public class ControllerInterfaz implements JuegoListener {
 				//ESTO ES PARA REPRODUCIR GIFS DE LAS PUERTAS 
 				// NO BORRAR
 				reproducirGifPuertaUnaVez("der", pnlJuego.getLblPuertaDer(),
-						"/images/puertas/pDER-ABRIR.gif", CargarImagenes.puertaDer1);
+						"/doors/door_right_opening.gif", CargarImagenes.puertaDer1);
 				
 
 				
@@ -524,7 +525,7 @@ public class ControllerInterfaz implements JuegoListener {
 				//ESTO ES PARA REPRODUCIR GIFS DE LAS PUERTAS 
 				// NO BORRAR
 				reproducirGifPuertaUnaVez("izq", pnlJuego.getLblPuertaIzq(),
-						"/images/puertas/pIZQ-CERRAR.gif", CargarImagenes.puertaIzq0);
+						"/doors/door_left_closing.gif", CargarImagenes.puertaIzq0);
 				
 
 				
@@ -535,7 +536,7 @@ public class ControllerInterfaz implements JuegoListener {
 				//ESTO ES PARA REPRODUCIR GIFS DE LAS PUERTAS 
 				// NO BORRAR
 				reproducirGifPuertaUnaVez("der", pnlJuego.getLblPuertaDer(),
-						"/images/puertas/pDER-CERRAR.gif", CargarImagenes.puertaDer0);
+						"/doors/door_right_closing.gif", CargarImagenes.puertaDer0);
 				
 
 				
@@ -591,27 +592,68 @@ public class ControllerInterfaz implements JuegoListener {
 		// nunca se pausaría).
 		sonidosAmbientales.detener();
 
-		sonido = reproducirJumpscareConFade("animatronicos/jumpscare.wav");
+		sonido = reproducirJumpscareConFade("sfx/jumpscare_scream.wav");
 
 		String nombre = animatronico.name();
-		String capitalizado = nombre.charAt(0) + nombre.substring(1).toLowerCase();
-		String ruta = "/gifs/jumpscares/Jumpscare" + capitalizado + ".gif";
+		// jumpscares/{bonnie,chica,foxy,freddy}_jumpscare.gif (CLAUDE.md §1.54).
+		String ruta = "/jumpscares/" + nombre.toLowerCase(java.util.Locale.ROOT) + "_jumpscare.gif";
 
 		mostrarEnOverlay(ruta, 1, lado);
 	}
 
 	@Override
 	public void alRevelarColeccionable(String lado, Coleccionable coleccionable) {
-		sonido = new Sonido("coleccionables/coleccionable_encontrado.wav");
+		sonido = new Sonido("sfx/collectible_found.wav");
 		sonido.play();
 		
-		String ruta = "/images/" + coleccionable.getArchivoImagen();
-		
-		if(coleccionable.getTipo().equals(TipoColeccionable.GUITARRA_BONNIE)) {
-		mostrarEnOverlay(ruta, 02, lado);
-		}else {
-			mostrarEnOverlay(ruta, 0, lado);
+		String ruta = "/" + coleccionable.getArchivoImagen();
+		URL recurso = getClass().getResource(ruta);
+		if (recurso == null) {
+			System.out.println("[RECURSO NO ENCONTRADO] " + ruta);
+			return;
 		}
+		// Se recorta el margen transparente antes de escalar: freddy_microphone.png mide
+		// 667x374 pero el micrófono ocupa solo el 7% del lienzo, y estirado a 80x80 quedaba
+		// diminuto, deformado y casi invisible sobre la puerta (CLAUDE.md §1.57).
+		ImageIcon icono = recortarMargenTransparente(new ImageIcon(recurso));
+		TipoColeccionable tipo = coleccionable.getTipo();
+		if (tipo == TipoColeccionable.GUITARRA_BONNIE) {
+			mostrarIconoEnOverlay(icono, lado, ANCHO_GUITARRA, ALTO_GUITARRA);
+		} else if (tipo == TipoColeccionable.MICROFONO_FREDDY) {
+			mostrarIconoEnOverlay(icono, lado, 80, Math.round(80f * icono.getIconHeight() / icono.getIconWidth()));
+		} else {
+			mostrarIconoEnOverlay(icono, lado);
+		}
+	}
+
+	// Guitarra: misma proporción que bonnie_guitar.png (153x402) pero más baja, para que su
+	// borde inferior quede por encima de la barra de la tableta (y=808 base): a 402 de alto
+	// tapaba el extremo izquierdo de la barra y un clic ahí recogía la guitarra en vez de
+	// abrir la tableta (CLAUDE.md §1.57).
+	private static final int ALTO_GUITARRA = 285;
+	private static final int ANCHO_GUITARRA = Math.round(ALTO_GUITARRA * 153f / 402f);
+
+	private static ImageIcon recortarMargenTransparente(ImageIcon icono) {
+		int w = icono.getIconWidth(), h = icono.getIconHeight();
+		if (w <= 0 || h <= 0) {
+			return icono;
+		}
+		java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+		java.awt.Graphics2D g = img.createGraphics();
+		g.drawImage(icono.getImage(), 0, 0, null);
+		g.dispose();
+		int x0 = w, y0 = h, x1 = -1, y1 = -1;
+		for (int y = 0; y < h; y++) {
+			for (int x = 0; x < w; x++) {
+				if ((img.getRGB(x, y) >>> 24) > 16) {
+					x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+				}
+			}
+		}
+		if (x1 < 0 || (x0 == 0 && y0 == 0 && x1 == w - 1 && y1 == h - 1)) {
+			return icono;
+		}
+		return new ImageIcon(img.getSubimage(x0, y0, x1 - x0 + 1, y1 - y0 + 1));
 	}
 
 	@Override
@@ -622,10 +664,10 @@ public class ControllerInterfaz implements JuegoListener {
 	public void alRevelarBateria(String lado) {
 		// Mismo sonido de hallazgo que ya usan los coleccionables --
 		// reutilizado, no uno nuevo.
-		sonido = new Sonido("coleccionables/coleccionable_encontrado.wav");
+		sonido = new Sonido("sfx/collectible_found.wav");
 		sonido.play();
 
-		mostrarIconoEnOverlay(CargarImagenes.bateria1, lado, 45);
+		mostrarIconoEnOverlay(CargarImagenes.bateria1, lado, 80, 45);
 	}
 
 	private void mostrarEnOverlay(String ruta, int identificacion, String lado) {
@@ -644,10 +686,7 @@ public class ControllerInterfaz implements JuegoListener {
 			overlay.setIcon(
 					new EscalarVista.GifEscalado(jumpscareFresco, overlay.getWidth(), overlay.getHeight()));
 
-		} else if(identificacion==02){
-			mostrarIconoEnOverlay(new ImageIcon(recurso), lado, 402);
-		
-		}else{
+		} else {
 			mostrarIconoEnOverlay(new ImageIcon(recurso), lado);
 			return;
 		}
@@ -659,40 +698,31 @@ public class ControllerInterfaz implements JuegoListener {
 	}
 
 	private void mostrarIconoEnOverlay(ImageIcon icono, String lado) {
-		mostrarIconoEnOverlay(icono, lado, 80);
+		mostrarIconoEnOverlay(icono, lado, 80, 80);
 	}
 
-	// altoBase: mismo ancho de siempre (80), altura configurable -- solo
-	// la batería usa un valor distinto (proporción más "aplastada", menos
-	// alargada) sin afectar el tamaño de los coleccionables normales.
-	private void mostrarIconoEnOverlay(ImageIcon icono, String lado, int altoBase) {
+	// Coordenadas base (lienzo 1600x900) del overlay en el instante de la revelación, con
+	// la cámara ya paneada hacia esa puerta. Coleccionables normales y batería: esquina
+	// superior en (350,710) / (1200,740) como siempre; un objeto más alto que 80 (el
+	// micrófono) crece hacia arriba para no bajar hacia la barra de la tableta. La guitarra,
+	// mucho más alta, va apoyada en el marco de cada puerta (CLAUDE.md §1.26, §1.57).
+	private void mostrarIconoEnOverlay(ImageIcon icono, String lado, int anchoBase, int altoBase) {
 		JLabel overlay = pnlJuego.getLblOverlay();
 		overlay.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-		
-		if ("izq".equals(lado)) {
-			if(altoBase>80) {
-			
-			overlay.setBounds(EscalarVista.getEscalaX(275), EscalarVista.getEscalaY(506),
-					EscalarVista.getEscalaX(153), EscalarVista.getEscalaY(altoBase));
-			}else {
-				overlay.setBounds(EscalarVista.getEscalaX(350), EscalarVista.getEscalaY(710),
-						EscalarVista.getEscalaX(80), EscalarVista.getEscalaY(altoBase));
-			}
+		boolean izq = "izq".equals(lado);
+		int x, y;
+		if (anchoBase == ANCHO_GUITARRA && altoBase == ALTO_GUITARRA) {
+			// Mismo centro horizontal que la colocación del compañero (x 275 / 1130, ancho
+			// 153) y borde inferior en y=795, por encima de la barra de la tableta (808).
+			x = (izq ? 275 : 1130) + (153 - anchoBase) / 2;
+			y = 795 - altoBase;
 		} else {
-			if(altoBase>80) {
-			// x=1130 (antes 1755): el overlay se ubica en coordenadas de PANTALLA en el
-			// instante de la revelación, con la cámara ya paneada a la derecha (único estado
-			// en que el botón de la puerta derecha es visible). 1755 caía fuera del lienzo
-			// base de 1600 -> guitarra 0% visible e imposible de recoger (CLAUDE.md §1.26).
-			// 1130 la deja dentro del marco de la puerta derecha, espejo de la izquierda.
-			overlay.setBounds(EscalarVista.getEscalaX(1130), EscalarVista.getEscalaY(506),
-					EscalarVista.getEscalaX(153), EscalarVista.getEscalaY(altoBase));
-			}else {
-				overlay.setBounds(EscalarVista.getEscalaX(1200), EscalarVista.getEscalaY(740),
-						EscalarVista.getEscalaX(80), EscalarVista.getEscalaY(altoBase));
-			}
+			x = (izq ? 350 : 1200) + (80 - anchoBase) / 2;
+			y = (izq ? 710 : 740) - Math.max(0, altoBase - 80);
 		}
+		overlay.setBounds(EscalarVista.getEscalaX(x), EscalarVista.getEscalaY(y),
+				EscalarVista.getEscalaX(anchoBase), EscalarVista.getEscalaY(altoBase));
 		overlay.setIcon(EscalarVista.getImagenEscalada(icono, overlay.getWidth(), overlay.getHeight()));
 
 		overlay.setVisible(true);
@@ -725,7 +755,7 @@ public class ControllerInterfaz implements JuegoListener {
 
 	@Override
 	public void alRecogerColeccionable(Coleccionable coleccionable) {
-		String ruta = "/images/" + coleccionable.getArchivoImagen();
+		String ruta = "/" + coleccionable.getArchivoImagen();
 		URL recurso = getClass().getResource(ruta);
 		if (recurso == null) {
 			System.out.println("[RECURSO NO ENCONTRADO] " + ruta);
@@ -757,7 +787,7 @@ public class ControllerInterfaz implements JuegoListener {
 			if (destino == null) continue;
 
 			if (tipo.ordinal() < cantidadEstaNoche) {
-				URL recursoBloqueado = getClass().getResource("/images/" + tipo.getArchivoBloqueado());
+				URL recursoBloqueado = getClass().getResource("/" + tipo.getArchivoBloqueado());
 				if (recursoBloqueado != null) {
 					destino.setText("");
 					// Lee el tamano real del slot (destino.getWidth()/getHeight()) en vez de un
@@ -822,7 +852,7 @@ public class ControllerInterfaz implements JuegoListener {
 		if (tipo.ordinal() >= cantidadEstaNoche) {
 			// No existe esta noche: sonido de error, sin tocar la
 			// selección ni la descripción actualmente mostradas.
-			new Sonido("botones/error_al_presionar_boton.wav").play();
+			new Sonido("sfx/button_error.wav").play();
 			return;
 		}
 
@@ -837,10 +867,10 @@ public class ControllerInterfaz implements JuegoListener {
 		String descripcion;
 
 		if (encontrado) {
-			ruta = "/images/" + tipo.getArchivoDesbloqueado();
+			ruta = "/" + tipo.getArchivoDesbloqueado();
 			descripcion = tipo.getDescripcion(ingles);
 		} else {
-			ruta = "/images/" + tipo.getArchivoBloqueado();
+			ruta = "/" + tipo.getArchivoBloqueado();
 			descripcion = ingles ? "Unknown" : "Desconocido";
 		}
 
@@ -980,7 +1010,7 @@ public class ControllerInterfaz implements JuegoListener {
 			// el gif; este quedaba con un snap instantaneo al icono estatico cerrado. Mismo
 			// helper/gif que ya usa el cierre manual, sin logica duplicada.
 			reproducirGifPuertaUnaVez("izq", pnlJuego.getLblPuertaIzq(),
-					"/images/puertas/pIZQ-CERRAR.gif", CargarImagenes.puertaIzq0);
+					"/doors/door_left_closing.gif", CargarImagenes.puertaIzq0);
 
 			pnlJuego.getLblImgOficina().setIcon(gifOficinaNormal);
 
@@ -992,7 +1022,7 @@ public class ControllerInterfaz implements JuegoListener {
 
 			// Ver comentario del lado "izq" arriba -- mismo cierre automatico animado.
 			reproducirGifPuertaUnaVez("der", pnlJuego.getLblPuertaDer(),
-					"/images/puertas/pDER-CERRAR.gif", CargarImagenes.puertaDer0);
+					"/doors/door_right_closing.gif", CargarImagenes.puertaDer0);
 
 			pnlJuego.getLblImgOficina().setIcon(gifOficinaNormal);
 
@@ -1129,7 +1159,7 @@ public class ControllerInterfaz implements JuegoListener {
 		// es el mismo componente, no una copia. Cero lógica duplicada.
 		int anchoOficina = pnlJuego.getLblImgOficina().getWidth();
 		int altoOficina = pnlJuego.getLblImgOficina().getHeight();
-		ImageIcon gameOverFresco = CargarGifs.cargarFresco("/gifs/fondos/gameover.gif", CargarImagenes.getGameOverRespaldo());
+		ImageIcon gameOverFresco = CargarGifs.cargarFresco("/backgrounds/game_over_sequence.gif", CargarImagenes.getGameOverRespaldo());
 		pnlJuego.getLblImgOficina().setIcon(new EscalarVista.GifEscalado(gameOverFresco, anchoOficina, altoOficina));
 		pnlJuego.revalidate();
 		pnlJuego.repaint();
@@ -1144,7 +1174,7 @@ public class ControllerInterfaz implements JuegoListener {
 		});
 		timerRepintadoGameOver.start();
 
-		sonidoGameOver = new Sonido("gameover/powerdown.wav");
+		sonidoGameOver = new Sonido("game_over/power_down.wav");
 		sonidoGameOver.play();
 
 		// SEGUNDO 7: Freddy acechando (sin cambio visual).
@@ -1154,7 +1184,7 @@ public class ControllerInterfaz implements JuegoListener {
 			if (sonidoGameOver != null)
 				sonidoGameOver.stop();
 
-			sonidoGameOver = new Sonido("gameover/freddy_acechando.wav");
+			sonidoGameOver = new Sonido("game_over/freddy_lurking.wav");
 			sonidoGameOver.play();
 
 			// SEGUNDO 20 (13s después): se abandona la oficina por
@@ -1229,7 +1259,7 @@ public class ControllerInterfaz implements JuegoListener {
 		pantallaGameOver.revalidate();
 		pantallaGameOver.repaint();
 
-		sonidoGameOver = new Sonido("gameover/pasos_freddy.wav");
+		sonidoGameOver = new Sonido("game_over/freddy_footsteps.wav");
 		sonidoGameOver.subirVolumen(5.0f); // ~20% más fuerte (aprox.)
 		sonidoGameOver.play();
 
@@ -1240,9 +1270,9 @@ public class ControllerInterfaz implements JuegoListener {
 			if (sonidoGameOver != null)
 				sonidoGameOver.stop();
 
-			pantallaGameOver.mostrar(com.fdaf.util.CargarGifs.cargarFresco("/gifs/jumpscares/JumpscareFreddySinLuz.gif", CargarImagenes.getJumpScareRespaldo()));
+			pantallaGameOver.mostrar(com.fdaf.util.CargarGifs.cargarFresco("/jumpscares/freddy_power_out_jumpscare.gif", CargarImagenes.getJumpScareRespaldo()));
 
-			sonidoGameOver = new Sonido("animatronicos/jumpscare.wav");
+			sonidoGameOver = new Sonido("sfx/jumpscare_scream.wav");
 			sonidoGameOver.play();
 
 			timerGameOverT4 = new Timer(1000, e4 -> {
@@ -1250,8 +1280,8 @@ public class ControllerInterfaz implements JuegoListener {
 
 				if (sonidoGameOver != null) sonidoGameOver.stop();
 
-				pantallaGameOver.mostrar(com.fdaf.util.CargarGifs.cargarFresco("/gifs/fondos/Static.gif", CargarImagenes.getEstaticaRespaldo()));
-				sonidoGameOver = new Sonido("gameover/static.wav");
+				pantallaGameOver.mostrar(com.fdaf.util.CargarGifs.cargarFresco("/backgrounds/static.gif", CargarImagenes.getEstaticaRespaldo()));
+				sonidoGameOver = new Sonido("game_over/static.wav");
 				sonidoGameOver.play();
 
 				Timer t5 = new Timer(5000, e5 -> {
@@ -1346,7 +1376,7 @@ public class ControllerInterfaz implements JuegoListener {
 		pantalla.repaint();
 
 		// Etapa 1: video con sonido (~9s, termina solo cuando el video acaba)
-		pantalla.reproducirVideo("/videos/ganar_fdaf.mp4", () -> {
+		pantalla.reproducirVideo("/videos/victory.mp4", () -> {
 
 			if (eraNoche5) {
 				iniciarTransicionAEscape(pantalla, vidasFinales);
@@ -1454,7 +1484,7 @@ public class ControllerInterfaz implements JuegoListener {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				siPartidaActiva(() -> {
-					Sonido sonido = new Sonido("varios/nariz_freddy.wav");
+					Sonido sonido = new Sonido("sfx/freddy_nose_honk.wav");
 					sonido.play();
 				});
 			}

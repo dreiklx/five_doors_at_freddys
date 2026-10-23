@@ -76,28 +76,28 @@ public class CargarImagenes {
 
 	public static ImageIcon getGameOverRespaldo() {
 		if (gameOverRespaldo == null) {
-			gameOverRespaldo = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/gameover.gif"));
+			gameOverRespaldo = new ImageIcon(CargarImagenes.class.getResource("/backgrounds/game_over_sequence.gif"));
 		}
 		return gameOverRespaldo;
 	}
 
 	public static ImageIcon getJumpScareRespaldo() {
 		if (jumpScareRespaldo == null) {
-			jumpScareRespaldo = new ImageIcon(CargarImagenes.class.getResource("/gifs/jumpscares/JumpscareFreddySinLuz.gif"));
+			jumpScareRespaldo = new ImageIcon(CargarImagenes.class.getResource("/jumpscares/freddy_power_out_jumpscare.gif"));
 		}
 		return jumpScareRespaldo;
 	}
 
 	public static ImageIcon getIntroduccionRespaldo() {
 		if (introduccionRespaldo == null) {
-			introduccionRespaldo = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/empezar.gif"));
+			introduccionRespaldo = new ImageIcon(CargarImagenes.class.getResource("/intros/intro_fallback.gif"));
 		}
 		return introduccionRespaldo;
 	}
 
 	public static ImageIcon getEstaticaRespaldo() {
 		if (estaticaRespaldo == null) {
-			estaticaRespaldo = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/Static.gif"));
+			estaticaRespaldo = new ImageIcon(CargarImagenes.class.getResource("/backgrounds/static.gif"));
 		}
 		return estaticaRespaldo;
 	}
@@ -117,21 +117,21 @@ public class CargarImagenes {
 
 	public static synchronized ImageIcon getFondoJuego() {
 		if (fondoJuego == null) {
-			fondoJuego = new ImageIcon(CargarImagenes.class.getResource("/images/fondos/FondoJuego.png"));
+			fondoJuego = new ImageIcon(CargarImagenes.class.getResource("/backgrounds/office.png"));
 		}
 		return fondoJuego;
 	}
 
 	public static synchronized ImageIcon getInventario() {
 		if (inventario == null) {
-			inventario = new ImageIcon(CargarImagenes.class.getResource("/images/fondos/inventario.png"));
+			inventario = new ImageIcon(CargarImagenes.class.getResource("/ui/tablet/inventory_background.png"));
 		}
 		return inventario;
 	}
 
 	public static synchronized ImageIcon getGameOverFinal() {
 		if (gameOverFinal == null) {
-			gameOverFinal = new ImageIcon(CargarImagenes.class.getResource("/images/fondos/GAME_OVER_.png"));
+			gameOverFinal = new ImageIcon(CargarImagenes.class.getResource("/backgrounds/game_over.png"));
 		}
 		return gameOverFinal;
 	}
@@ -139,7 +139,7 @@ public class CargarImagenes {
 	// Advertencia en inglés (la española es getAdvertenciaEspanol()).
 	public static synchronized ImageIcon getWarning() {
 		if (warning == null) {
-			warning = cargarImagenSegura("/images/fondos/warning_fdaf.png");
+			warning = cargarImagenSegura("/ui/screens/warning_en.png");
 		}
 		return warning;
 	}
@@ -166,15 +166,15 @@ public class CargarImagenes {
 	}
 
 	static {
-		fondoNegro = new ImageIcon(CargarImagenes.class.getResource("/images/fondos/fondo_negro.png"));
-		juegoLuzIzq = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/OficinaLuzIzq.gif"));
-	    juegoLuzDer = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/OficinaLuzDer.gif"));
+		fondoNegro = new ImageIcon(CargarImagenes.class.getResource("/backgrounds/black_screen.png"));
+		juegoLuzIzq = new ImageIcon(CargarImagenes.class.getResource("/backgrounds/office_light_left.gif"));
+	    juegoLuzDer = new ImageIcon(CargarImagenes.class.getResource("/backgrounds/office_light_right.gif"));
 	    // El archivo real en disco es "Abanico.gif" (A mayuscula) -- "abanico.gif" (minuscula)
 	    // funcionaba por pura casualidad al correr desde una carpeta de clases suelta en Windows
 	    // (NTFS es insensible a mayusculas), pero rompe con NullPointerException real al empaquetar
 	    // en un .jar (las entradas de un .jar SI son sensibles a mayusculas) -- encontrado al probar
 	    // una distribucion real empaquetada (2026-08-09/10, investigacion de distribucion portable).
-	    abanico = new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/Abanico.gif"));
+	    abanico = new ImageIcon(CargarImagenes.class.getResource("/backgrounds/office_fan.gif"));
 	    
 
 	    
@@ -186,17 +186,17 @@ public class CargarImagenes {
 	    Toolkit.getDefaultToolkit().prepareImage(abanico.getImage(), -1, -1, null);
 	
 
-	    menu=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/Menu.gif"));
- 		camara=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/camara.gif"));
- 		puntoCamara=new ImageIcon(CargarImagenes.class.getResource("/gifs/fondos/puntorojo.gif"));
+	    menu=new ImageIcon(CargarImagenes.class.getResource("/backgrounds/menu_background.gif"));
+ 		camara=new ImageIcon(CargarImagenes.class.getResource("/ui/tablet/camera_static.gif"));
+ 		puntoCamara=new ImageIcon(CargarImagenes.class.getResource("/ui/tablet/camera_rec_dot.gif"));
  		
 	
 		/*
 	 	* Fondos
 	 	*/
 	
- 		zonaTresIzq=new ImageIcon(CargarImagenes.class.getResource("/images/fondos/left.png"));
- 		zonaTresDer=new ImageIcon(CargarImagenes.class.getResource("/images/fondos/right.png"));
+ 		zonaTresIzq=new ImageIcon(CargarImagenes.class.getResource("/backgrounds/office_edge_left.png"));
+ 		zonaTresDer=new ImageIcon(CargarImagenes.class.getResource("/backgrounds/office_edge_right.png"));
 	
 	
 		/*
@@ -204,20 +204,20 @@ public class CargarImagenes {
 	 	*/
 	
 		/*botones*/
-		barraTableta=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/barraTablet.fw.png"));
-		panelIzq=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/pnlBotonesIzq.fw.png"));
-		panelDer=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/pnlBotonesDer.fw.png"));
+		barraTableta=new ImageIcon(CargarImagenes.class.getResource("/ui/office/tablet_bar.png"));
+		panelIzq=new ImageIcon(CargarImagenes.class.getResource("/ui/office/door_panel_left_en.png"));
+		panelDer=new ImageIcon(CargarImagenes.class.getResource("/ui/office/door_panel_right_en.png"));
 	
-		btnIzq0=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/btnPuertaIzq0.png"));
- 		btnDer0=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/btnPuertaDer0.fw.png"));
- 		btnIzq1=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/btnPuertaIzq1.png"));
- 		btnDer1=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/btnPuertaDer1png.fw.png"));
+		btnIzq0=new ImageIcon(CargarImagenes.class.getResource("/ui/office/door_button_left_closed.png"));
+ 		btnDer0=new ImageIcon(CargarImagenes.class.getResource("/ui/office/door_button_right_closed.png"));
+ 		btnIzq1=new ImageIcon(CargarImagenes.class.getResource("/ui/office/door_button_left_open.png"));
+ 		btnDer1=new ImageIcon(CargarImagenes.class.getResource("/ui/office/door_button_right_open.png"));
 
 	
-		luzIzq0=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/btnLuzIzq0.png"));
-		luzDer0=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/btnLuzDer0.fw.png"));
-		luzIzq1=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/btnLuzIzq1.png"));
-		luzDer1=new ImageIcon(CargarImagenes.class.getResource("/images/ui/botones/btnLuzDer1.fw.png"));
+		luzIzq0=new ImageIcon(CargarImagenes.class.getResource("/ui/office/light_button_left_off.png"));
+		luzDer0=new ImageIcon(CargarImagenes.class.getResource("/ui/office/light_button_right_off.png"));
+		luzIzq1=new ImageIcon(CargarImagenes.class.getResource("/ui/office/light_button_left_on.png"));
+		luzDer1=new ImageIcon(CargarImagenes.class.getResource("/ui/office/light_button_right_on.png"));
 
 
 
@@ -225,41 +225,41 @@ public class CargarImagenes {
 		/*puertas*/
 		
 		
-	    puertaDerAB=new ImageIcon(CargarImagenes.class.getResource("/images/puertas/pDER-ABRIR.gif"));
-	    puertaDerCE=new ImageIcon(CargarImagenes.class.getResource("/images/puertas/pDER-CERRAR.gif"));
+	    puertaDerAB=new ImageIcon(CargarImagenes.class.getResource("/doors/door_right_opening.gif"));
+	    puertaDerCE=new ImageIcon(CargarImagenes.class.getResource("/doors/door_right_closing.gif"));
 	    
-	    puertaIzqAB=new ImageIcon(CargarImagenes.class.getResource("/images/puertas/pIZQ-ABRIR.gif"));
-	    puertaIzqCE=new ImageIcon(CargarImagenes.class.getResource("/images/puertas/pIZQ-CERRAR.gif"));
+	    puertaIzqAB=new ImageIcon(CargarImagenes.class.getResource("/doors/door_left_opening.gif"));
+	    puertaIzqCE=new ImageIcon(CargarImagenes.class.getResource("/doors/door_left_closing.gif"));
 		
 		
-		puertaDer0=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/puertaDer.png"));
-		puertaIzq0=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/puertaIzq.png"));
-		puertaDer1=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/104.png"));
-		puertaIzq1=new ImageIcon(CargarImagenes.class.getResource("/images/ui/puertas/103.png"));
+		puertaDer0=new ImageIcon(CargarImagenes.class.getResource("/doors/door_right_closed.png"));
+		puertaIzq0=new ImageIcon(CargarImagenes.class.getResource("/doors/door_left_closed.png"));
+		puertaDer1=new ImageIcon(CargarImagenes.class.getResource("/doors/door_right_open.png"));
+		puertaIzq1=new ImageIcon(CargarImagenes.class.getResource("/doors/door_left_open.png"));
 
-		bateria0=new ImageIcon(CargarImagenes.class.getResource("/images/hud/bateria0.png"));
-		bateria1=new ImageIcon(CargarImagenes.class.getResource("/images/hud/bateria1.png"));
-		bateria2=new ImageIcon(CargarImagenes.class.getResource("/images/hud/bateria2.png"));
-		bateria3=new ImageIcon(CargarImagenes.class.getResource("/images/hud/bateria3.png"));
-		bateria4=new ImageIcon(CargarImagenes.class.getResource("/images/hud/bateria4.png"));
+		bateria0=new ImageIcon(CargarImagenes.class.getResource("/ui/hud/battery_0.png"));
+		bateria1=new ImageIcon(CargarImagenes.class.getResource("/ui/hud/battery_1.png"));
+		bateria2=new ImageIcon(CargarImagenes.class.getResource("/ui/hud/battery_2.png"));
+		bateria3=new ImageIcon(CargarImagenes.class.getResource("/ui/hud/battery_3.png"));
+		bateria4=new ImageIcon(CargarImagenes.class.getResource("/ui/hud/battery_4.png"));
 
-		mutecall=new ImageIcon(CargarImagenes.class.getResource("/images/hud/mutecall.png"));
+		mutecall=new ImageIcon(CargarImagenes.class.getResource("/ui/office/mute_call_en.png"));
 
 	}
 	
 	// Ruta del gif de introducción según la noche (índice 0-4). Si el
 		// archivo específico de esa noche no existe todavía, cae de vuelta al
 		// gif genérico -- nada se rompe mientras se agregan los 5 reales.
-		// Intros por idioma (CLAUDE.md §1.47): introNocheN_es.gif /
-		// introNocheN_en.gif, ya con su tarjeta "12:00 AM / 1ra Noche" o
+		// Intros por idioma (CLAUDE.md §1.47, nombres §1.54): night_NN_intro_es.gif /
+		// night_NN_intro_en.gif, ya con su tarjeta "12:00 AM / 1ra Noche" o
 		// "1st Night" dibujada. Solo se carga la de la noche que se va a jugar.
 		public static String rutaIntroPorNoche(int indiceNoche) {
 			if (indiceNoche < 0 || indiceNoche > 4) {
-				return "/gifs/fondos/empezar.gif";
+				return "/intros/intro_fallback.gif";
 			}
 			String sufijo = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES) ? "_en" : "_es";
-			String ruta = "/gifs/fondos/introduccion/introNoche" + (indiceNoche + 1) + sufijo + ".gif";
-			return (CargarImagenes.class.getResource(ruta) != null) ? ruta : "/gifs/fondos/empezar.gif";
+			String ruta = String.format("/intros/night_%02d_intro%s.gif", indiceNoche + 1, sufijo);
+			return (CargarImagenes.class.getResource(ruta) != null) ? ruta : "/intros/intro_fallback.gif";
 		}
 
 		// Carga defensiva: si el archivo aún no existe, devuelve null en vez
@@ -275,7 +275,7 @@ public class CargarImagenes {
 
 		public static synchronized ImageIcon getAdvertenciaEspanol() {
 			if (advertenciaEspanol == null) {
-				advertenciaEspanol = cargarImagenSegura("/images/fondos/advertencia_fdaf.png");
+				advertenciaEspanol = cargarImagenSegura("/ui/screens/warning_es.png");
 			}
 			return advertenciaEspanol;
 		}
@@ -292,7 +292,7 @@ public class CargarImagenes {
 		/*
 		 * Etiquetas del HUD con texto dibujado (CLAUDE.md §1.40). Son imágenes
 		 * (fuente pixelada) y existen en dos idiomas en /images/hud/idioma/,
-		 * recortadas de los originales de "FDAF assets/FDAF HUD". Se eligen
+		 * recortadas de los originales (FDAF assets/fdaf/ui/hud/*_original.png). Se eligen
 		 * por PreferenciasJuego.idiomaSeleccionado en el momento de pedirlas
 		 * (el idioma no cambia a mitad de una partida) y se cachean por ruta.
 		 */
@@ -304,38 +304,37 @@ public class CargarImagenes {
 
 		// "Energía restante:" / "Power left:"
 		public static ImageIcon getEtiquetaEnergia() {
-			return etiquetaHud(ingles() ? "/images/hud/idioma/power_left_en.png"
-					: "/images/hud/idioma/energia_restante_es.png");
+			return etiquetaHud(ingles() ? "/ui/hud/power_left_en.png"
+					: "/ui/hud/power_left_es.png");
 		}
 
 		// "Noche N" / "Night N" (numero 1-5).
 		public static ImageIcon getEtiquetaNoche(int numero) {
 			int n = Math.max(1, Math.min(5, numero));
-			return etiquetaHud(ingles() ? "/images/hud/idioma/night" + n + "_en.png"
-					: "/images/hud/idioma/noche" + n + "_es.png");
+			return etiquetaHud(String.format("/ui/hud/night_%02d_%s.png", n, ingles() ? "en" : "es"));
 		}
 
 		// Botones de la oficina con texto incrustado (CLAUDE.md §1.42): el
 		// original en inglés ("DOOR"/"LIGHT", "MUTE CALL") y una variante
 		// española generada a partir de él ("PUERTA"/"LUZ", "COLGAR").
 		public static ImageIcon getPanelBotonesIzq() {
-			ImageIcon es = ingles() ? null : etiquetaHud("/images/hud/idioma/pnlBotonesIzq_es.png");
+			ImageIcon es = ingles() ? null : etiquetaHud("/ui/office/door_panel_left_es.png");
 			return es != null ? es : panelIzq;
 		}
 
 		public static ImageIcon getPanelBotonesDer() {
-			ImageIcon es = ingles() ? null : etiquetaHud("/images/hud/idioma/pnlBotonesDer_es.png");
+			ImageIcon es = ingles() ? null : etiquetaHud("/ui/office/door_panel_right_es.png");
 			return es != null ? es : panelDer;
 		}
 
 		// Rótulo de la cámara de la tableta, aparte del gif (CLAUDE.md §1.45).
 		public static ImageIcon getRotuloCamara() {
-			return etiquetaHud(ingles() ? "/images/hud/idioma/camera_disabled_en.png"
-					: "/images/hud/idioma/camara_desactivada_es.png");
+			return etiquetaHud(ingles() ? "/ui/tablet/camera_disabled_en.png"
+					: "/ui/tablet/camera_disabled_es.png");
 		}
 
 		public static ImageIcon getMuteCall() {
-			ImageIcon es = ingles() ? null : etiquetaHud("/images/hud/idioma/mutecall_es.png");
+			ImageIcon es = ingles() ? null : etiquetaHud("/ui/office/mute_call_es.png");
 			return es != null ? es : mutecall;
 		}
 

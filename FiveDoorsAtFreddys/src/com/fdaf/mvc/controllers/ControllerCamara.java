@@ -145,7 +145,7 @@ public class ControllerCamara {
 	            if (!bloqueado && !interfaz.isTransicionTabletActiva() && !juegoTerminado()) {
 	                bloqueado = true;
 
-	                interfaz.mostrarTransicionTablet("/gifs/fondos/abrirTablet.gif", () -> {
+	                interfaz.mostrarTransicionTablet("/ui/tablet/tablet_open.gif", () -> {
 	                    vp.setContenido(pnlTableta);
 	                });
 	                bloquear.stop();
@@ -162,7 +162,7 @@ public class ControllerCamara {
 	            if (!bloqueado && !interfaz.isTransicionTabletActiva() && !juegoTerminado()) {
 	                bloqueado = true;
 
-	                interfaz.mostrarTransicionTablet("/gifs/fondos/CerrarTablet.gif",
+	                interfaz.mostrarTransicionTablet("/ui/tablet/tablet_close.gif",
 	                        () -> vp.setContenido(pnlJuego), // acción inmediata: se ve el gif, no el inventario
 	                        null);
 	                bloquear.stop(); 

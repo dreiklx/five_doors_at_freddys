@@ -155,7 +155,7 @@ public class PnlMenu extends JPanel {
 		// asigna ya escalado en EscalarVista.adaptarMenu.
 		lblLogoNyder = new JLabel();
 		lblLogoNyder.setBounds(1460, 768, 120, 120);
-		java.net.URL recursoLogo = PnlMenu.class.getResource("/images/nyder/NYDER-logo.png");
+		java.net.URL recursoLogo = PnlMenu.class.getResource("/branding/nyder_logo.png");
 		if (recursoLogo != null) {
 			logoNyderOriginal = new ImageIcon(recursoLogo);
 		}

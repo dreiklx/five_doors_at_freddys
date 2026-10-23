@@ -20,21 +20,21 @@ public class SonidosAmbientalesAleatorios {
 	// Agregar un sonido nuevo en el futuro es una sola linea aqui, sin
 	// tocar ningun otro metodo de esta clase.
 	private static final Object[][] POOL = {
-			{ "random/knock1.wav", 3, false },
-			{ "random/knock2.wav", 3, false },
-			{ "random/interferencia1.wav", 2, false },
-			{ "random/interferencia2.wav", 2, false },
-			{ "random/susurros.wav", 3, false },
-			{ "random/risa_freddy1.wav", 3, true },
-			{ "random/risa_freddy2.wav", 3, true },
-			{ "random/foxy_cantando.wav", 2, true },
-			{ "random/chica_en_cocina.wav", 2, true },
-			{ "random/run.wav", 1, false },
+			{ "random/knock_01.wav", 3, false },
+			{ "random/knock_02.wav", 3, false },
+			{ "random/interference_01.wav", 2, false },
+			{ "random/interference_02.wav", 2, false },
+			{ "random/whispers.wav", 3, false },
+			{ "random/freddy_laugh_01.wav", 3, true },
+			{ "random/freddy_laugh_02.wav", 3, true },
+			{ "random/foxy_singing.wav", 2, true },
+			{ "random/chica_kitchen.wav", 2, true },
+			{ "random/running.wav", 1, false },
 			// Peso bajo a propósito: comparte familia temática con
 			// varios/respiracion_agitada.wav (la que ya suena justo
 			// después de un jumpscare real) -- reduce el riesgo de
 			// confusión sin excluir el recurso.
-			{ "random/respiracion_turbia.wav", 1, false },
+			{ "random/raspy_breathing.wav", 1, false },
 	};
 
 	// Progresion de tension por noche (pedido explicito del usuario
