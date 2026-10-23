@@ -1980,6 +1980,42 @@ Todas con perfil aislado (`-Duser.home`); el `config.properties` real no se toc�
 
 **Versión:** `Version.MENOR` 7 → 8; este commit publica **v2.8** (§1.32).
 
+### 1.59 Cinemática de Rendirse: "dentro del traje", sesiones 2026-10-23 (iniciada, interrumpida y retomada)
+
+**Historial:** el usuario descartó las propuestas sencillas de §4 ("QUIERO CINEMÁTICAS DE VERDAD") y pidió tres escenas reales. La sesión que la empezó se cortó por límite de uso a las 07:01 UTC del 23-10 con el reproductor escrito, conectado a los controladores, la banda sonora generada y 50 de 160 fotogramas renderizados (el render en segundo plano terminó solo después). Se retomó en una terminal nueva reconstruyendo la conversación desde el `.jsonl` y contrastándola con el working tree; nada de lo existente se rehízo.
+
+**Referencias investigadas (no se descargó ni se incorporó nada del juego original):** wiki de FNaF por su API (`Cinematics_(FNaF2)`, `Jumpscares_(FNaF1)`) y sus capturas de referencia. (A) La vista "desde Freddy mirando a los lados" es la alucinación de fin de noche de **FNaF 2** (noches 1-3 en adelante): panorama estático que se recorre con el ratón, a través de la máscara de Freddy, con Bonnie y Chica a los lados; dura unos segundos y termina en negro. (B) El guardia dentro del traje es la **pantalla de Game Over de FNaF 1**: imagen fija (ojos y dientes saliendo por la cabeza del traje) con estática, no una cinemática animada. Aprovechado: la mirada libre limitada, la máscara como marco, los personajes que reaccionan a ti y el "ahora eres un traje" como desenlace; todo con modelos propios.
+
+**Qué ve y oye el jugador (12.3 s):**
+1. 0-1.25 s: la oficina (o la tableta) se apaga a tirones con el principio de `power_down.wav`.
+2. 1.25-2.2 s: negro; golpe sordo y los clics de los resortes del traje cerrándose.
+3. 2.2-10.15 s: 160 fotogramas a 20 fps, vista equirectangular de 160°×53° desde dentro de la cabeza de Freddy en el escenario, con máscara de dos aberturas de ojos, respiración leve, líneas de interferencia y respiración amortiguada. Freddy cruza el comedor por el pasillo (Walk), Bonnie (derecha) y Chica (izquierda) giran la cabeza hacia el jugador con servos, los focos fallan y Freddy se planta delante con los ojos encendidos; todo se apaga.
+4. 10.15-10.7 s: estática (`static.gif` + `static.wav`).
+5. 10.7-12.3 s: negro con "ahora eres parte del espectáculo" / "you're part of the show now".
+6. Reinicio de siempre (`reiniciarJuegoCompleto()` → "Cargando...").
+
+**Mirada:** si el jugador mueve el ratón, manda el ratón (horizontal) durante 1.8 s; si no, la mirada sigue un guion (`GUION_PANEO`: centro → Bonnie cuando gira → Chica → Freddy al frente). Sin el guion, quien no tocaba el ratón no veía ni a Bonnie ni a Chica (medido con capturas).
+
+**Construcción:**
+- **Render fuera del juego:** Blender 5.1.2, Cycles en GPU (RTX 4050), 32 muestras, 1800×600, con `pizzeria.glb`, `freddy.glb`, `bonnie.glb` y `chica.glb` de Five Doors Escape y sus animaciones reales (`*_Idle`, `Freddy_Walk`). El juego no carga ningún 3D: solo JPG. Se eligió esto frente a (a) imágenes estáticas con paneo (sin movimiento real) y (b) arrancar Escape/LibGDX desde Swing (acopla los proyectos y tarda en cargar). Scripts para volver a generarlo en `tools/cinematics/surrender/` (raíz del repo): `build_surrender_scene.py` (importa los modelos), `direct_surrender.py` (posiciones, NLA, giros de cabeza con *Damped Track* sobre los huesos `bip_head_bonnie`, `Bone.003_Armature_7` de Chica y `j_head_04` de Freddy, luces que fallan, cámara panorámica en (0, 2.26, −8.05) con rotación (86°, 0, 180°)) y `mix_surrender_audio.py`.
+- **Audio** `audio/cinematics/surrender_mix.wav` (12.6 s, estéreo 44.1 kHz): mezcla de sonidos que ya estaban en el repo (`game_over/power_down.wav`, `game_over/freddy_footsteps.wav`, `game_over/static.wav`, `sfx/heavy_breathing.wav` con pasa bajos) y efectos sintetizados en el script (resortes, servos, latido que se acelera, zumbido de 60 Hz, chasquidos). Ningún audio de procedencia externa.
+- **Fotogramas** `videos/surrender/surrender_0001.jpg` … `_0160.jpg` (16 MB). Numeración de 4 dígitos por ser una secuencia de 160.
+- **Código:** `com.fdaf.util.CinematicaRendirse` (nuevo): un `JPanel` en `POPUP_LAYER` del `JLayeredPane` (no toca los paneles del juego), un `Timer` de 33 ms y un hilo daemon `cinematica-rendirse` que decodifica 8 fotogramas por delante y suelta los ya pasados (nunca en el EDT; con `-Xmx256m` termina bien). `ControllerCamara.rendirse()` llama a `ControllerInterfaz.reproducirCinematicaRendirse()` en lugar de `reiniciarJuegoCompleto()`; ese método marca la partida como terminada y llama a `ControllerJuego.cancelarRevelacionPendiente()` (nuevo) antes de empezar. Sin esto, una revelación de puerta pendiente terminaría en `liberar()` → `verificarFinDeJuego()` y podría disparar `alPerder()`/`alGanar()` por debajo de la escena.
+- **Salto:** clic o ESC desde los 400 ms (un clic anterior se ignora para no saltarla sin querer al soltar la barra). Rótulo "Clic o ESC para saltar". `terminar()` es el único cierre: detiene el timer, el hilo y el audio, suelta la caché y llama una sola vez al reinicio.
+- **Bloqueo real corregido durante las pruebas:** `Clip.stop()` (Java 8, `AbstractDataLine.stop`) llegó a bloquear el EDT ~2 s al terminar con el clip en su último tramo; la pantalla quedaba congelada antes de "Cargando...". Ahora el audio se detiene y se cierra en un hilo aparte (`cinematica-rendirse-audio`).
+
+**No cambia:** progreso, vidas, noches, el Game Over normal (`alPerder()` no pasa por aquí) ni la victoria.
+
+**Pruebas** (arnés `PruebaRendirse`, partida real con `ControllerInterfaz`, `-Duser.home` aislado, ventana fuera de pantalla para que el ratón real no contamine la mirada; sale antes de que `ReiniciadorJuego` relance el proceso):
+- Barra completa con el `Timer` real → capa abierta y `juegoTerminado=true`: OK.
+- Fin natural a los 12.36-12.41 s → "Cargando..."/"Loading...": OK en ES y EN, también con `-Xmx256m`.
+- Clic (35 ms) y ESC (25 ms) → pantalla de carga; clic a los <400 ms ignorado: OK.
+- Hilo de fotogramas terminado y capa retirada tras el fin o el salto: OK.
+- `alPerder()` no abre la capa ni el hilo: OK.
+- Capturas de 10 instantes revisadas (apagón, Freddy al fondo, Bonnie mirando, Chica mirando, Freddy delante, estática, frase).
+- `config.properties` real intacto.
+- **No verificado:** escucha humana de la mezcla ni ratón físico.
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos
@@ -1998,6 +2034,8 @@ Todas con perfil aislado (`-Duser.home`); el `config.properties` real no se toc�
 ---
 
 ## 4. Diseños pendientes de aprobación — NO implementados (propuestos 2026-10-22)
+
+> **Superado (2026-10-23):** el usuario rechazó estas propuestas por demasiado sencillas y pidió cinemáticas reales. Rendirse se implementó como "dentro del traje" (§1.59), no como R1. La victoria de Escape va por la dirección C (exterior, estacionamiento y auto) y la derrota definitiva por una escena propia; ver la sección de cada una en §2. Se conserva el texto como registro de lo que se propuso.
 
 Ninguna de estas cinemáticas existe en el código. Son propuestas para que el usuario elija; no implementar ninguna sin su aprobación explícita. Los recursos se citan por su nombre actual (§1.54, §2.48).
 

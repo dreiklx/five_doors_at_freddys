@@ -28,6 +28,7 @@ Otras carpetas de `FDAF assets`:
 | `source_files/sound_library/` | Efectos de biblioteca sin uso directo en los juegos (antes en `FDAF Sounds/` y en la raíz), con el nombre normalizado a `snake_case` a partir del original. |
 | `_reference/fnaf_assets_enterest/` | Pack de terceros "FNAF ASSETS REORGANIZED BY ENTEREST" (650 archivos), sin tocar: solo referencia. |
 | `_archive/fdaf_repo_unused/` | Los 12 recursos retirados del repo FDAF en v2.8 por no tener ningún uso (con su ruta antigua). |
+| `source_files/cinematics/` | Escenas de Blender y recursos externos descargados para las cinemáticas (desde 2026-10-23), una subcarpeta por escena; cada recurso externo con su procedencia y licencia en `LICENSES.md` de esa carpeta. |
 | `_archive/old_versions/` | Versiones anteriores: iconos v1-v4, transiciones de tableta v1, copia de seguridad de las intros (zip). |
 | `_manifiesto_reorganizacion_2026-10-22.tsv` | Cada movimiento/copia de la reorganización (origen → destino), para poder deshacerla. |
 
@@ -176,6 +177,8 @@ Ruta relativa a `src/com/fdaf/resources/` y a `FDAF assets/fdaf/`. «Derivado» 
 | `audio/sfx/heavy_breathing.wav` | `sounds/varios/respiracion_agitada.wav` | sfx | - | Respiracion tras sobrevivir un jumpscare | original |
 | `audio/music/escape_transition_les_toreadors_remix.wav` | `sounds/win/LesToreadorsRemix.wav` | musica | - | Musica de la transicion Noche 5 -> Escape | original |
 | `videos/victory.mp4` | `videos/ganar_fdaf.mp4` | video | - | Video de victoria (JavaFX) | original |
+| `videos/surrender/surrender_0001.jpg` … `surrender_0160.jpg` | (nuevo en v2.9) | video (secuencia) | - | Fotogramas de la cinematica de Rendirse (§1.59), panorama 1800×600 a 20 fps | derivado: render de Blender (`tools/cinematics/surrender/`, escena en `FDAF assets/source_files/cinematics/surrender/`) |
+| `audio/cinematics/surrender_mix.wav` | (nuevo en v2.9) | cinematica | - | Banda sonora de la cinematica de Rendirse (12.6 s) | derivado: mezcla de `power_down`, `freddy_footsteps`, `static` y `heavy_breathing` + efectos sintetizados (`mix_surrender_audio.py`) |
 
 Rutas construidas por código (no aparecen literales): `intros/night_%02d_intro_{en,es}.gif` (`CargarImagenes.rutaIntroPorNoche`), `ui/hud/night_%02d_{en,es}.png` (`getEtiquetaNoche`), `audio/phone_calls/night_%02d_call_{en,es}.wav` (`ControllerInterfaz.rutaLlamadaNocheActual`), `jumpscares/<animatronico>_jumpscare.gif` (`alRevelarAnimatronico`, nombre del enum en minúsculas). Todos los sonidos se piden a `Sonido` con la ruta relativa a `audio/`.
 

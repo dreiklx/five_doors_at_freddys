@@ -408,4 +408,15 @@ public class ControllerJuego {
 		return juegoTerminado;
 	}
 
+	// Rendirse (CLAUDE.md §1.59): la cinematica dura ~12 s con la partida todavia
+	// cargada debajo. Una revelacion de puerta pendiente terminaria en liberar() ->
+	// verificarFinDeJuego() y podria disparar alPerder()/alGanar() en mitad de la
+	// escena; se cancela aqui para que el unico final posible sea el reinicio.
+	public void cancelarRevelacionPendiente() {
+		if (timerRevelacion != null && timerRevelacion.isRunning()) {
+			timerRevelacion.stop();
+		}
+		detenerTodosLosSonidos();
+	}
+
 }

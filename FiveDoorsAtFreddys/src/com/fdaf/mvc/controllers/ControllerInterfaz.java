@@ -1405,6 +1405,17 @@ public class ControllerInterfaz implements JuegoListener {
 	// reinicio no puede completarse (java.exe no encontrado, etc.),
 	// siFalla reproduce exactamente el comportamiento que existía antes
 	// de este mecanismo -- nunca se deja al jugador atascado.
+	// Solo para Rendirse (CLAUDE.md §1.59): el Game Over normal y la victoria no
+	// pasan por aqui. El progreso no cambia; al terminar la escena (o al
+	// saltarla con clic/ESC) sigue exactamente el reinicio de siempre.
+	public void reproducirCinematicaRendirse() {
+		// La partida queda cerrada antes de empezar: ningun clic, revelacion o
+		// fin de noche puede colarse por debajo de la escena.
+		controllerJuego.setJuegoTerminado(true);
+		controllerJuego.cancelarRevelacionPendiente();
+		new com.fdaf.util.CinematicaRendirse().iniciar(vistaPrincipal, this::reiniciarJuegoCompleto);
+	}
+
 	public void reiniciarJuegoCompleto() {
 		if (controllerMenuPadre != null) {
 			controllerMenuPadre.limpiarPartidaActiva();
