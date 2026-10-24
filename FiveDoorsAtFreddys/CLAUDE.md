@@ -2381,6 +2381,540 @@ Datos medidos en esta sesión salvo donde se indica "cálculo". Coste: bajo (< 1
 
 **Hecho en esta sesión a raíz de la auditoría:** culling y precalentamiento (§2.60), indicadores del auto rehechos, texturas temporales del exterior fuera de `assets/` y diagnóstico de las capturas (§2.61).
 
+### 2.63 Puertas que giraban sobre el picaporte: bisagra en el canto opuesto a los pomos, sesión 2026-10-23 (tarde)
+
+**Contexto de la sesión:** la sesión anterior recibió este mismo pedido (16 puntos: puertas, derrota, persecución de Freddy, colisión de Freddy, salpicadero, faroles, estrella, agradecimiento, destello NYDER, sonido de las líneas blancas, GIF del menú, noches personalizadas bloqueadas, atascos con mesas, foco de la ventana, umbrales de aturdimiento y auditoría) y se cortó mientras analizaba la geometría de las puertas, sin cambios publicados. Se retomó reconstruyendo la conversación desde el `.jsonl`; el único cambio que había dejado en disco era un `Gdx.app.log` de diagnóstico en `PuertasInteriores`, que se integra aquí.
+
+**Auditoría por puerta (pomos medidos en la malla de cada hoja; los pomos son lo único que sobresale de las dos caras, a 0.88-0.98 m de altura):**
+
+| Puerta | Eje ancho | Pomos en | Bisagra antes | Bisagra ahora | Estado |
+|---|---|---|---|---|---|
+| `puerta.001_42` (baño) | z -4.755..-3.846 | -3.94 (máx.) | -4.755 (mín.) | -4.755 | ya estaba bien |
+| `puerta.002_43` (baño) | z -3.423..-2.514 | -2.61 (máx.) | -3.423 | -3.423 | ya estaba bien |
+| `puerta.003_44` (baño, tras Golden Freddy) | z 0.070..0.980 | 0.89 (máx.) | 0.070 | 0.070 | ya estaba bien |
+| `puerta.004_45` | x 6.747..7.656 | 6.84 (mín.) | **6.747 (sobre los pomos)** | 7.656 | **corregida** |
+| `puerta.005_46` | z 5.053..5.962 | 5.15 (mín.) | **5.053 (sobre los pomos)** | 5.962 | **corregida** |
+| `puerta_41` (salida, `SalidaExterior`) | z -6.779..-5.870 | -6.69 (mín.) | -5.87 (`exterior.json`) | sin cambios | ya estaba bien |
+| `puerta Izquierda/Derecha` (seguridad) | — | sin pomos | corredizas | sin cambios | no aplica |
+
+**Causa:** `elegirBisagras` (§2.56) elegía la bisagra **solo** por el barrido libre de la hoja. En las cinco abatibles los dos cantos daban 0 choques y ganaba el primero probado (el extremo mínimo). En las tres del baño coincidía por casualidad con el canto correcto; en la 004 y la 005 ese extremo es justo el de los pomos, así que la hoja giraba sobre el picaporte. No era un problema de orientación del modelo ni del pivote de la animación: la rotación se aplicaba bien, pero alrededor del canto equivocado.
+
+**Corrección (`PuertasInteriores.cantoPicaporte`):** lee los vértices de la hoja (posiciones de la malla con la transformación global del nodo), se queda con los que están a la altura de la mano (0.7-1.2 m) y, de ellos, con los que más sobresalen del plano de la hoja (más del 60 % del máximo: los pomos llegan a ~14 cm del centro y la placa a ~3.5 cm). Su posición media a lo ancho da el canto del picaporte (−1 mínimo, +1 máximo, 0 si no se reconoce). `elegirBisagras` prueba solo el canto opuesto. Si no se reconoce ningún picaporte, se mantiene el criterio anterior (barrido libre). El resto no cambia: giro de 88°, apertura hacia el lado contrario de quien llega si ese lado está libre, collider fino con la puerta cerrada y retirado mientras se mueve, sonidos y tiempos. El log de arranque indica para cada puerta el canto del picaporte y la bisagra elegida.
+
+**Pruebas:**
+- `PruebaMundo puertas` (teclas reales): **6/6** puertas se abren al llegar, se cruzan en los dos sentidos y se cierran al alejarse.
+- Log de arranque: las tres del baño conservan **exactamente** la misma bisagra que antes. La 004 y la 005 la cambian al canto opuesto. Los dos lados de barrido siguen libres en las cinco, así que la hoja abierta no se mete en ninguna pared.
+- Capturas (modo nuevo `PruebaMundo vista`: cada hoja entreabierta al 55 % hacia cada lado, vista a 2.6 m): en las cinco abatibles el pomo queda en el canto que se mueve y la hoja gira pegada al marco del lado contrario. La 004 y la 005 se revisaron desde los dos lados.
+- **No verificado:** recorrido con teclado y ratón físicos.
+
+**Archivos:** `world/PuertasInteriores.java`.
+
+### 2.64 Umbrales de aturdimiento: Foxy 3, Bonnie 7, Chica 7, sesión 2026-10-23 (tarde)
+
+**Cambio de diseño pedido:** `assets/content/balance/flashlight.json` pasa de Foxy 5 / Bonnie 10 / Chica 10 a **Foxy 3 / Bonnie 7 / Chica 7** ciclos válidos. La duración sigue siendo 1.5 s para los tres. No se tocó código: los umbrales ya estaban centralizados en ese JSON (§2.58).
+
+**Revisión de la mecánica contra lo pedido (sin cambios, ya cumplía):**
+- Un destello es un ciclo encendido → apagado en el que el haz iluminó de verdad al animatrónico: alcance de 11 m, cono de 22° y `lineaDeVisionLibre`. No se cuentan fotogramas, y mantener la linterna encendida cuenta un solo ciclo.
+- Los contadores son independientes por animatrónico.
+- Al llegar al umbral el animatrónico queda quieto 1.5 s, sin poder atrapar (`AISystem` no actualiza su FSM). Sacude la cabeza, hay un chispazo azul y suena `animatronic_stun.wav`. Después vuelve la IA y el contador queda en 0.
+- Mientras está aturdido no acumula ciclos, así que no hay aturdimiento infinito.
+- Todo corre en el bucle de juego, sin hilos. Con la pausa, las cinemáticas, la victoria y la derrota no se actualiza.
+
+**Prueba (`PruebaMundo aturdir`, linterna con CTRL simulado, con los umbrales nuevos en el arnés):** 22/22.
+- Para los tres: 2.5 s encendida sobre el objetivo cuentan 1 ciclo, y los ciclos fuera del haz no cuentan.
+- Foxy no se aturde con 2 ciclos y sí con el 3.º. Bonnie y Chica, con 6 no y con el 7.º sí. En cada aturdimiento el contador vuelve a 0.
+- Aturdido 1.48 s medidos: 0.000 m recorridos y sin atrapar al jugador pegado a él. Después retoma la IA.
+- Detrás de una pared (sin línea de visión): 0 destellos.
+
+### 2.65 Atascos junto a las mesas: la caja del jugador bajaba del escenario dentro de un tablero, sesión 2026-10-23 (tarde)
+
+**Síntoma reportado:** caminando muy cerca de una mesa, el jugador quedó atrapado por las colisiones.
+
+**Auditoría:**
+- Caja del jugador: AABB (0.3, 0.9, 0.3) centrada en los ojos, de 0.7 a 2.5 m.
+- Mesas y sillas: el mobiliario fusionado del comedor se rasteriza en celdas de 0.1 m con erosión de 0.03 m (§2.37). Las celdas conservan la altura real, así que las sillas bajas se pisan y los respaldos y tableros bloquean.
+- Resolución: eje por eje (X y luego Z), en sub-pasos de 0.1 m (§2.53). Con el sprint, la diagonal sale normalizada y no cambia nada.
+- Con este esquema, si la posición de partida está libre, siempre queda al menos un camino de vuelta. Un atasco total solo es posible si el jugador **ya está dentro** de un collider. Faltaba saber cómo llegaba ahí.
+
+**Medición:**
+- `PruebaMundo mesas`: 40 caminatas aleatorias de 400 cuadros por el comedor (WASD, diagonales, sprint y giros), 882 m en total. 0 atascos. Por sí solo no lo reproducía.
+- Volcado de los 11 432 colliders y espacio de configuración del jugador (`cspace.py`, rejilla de 2 cm). En el comedor hay 6 componentes libres (el principal de 96 m² y bolsillos cerrados que no se pueden alcanzar). Se encontró una franja de 8.1 m² junto al escalón del escenario que **bloquea a la altura del suelo pero queda libre a la altura del escenario**: es el borde de los tableros de la primera fila de mesas (z -6.34..-5.20).
+- **Causa reproducida:** el escenario (z -9.4..-7.0) sube los ojos 0.56 m y la altura vuelve **de forma gradual** (2 m/s, ~0.28 s) **después** de resolver el movimiento horizontal. Al bajar corriendo hacia una mesa, la caja todavía va elevada y su base (1.26 m) pasa por encima del tablero (~0.75 m). El jugador avanza hasta 1.6 m y, al terminar de bajar, la caja queda dentro de la mesa; desde ahí ningún eje vuelve a quedar libre. Prueba `PruebaMundo escalon` (6 columnas × 5 direcciones × caminar/correr): **10 de los 40 casos válidos quedaban incrustados y sin poder moverse**, todos corriendo, en z ≈ -5.8..-6.2.
+
+**Corrección (`CollisionWorld.resolveMovementConEscalon`, usado por el jugador en cada sub-paso):**
+- En cada eje, la caja probada cubre en vertical **desde la altura actual hasta la de reposo en el destino** (`playerStartY + alturaEscalonEn(destino)`). No se puede avanzar hacia un sitio donde, al terminar de bajar (o de subir), quedaría dentro de algo.
+- Lejos del escalón las dos alturas coinciden y es exactamente la misma prueba de antes.
+- Las mesas no se tocaron, y tampoco su erosión, el tamaño del jugador ni las colisiones.
+- **Red de seguridad:** al empezar cada cuadro, `collidersYaSolapados` anota los colliders que el jugador ya toca, y en ese cuadro se ignoran. Si por cualquier otro motivo quedara dentro de algo (un collider que aparece encima o una reaparición en mal sitio), puede moverse mientras no entre en ningún collider **nuevo**, y así sale. Normalmente la lista está vacía. Se hace un recorrido extra de los colliders por cuadro, no por sub-paso.
+- La IA (`ChaseState`) sigue con `resolveMovement` y tiene su propio detector de atascos. Queda anotado en la auditoría (§2.72).
+
+**Pruebas después:**
+- `escalon`: **0 de 40** casos con atasco. Los puntos de partida dentro de la utilería del escenario se omiten.
+- Rescate: incrustado a mano dentro del borde de una mesa, al retroceder sale.
+- Desde fuera, W contra la mesa se detiene en el borde (z=-6.325), sin atravesarla.
+- `mesas`: 0 atascos.
+- `bordes`: 11/11 (incluida la diagonal con sprint contra una esquina).
+- `puertas`: 6/6.
+- `sprint`: 4/4, con 3.5 y 5.78 m/s y la diagonal normalizada.
+
+**Archivos:** `world/CollisionWorld.java`, `screens/GameplayScreen.java` (`resolverMovimientoEnPasos`).
+
+### 1.63 Bordes blancos del GIF del menú: dibujado un 1.2 % más grande, sin tocar el archivo, sesión 2026-10-23 (tarde)
+
+**Medición (los 70 cuadros de `backgrounds/menu_background.gif`, 1600×900, 150 ms por cuadro, compuestos uno a uno con PIL):** el defecto viene **del propio GIF**, no del escalado. Los cuadros 12 y 21 traen la última fila blanca (luminancia 201-224) y las dos últimas columnas blancas. El cuadro 61 trae las tres últimas filas blancas. El resto no tiene píxeles blancos en el borde. Arriba solo hay un degradado más claro de la propia imagen (48-75 de luminancia frente a 71-76 del interior), no un borde blanco. Al estirar el GIF a pantalla completa (1920×1080 = ×1.2), esas líneas se ven más gruesas.
+
+**Corrección (`PnlAplicarImagen.dibujarFondoMenu`):** el GIF se dibuja centrado y un 1.2 % más grande, con el mismo factor en los dos ejes (no cambia la proporción). Quedan fuera ~9.6 px de cada lado y ~5.4 px arriba y abajo en coordenadas del GIF, frente a un máximo de 2 y 3 px de borde blanco. Freddy se desplaza menos de 1 % y su cara no se recorta. El archivo original no se modifica. Se aplica en todas las pantallas que usan este GIF de fondo: menú, Opciones, Idioma, Volumen y Noche personalizada (`PnlAplicarImagen` lo reconoce por `CargarImagenes.menu`), y además `PnlInfo` y `PnlSelectorIdioma`, que lo dibujan por su cuenta. El costo es el mismo `drawImage` escalado de antes.
+
+**Verificación (`FondoMenuBordes`, arnés del scratchpad):** los 70 cuadros dibujados como antes y como ahora, en 1920×1080, 1600×900, 1366×768, 2560×1440 y 1280×1024 (5:4), contando píxeles casi blancos (mín(R,G,B) > 170) en los 4 px del borde. **Antes: 76 964 píxeles en 15 combinaciones de cuadro y resolución. Ahora: 0.** Comparación del cuadro 61 a 1920×1080, con ampliación de la esquina inferior derecha: la línea blanca desaparece y la composición es la misma.
+
+**Archivos:** `PnlAplicarImagen.java`, `PnlInfo.java`, `PnlSelectorIdioma.java`.
+
+### 1.64 Sonido de apertura de la tableta al aparecer las franjas blancas de la intro de cada noche, sesión 2026-10-23 (tarde)
+
+**Investigación:**
+- El sonido de abrir la tableta es `InteraccionBoton.reproducirSonidoHover()` (`audio/sfx/button_hover.wav`). Es el **único clip compartido** del proyecto: aplica `volumenGeneral` antes de sonar y reproduce en su propio hilo (§1.52). Se reutiliza tal cual, sin duplicar el archivo ni crear instancias nuevas.
+- Las franjas blancas son una ráfaga de 5 cuadros de 10 ms, justo antes de la tarjeta "12:00 AM" (medido con PIL en las 10 intros):
+  - Noche 1: cuadros 40-44, tras el periódico, a 10 800 ms según la suma de retardos.
+  - Noches 2-5: cuadros 2-6, a 1 050 ms (tras la estática y 1 s de negro).
+  - Igual en los dos idiomas.
+- **Hallazgo:** AWT reproduce la intro de la Noche 1 (12-14 MB) **0.7-1.0 s más lenta** que la suma de sus retardos, porque la decodifica sobre la marcha. Medido en la ejecución real, las franjas se ven a 11.6-12.0 s. Un temporizador quedaba ~0.9 s adelantado (primer intento descartado).
+- Contar avisos `FRAMEBITS` del `ImageObserver` tampoco sirve: la correspondencia entre aviso y cuadro cambia en uno según cómo se pinte el panel. Con el arnés aislado el cuadro k llegaba con el aviso k−1 y en la intro real con el aviso k. Segundo intento, ~0.9 s adelantado, descartado.
+
+**Implementación (`ControllerMenu.iniciarSecuenciaIntro`):** el panel de la intro es el `ImageObserver` del gif. En cada aviso `FRAMEBITS`, mientras el sonido sigue pendiente, el cuadro **que AWT acaba de mostrar** se dibuja en 160×90 (`esCuadroDeFranjasBlancas`). Si al menos 6 filas (1/15 del alto) son casi blancas en más de la mitad del ancho, es la ráfaga y suena. El periódico, la estática, la tarjeta y el reloj no llegan a ese umbral.
+- `sonidoFranjasPendiente` (atómico) garantiza **una sola reproducción por intro** aunque la ráfaga dure 5 cuadros, aunque haya repintados y aunque el gif vuelva a empezar.
+- `finalizarIntroYComenzarPartida()` lo cancela, tanto en el fin natural como con CTRL+S.
+- Después de sonar ya no se analiza ningún cuadro. Mientras está pendiente cuesta un dibujo de 160×90 por cuadro nuevo, en el hilo de animación de AWT.
+- La duración de la intro (`DuracionGif`) y el resto del flujo no cambian. El sonido normal de la tableta tampoco: no se tocó `mostrarTransicionTablet`.
+
+**Prueba (`PruebaLineasIntro`, intros reales con `ControllerMenu` real y perfil aislado):** se capturó el panel de la intro cada ~5-15 ms para ver cuándo aparecen las franjas, y un `LineListener` en el clip compartido registró cuándo arranca el sonido.
+
+| Intro | Franjas visibles | Sonido | Diferencia | Reproducciones | Intro (timer) |
+|---|---|---|---|---|---|
+| Noche 1 ES | 12 037 ms | 12 034 ms | −3 ms | 1 | 20 637 ms (20 400) |
+| Noche 1 EN | 11 650 ms | 11 653 ms | +3 ms | 1 | 20 657 ms (20 450) |
+| Noches 2-5 ES | 1 088-1 096 ms | 1 091-1 095 ms | −1..+3 ms | 1 c/u | 8 705-8 727 ms (8 650) |
+| Noches 2-5 EN | 1 094-1 102 ms | 1 096-1 101 ms | −1..+2 ms | 1 c/u | 8 709-8 732 ms (8 650) |
+
+Saltar la intro de la Noche 1 a los 3 s: 0 reproducciones después (ES y EN). **No verificado:** escucha humana (el clip arrancó en esta máquina, pero nadie lo oyó).
+
+**Observación para la auditoría:** como la Noche 1 se ve ~1 s más lenta que sus retardos, su temporizador (20.4 s, suma de retardos) corta el reloj final ~1 s antes de lo previsto. No se cambió: no era parte del pedido y el corte cae dentro de los 5 s de reloj.
+
+**Archivos:** `ControllerMenu.java`.
+
+### 1.65 Destello en la estrella de la D de NYDER GAMES durante la presentación, sesión 2026-10-23 (tarde)
+
+**Orden de inicio sin cambios:** selector de idioma → NYDER GAMES → advertencia → introducción → menú. También se mantienen los tiempos de §1.31: 250 ms de negro, 800 de entrada, 1300 visible y 650 de salida.
+
+**La estrella:** es el **único elemento violeta** de `branding/nyder_games_splash.png` (2172×724). Hay 12 189 píxeles con azul > rojo + 40 y azul > verde + 40, todos en x 941-1219, y 145-379 (medido; ninguno fuera de esa caja). El repositorio no tiene una imagen suelta de la estrella que sirva (`images/nyder/NYDER-star.png` es otro diseño, del trabajo ajeno sin seguimiento). **La máscara se genera en memoria a partir del propio PNG**, en un hilo aparte al aparecer la pantalla negra de NYDER. El archivo no se modifica.
+
+**Animación (`PnlWarning.setBrilloEstrella` + `ControllerMenu.iniciarDestelloNyder`):** dentro de los 1300 ms en que el logo está totalmente visible:
+- espera 120 ms;
+- sube en 420 ms (curva cuadrática);
+- se sostiene 60 ms en el pico;
+- se apaga en 600 ms.
+En total son 1.2 s y no alargan la presentación. Mientras dura:
+1. la estrella se aclara de violeta a un blanco lavanda (la máscara se dibuja encima con alfa = brillo);
+2. aparece un halo radial suave centrado en la estrella;
+3. cerca del pico, una cruz fina de cuatro puntas (el "chispazo") que crece y se apaga.
+
+No hay flash de pantalla completa, ni parpadeos repetidos, ni nada fuera de la estrella. Todo respeta el alfa del fundido del panel. Un único `Timer` de 16 ms, que se detiene al terminar.
+
+**Sonido:** no había ningún efecto de brillo en el proyecto, así que se sintetizó uno original: `audio/sfx/nyder_star_sparkle.wav` (1.6 s, 44.1 kHz estéreo, pico a −9 dBFS, ataque de 6 ms sin clic). Es un arpegio ascendente muy rápido de campanillas (Do6-Mi6-Sol6-Do7-Mi7, parciales inarmónicos con vibrato leve), un soplo de aire filtrado que acompaña la luz y una cola de ecos. Se genera con `tools/audio/synth_nyder_sparkle.py` (raíz del repo), sin muestras externas.
+- Se carga en segundo plano con `Sonido`, que aplica el volumen general.
+- Suena **una vez** a los 160 ms del destello, en un hilo aparte (no bloquea Swing), para que la subida del arpegio coincida con el pico de luz.
+- **Al omitir** (CTRL+S) se detienen el `Timer` y el sonido, si ya sonaba (`cerrar()` en un hilo aparte, por el bloqueo conocido de `Clip.stop` en Java 8, §1.52). Si todavía no había sonado, se suelta sin reproducirse. Si NYDER termina con naturalidad, el sonido acaba solo y su `Clip` se cierra solo.
+
+**Pruebas (`PruebaDestelloNyder`, arranque real `ControllerMenu(false)` con perfil aislado, ES y EN):**
+- Orden de pantallas: NYDER a los 40-52 ms del clic en el idioma, advertencia a los 3085-3165 ms (como antes).
+- El brillo empieza a los ~1.31 s, llega a 1.00 y se apaga a los ~2.37 s, siempre dentro de la fase visible.
+- El sonido arranca **una sola vez** (`LineListener` en su clip), entre 0 y 130 ms después de empezar el destello.
+- La diferencia de píxeles entre una captura sin destello y otra en el pico afecta a ~17 100 píxeles, todos en x 802-1093, y 339-625 de 1920×1080 (la zona de la estrella). Revisado a ojo.
+- Omitir a mitad del destello: no queda `Timer`, el sonido se corta y se suelta, y sigue la advertencia.
+- **No verificado:** escucha humana del sonido.
+
+**Archivos:** `PnlWarning.java`, `ControllerMenu.java`, `audio/sfx/nyder_star_sparkle.wav` (nuevo), `tools/audio/synth_nyder_sparkle.py` (nuevo).
+
+### 1.66 Noches personalizadas solo tras superarlas y estrella permanente al completar Escape, sesión 2026-10-23 (tarde)
+
+**Progresión, estado de partida verificado:** `PreferenciasJuego.nocheActual` es la noche que "Continuar" va a jugar **y** la que elige Noche personalizada (§1.5). No es un historial: Noche personalizada la cambiaba libremente y un jugador nuevo podía elegir la Noche 5. No servía para decidir qué está superado.
+
+**Historial nuevo:** `PreferenciasJuego.nochesSuperadas` (`boolean[5]`, índice = `Noche.ordinal()`), persistido como `nochesSuperadas=NOCHE_1,NOCHE_2` en `config.properties`.
+- Se marca en `ControllerInterfaz.alGanar()` antes de avanzar, con su propio guardado; así cubre también la Noche 5, que no avanza.
+- Perder (`alPerder`) y rendirse no lo tocan.
+- "Nueva Partida" ("¿Reiniciar todo el progreso?") lo vacía, igual que ya hacía con el desbloqueo de ESCAPE. La estrella no se borra (ver abajo).
+- **Migración conservadora** de archivos sin la clave: no se concede nada que el archivo no demuestre. `nocheActual` no prueba nada; lo único demostrado es `escapeDesbloqueado=true`, que solo se activa al ganar la Noche 5, así que únicamente la Noche 5 queda superada.
+- Ejemplo: el perfil real de esta máquina (Noche 5, Escape desbloqueado; no se modificó en las pruebas) verá la Noche 5 y ESCAPE disponibles y las noches 1-4 bloqueadas hasta volver a ganarlas.
+
+**Noche personalizada (`ControllerMenu`, `PnlNochePersonalizada`):**
+- Las noches no superadas se ven en gris (140) con "(Bloqueada)"/"(Locked)", el mismo lenguaje visual que "ESCAPE (Bloqueado)".
+- Al hacer clic no cambian `nocheActual` ni el archivo. Suena `button_error.wav` y aparece 3 s "Supera la Noche N en una partida normal para desbloquearla." / "Beat Night N in a normal game to unlock it.". Usan el mismo rótulo y temporizador que el mensaje de ESCAPE (`mostrarMensajeBloqueado`).
+- Sobre una noche bloqueada, el ratón no hace sonar el hover ni muestra la flecha `>>`, que sería una interacción engañosa. Se resuelve con una sobrecarga de `InteraccionBoton.aplicarHoverYSonido` que recibe una condición `activo`.
+- Los botones pasan de 350 a 640 de ancho base: cabe "> Noche 1 (Bloqueada)" sin llegar a la columna de ESCAPE (x 920).
+- Las noches superadas se comportan como siempre.
+
+**Estrella de "Escape completado":**
+- **Señal entre procesos:** Escape escribe `~/.fivedoorsatfreddys/escape_victoria.flag` (`com.fivedoorsescape.io.VictoriaEscape`, a un temporal y renombrado). Lo hace en el **único** punto que registra la victoria: `GameplayScreen`, donde se marca `escapado` al terminar o saltar la cinemática del auto. Abrir la puerta de salida, rendirse, perder, cerrar la ventana o volver sin ganar no la escriben. Solo FDAF escribe `config.properties`, así que los dos procesos nunca escriben el mismo archivo.
+- **Consumo en FDAF (`com.fdaf.util.LogroEscape`):** `ControllerMenu.mostrarMenuPrincipal()` la consume antes de mostrar el menú. Ese es el camino del proceso nuevo tras volver de Escape (`ReiniciadorJuego`) y también el del arranque normal tras la introducción; si FDAF se hubiera cerrado con Escape abierto, la victoria se recoge en el siguiente arranque. El orden es fijo: `escapeCompletado=true`, guardar y **después** borrar la señal. Una victoria no se cuenta dos veces y no se pierde si el guardado fallara.
+- `PreferenciasJuego.escapeCompletado` se persiste como `escapeCompletado=true` y es independiente del idioma, el volumen y "Nueva Partida" (un logro no se reinicia con la partida).
+- **Guardado atómico de la configuración** (`PersistenciaJuego.guardar`): se escribe `config.properties.tmp` y se renombra encima (`ATOMIC_MOVE`, con respaldo sin él). Un cierre a mitad de escritura ya no puede dejar el archivo a medias.
+- **Diseño (`com.fdaf.util.EstrellaLogro`):** estrella dorada de cinco puntas dibujada en código, nítida a cualquier escala:
+  - degradado dorado, reflejo superior y filete interior;
+  - borde oscuro fino, para que se lea sobre la estática clara y oscura;
+  - resplandor cálido muy tenue.
+  No reutiliza la estrella violeta de cuatro puntas de NYDER: esta es un logro del jugador, no la marca del equipo.
+- **Posición (`PnlMenu.ubicarEstrellaEscape`):** como en FNaF 1, junto al título. Va a la derecha de "Freddy's", centrada en la altura de sus mayúsculas y del mismo tamaño (68 px en 1080p, en (686, 385)), calculada con la posición real del final del texto del `JTextPane`. No toca ningún botón (el título termina muy por encima de "Nueva Partida") ni compite con el título. Tooltip: "Completaste Five Doors Escape" / "You completed Five Doors Escape".
+
+**Pruebas (`PruebaLogro`, `ControllerMenu`/`ControllerInterfaz` reales, perfil aislado `-Duser.home`): 26/26 en ES y 26/26 en EN.**
+- Migración: un archivo viejo con Escape desbloqueado deja solo la Noche 5 superada y sin estrella.
+- Jugador nuevo:
+  - las 5 noches en gris con el indicador;
+  - un clic en una bloqueada no la elige, no cambia el archivo y muestra el mensaje;
+  - el hover no muestra la flecha;
+  - el texto más largo (693 px ES / 594 EN) cabe en el botón (768) sin invadir ESCAPE.
+- `alGanar()` real de las noches 1 y 2: `nochesSuperadas=NOCHE_1,NOCHE_2` y `nocheActual=NOCHE_3`. La 1 se puede elegir (con flecha) y la 3 sigue bloqueada.
+- Cambiar idioma y volumen conserva los desbloqueos.
+- Primera señal de victoria: agradecimiento con estrella, `escapeCompletado=true` en el archivo y la señal borrada. Después, menú con la estrella visible sin tapar botones.
+- Segunda señal: el agradecimiento sale otra vez, sin la presentación de la estrella, que sigue en el menú. Sin señal nueva, no vuelve a salir.
+- Recargar desde el archivo recupera la estrella.
+- "Nueva Partida" deja `nochesSuperadas` vacío y `nocheActual=NOCHE_1`, y conserva `escapeCompletado=true`.
+- No queda el `.tmp` del guardado atómico.
+- Capturas revisadas: Noche personalizada bloqueada (ES) y con 1-2 superadas (EN), y el menú con la estrella (ES y EN).
+- **No verificado aquí:** una partida completa real de Escape que escriba la señal. Eso se prueba del lado de Escape (§2.66); en FDAF la señal se escribió a mano.
+
+**Archivos:** `PreferenciasJuego.java`, `PersistenciaJuego.java`, `LogroEscape.java` (nuevo), `EstrellaLogro.java` (nuevo), `ControllerMenu.java`, `ControllerInterfaz.java` (`alGanar`), `InteraccionBoton.java`, `TextosInfo.java`, `PnlMenu.java`, `PnlNochePersonalizada.java`. En Escape: `io/VictoriaEscape.java` (nuevo) y `GameplayScreen.java`.
+
+### 1.67 Pantalla de agradecimiento de NYDER tras cada victoria de Escape, sesión 2026-10-23 (tarde)
+
+**Cuándo:** cada vez que `LogroEscape` encuentra una victoria pendiente (§1.66), antes del menú.
+- Primera victoria: incluye la presentación de la estrella.
+- Victorias siguientes: solo el agradecimiento.
+- Derrota, abandono o cierre: no hay señal, así que no hay agradecimiento ni estrella.
+
+El retorno a FDAF no cambia: el proceso se reinicia como siempre, y es el menú del proceso nuevo el que la muestra.
+
+**Texto (en `TextosInfo`, ES/EN):**
+- ES: «¡FELICIDADES!» — «¡Lo conseguiste! Escapaste y completaste la experiencia de Five Doors at Freddy's. / Todo el equipo de NYDER te agradece por jugar nuestro proyecto y por acompañarnos hasta el final. / Este juego fue creado con dedicación por estudiantes de Informática Empresarial de la Universidad de Costa Rica, Recinto de Siquirres. / Gracias por formar parte de esta experiencia. / — Equipo NYDER».
+- EN: «CONGRATULATIONS!» — «You made it! You escaped and completed the Five Doors at Freddy's experience. / The whole NYDER team thanks you for playing our project and sticking with us until the very end. / This game was made with dedication by Business Informatics students at the University of Costa Rica, Siquirres Campus. / Thank you for being part of this experience. / — Team NYDER».
+- Ajustes respecto al pedido, sin cambiar la intención:
+  - "Has escapado y completado" pasa a "Escapaste y completaste", más natural junto a "¡Lo conseguiste!";
+  - "y acompañarnos" pasa a "y por acompañarnos";
+  - en inglés, "The NYDER team" pasa a "The whole NYDER team … sticking with us until the very end".
+
+**Diseño (`PnlAgradecimiento`, dibujado en `paintComponent` a partir del tamaño real, sin `EscalarVista`):**
+- Composición centrada en vertical, medida antes de dibujar, de arriba abajo:
+  - logo de NYDER (`branding/nyder_logo.png`);
+  - la estrella, si es la primera vez;
+  - título dorado con sombra cálida y línea de acento violeta de NYDER;
+  - cuatro párrafos centrados al 66 % del ancho;
+  - firma en violeta claro;
+  - "Continuar", justo debajo.
+- Fuente del proyecto (`Fuentes`, Consolas escalada). Fondo negro con un resplandor violeta muy tenue.
+- Entrada: fundido desde negro de 0.7 s. Logo, título y cada párrafo aparecen escalonados entre 0.25 y 2.2 s.
+- Salida: fundido de 0.55 s antes del menú.
+- Celebración discreta: 46 chispas pequeñas, doradas y algunas violetas, que suben despacio y titilan.
+- **Estrella (solo la primera vez):** a los 0.9 s entra creciendo con un pequeño rebote, con un resplandor que pulsa y el rótulo "¡Estrella desbloqueada!" / "Star unlocked!". Suena el mismo destello de NYDER (§1.65): cargado en segundo plano, una sola vez y con el volumen general.
+- **Continuar:** el botón aparece a los 2.6 s y responde a clic, Enter, Espacio o ESC (ESC llega por `ControllerMenu.manejarEscape`, que delega en el panel). Antes de eso las teclas no hacen nada, para que una tecla que venía apretada desde Escape no cierre el mensaje sin leerlo. Un único `Timer` de ~30 fps, que se detiene al continuar.
+
+**Pruebas (dentro de `PruebaLogro`, §1.66):**
+- Aparece con `isPrimeraVez()` correcto en la primera y en la segunda victoria.
+- Enter antes de que aparezca Continuar no la cierra; ESC después sí; el clic en Continuar a los ~3 s, también.
+- Capturas a 1920×1080 en ES y EN de la primera victoria (con estrella) y de una repetida.
+- Problema real corregido con las capturas: en la primera versión el botón tenía altura fija y, en la primera victoria en español, se montaba sobre el último párrafo. Ahora se mide la composición y el botón va bajo la firma.
+- **No verificado:** escucha humana del destello ni ratón físico.
+
+**Archivos:** `PnlAgradecimiento.java` (nuevo), `ControllerMenu.java` (`mostrarMenuPrincipal`, `mostrarAgradecimiento`, `manejarEscape`), `TextosInfo.java`.
+
+### 2.66 Señal de victoria para la estrella de FDAF, sesión 2026-10-23 (tarde)
+
+Del lado de Escape, la estrella y el agradecimiento (§1.66-§1.67) solo necesitan una señal. `io/VictoriaEscape.marcar()` escribe `~/.fivedoorsatfreddys/escape_victoria.flag` (a un temporal y renombrado) en el único punto que registra la victoria: `GameplayScreen.actualizarCinematicaVictoria`, justo donde se marca `escapado`. Llega igual al terminar la cinemática del auto o al saltarla con ESC.
+- Abrir la puerta de salida, la puerta de emergencia, rendirse, perder o cerrar la ventana no la escriben.
+- Escape no toca `config.properties`.
+- Si la escritura fallara, se registra el error y la victoria sigue igual (FDAF simplemente no se entera).
+
+Prueba de punta a punta (la señal se escribe al terminar y al omitir la cinemática) en §2.68.
+
+### 2.67 Derrota: los cuatro animatrónicos reaccionan en el escenario (movimiento procedural), sesión 2026-10-23 (tarde)
+
+**Pedido:** la llegada al escenario se sentía rígida, con cuatro modelos inmóviles en fila. Los cuatro tenían que reaccionar ante el jugador: girar la cabeza, cada uno a su manera, con movimiento real, tics, interferencias y un foco que falle y cambie lo que se ilumina. El arrastre y el final no se tocan.
+
+**Lo que había:** solo existen las animaciones `idle` y `walk` retargeteadas (§2.23-§2.26). No hay una animación de "mirar". En el escenario los cuatro estaban en `idle`. Comparación "sin" del arnés: con la pose `idle` miran por encima del jugador y se les ven las barbillas.
+
+**`cinematics/PoseProcedural` (nuevo):** cabeza, torso y mandíbula de cada animatrónico se mueven **encima de su animación real**:
+- mirar a un punto, con giro y cabeceo limitados a ±78° y −55/+40°;
+- ladear la cabeza;
+- inclinar el torso;
+- abrir la mandíbula.
+Los huesos se declaran por datos en cada `content/entities/*.json` (`"huesos": {"cabeza", "torso", "mandibula"}`, `EntityDefinition.huesos`):
+- Freddy: `j_head_04`, `j_spine_03`, `j_jaw_06`;
+- Bonnie: `bip_head_bonnie`, `bip_spine_0_bonnie`, `bip_jaw_bonnie`;
+- Chica: `Bone.003_Armature_7`, `Bone.001_Armature_5`, sin hueso de mandíbula;
+- Foxy: `bip_head_foxy`, `bip_spine_0_foxy`, `bip_jaw_foxy`.
+Los giros se calculan en el **espacio del mundo** alrededor del pivote real del hueso, así no dependen de los ejes de cada uno de los cuatro rigs, y se devuelven al espacio local del padre. Cada cuadro hace `restaurar()` antes de que el `SceneManager` aplique la animación y `aplicar(...)` después, de modo que el desvío nunca se acumula.
+
+**Hallazgo técnico (medido):** la primera versión no tenía **ningún efecto visible**; las capturas "sin" y "con" salían idénticas. En gdx-gltf, el `AnimationController` deja los huesos con `isAnimated = true`, y entonces `Node.calculateTransforms` usa `localTransform` tal cual, sin rehacerlo desde traslación, rotación y escala. Ahora `PoseProcedural` escribe y guarda también `localTransform`.
+
+**Puesta en escena (6.0-11.3 s, en `CinematicaDerrota`):**
+- **La mirada recorre el círculo:** el culpable desde arriba → el de la izquierda (6.7 s) → el de la derecha (7.5 s) → el que está detrás de la cabeza, mirando hacia arriba y atrás (8.3 s) → de vuelta al culpable, que se inclina (8.95 s). Cada tramo termina en la **cara real** de cada uno (posición del hueso + 0.35 m, porque el pivote está en la base del cuello). Cada uno **gira la cabeza hacia el jugador justo cuando la cámara llega a él**. En el pasillo, los dos testigos ya siguen con la cabeza al jugador mientras lo arrastran.
+- **Cada personaje a su manera:**
+  - Bonnie: servo que se traba (sube, se frena, retrocede un poco, completa), con ladeos bruscos en los tics.
+  - Chica: un giro que se pasa de largo y vuelve, la cabeza ladeada 22° (antinatural) y espasmos en los que la cabeza se suelta y vuelve.
+  - Foxy: encorvado (torso 10-22°), la cabeza baja y ladeada y la mandíbula que chasquea.
+  - Freddy: lento y fijo, un poco hacia abajo, con la mandíbula que se entreabre.
+- **Desenlace:** todos se inclinan hacia el jugador. El culpable además se inclina hasta 14° más mientras se acerca (el acercamiento de antes). Al reventar el foco, los cuatro lo miran de lleno.
+- **Foco:** además de fallar, se balancea como si colgara y se va hacia la cara que se está mirando. El que la cámara encuentra queda iluminado y los demás en sombra. Sin esto, las capturas mostraban a oscuras al de la izquierda y al de atrás. En cada tic se apaga un instante.
+- **Tics e interferencias:** en 6.95, 7.78, 8.52, 9.42, 9.93 y 10.28 s hay ~0.13 s de franjas finas claras y oscuras y un velo rojo al 7 %, translúcidos, para no tapar a nadie. El ojo del jugador tiembla apenas (respiración).
+- `T_INCLINA` pasa de 8.8 a 8.95 s (el servo suena ahí). La duración total (12.3 s), el arrastre, el foco que revienta, los ojos rojos y el cierre no cambian.
+- `terminar()` restaura los esqueletos, tanto al terminar como al omitir.
+
+**Pruebas (`PruebaDerrota`, arranque real con ventana oculta):**
+- Última vida con Freddy, Bonnie y Foxy como culpables: `NightGameOverScreen` a los 12.29 s.
+- Omitir manteniendo ESC: 3.20 s (empezó a los 2.0).
+- Atrapada normal con vidas: estática, corazones y reaparición, sin cinemática.
+- Modo nuevo `diag`: desde el ojo del jugador encuadra la cara de cada uno con luz auxiliar, **sin** y **con** el movimiento procedural en el mismo instante (9.6 s). Sin él, los cuatro miran por encima del jugador; con él, los cuatro lo miran de frente. Foxy sale ladeado y con la mandíbula abierta.
+- 3 × 17 capturas de la secuencia revisadas:
+  - Freddy iluminado a la izquierda mirando;
+  - Chica iluminada con el pico abierto;
+  - Foxy detrás bajo el foco;
+  - los demás asomando por los bordes;
+  - las interferencias;
+  - el culpable inclinado con los ojos encendidos.
+- **No verificado:** juego con teclado físico.
+
+**Archivos:** `cinematics/PoseProcedural.java` (nuevo), `cinematics/CinematicaDerrota.java`, `content/EntityDefinition.java`, `content/entities/{freddy,bonnie,chica,foxy}.json`, `screens/GameplayScreen.java` (registro y ganchos antes/después de animar).
+
+### 2.68 Freddy en el estacionamiento: presencia física, amenaza y persecución del auto, sesión 2026-10-23 (tarde)
+
+**Pedidos:**
+1. Al acercarse a Freddy en el estacionamiento se lo atravesaba como a un decorado.
+2. Al escapar en el auto, Freddy debía perseguirlo, como un último momento de tensión integrado con la cámara, el auto y el sonido, que terminara en un escape exitoso.
+
+**Causa de (1), auditada:**
+- Desde que se abre la salida, la IA está congelada (`AISystem` retirado, §2.49) y los animatrónicos nunca tuvieron colisión contra el jugador: dentro, el contacto es la atrapada.
+- Freddy aparecía en la puerta de emergencia con `TransformComponent` y sin collider. La posición, el tamaño y la orientación del modelo eran correctos (de pie en el suelo, mirando al estacionamiento); lo que faltaba era la caja.
+
+**¿Por qué afuera?** Se evaluaron tres opciones:
+- que atraviese la puerta de emergencia;
+- que aparezca en el estacionamiento;
+- que persiga desde cerca de la salida.
+
+Se eligió la que **ya justificaba la escena**: Freddy aparece en la puerta de emergencia que el propio jugador dejó abierta (la caja musical, que suena desde él, lo delata). Es decir, lo siguió por donde salió. Desde ahí, salir corriendo hacia el auto es la continuación natural, sin teletransportes ni apariciones en medio del estacionamiento. Freddy sigue sin aparecer nunca a la vista (§2.49).
+
+**`world/FreddyExterior` (nuevo), para no seguir engordando `GameplayScreen` (auditoría M4):**
+- **EN_PUERTA:**
+  - Collider de 0.64 × 0.64 m, del suelo a 2.3 m, en el hueco de la puerta: el jugador ya no lo atraviesa y no puede volver a entrar al edificio por ahí.
+  - **Amenaza** si el jugador se acerca a menos de 3.4 m: gira el cuerpo hacia él a 90°/s (sin dar la espalda al estacionamiento, ±70°), lo mira con la cabeza, se inclina y abre la mandíbula (`PoseProcedural`, §2.67). Suenan un servo y su risa grave, una vez por acercamiento; alejarse más de 4.9 m lo rearma.
+  - **No ataca:** la IA sigue congelada, así que no hay muerte posible y la victoria nunca coincide con una atrapada.
+- **PERSIGUE (solo en la cinemática):** retira su collider y corre con la animación `walk` al 1.9× (aceleración 6.5 m/s², hasta 5.2 m/s), echado hacia adelante. Antes de que arranque el auto va hacia la puerta del conductor; después, hacia un punto 3.5 m detrás del auto: lo sigue, pero nunca se le echa encima. Pasos metálicos (`audio/sfx/freddy_run_step.wav`, sintetizado con `tools/audio/synth_freddy_chase.py`: golpe grave, chasquido del endoesqueleto y servo) cada 0.31 s, con volumen según la distancia a la cámara.
+- **EN_PORTON:** al llegar a la línea del portón se planta dentro del estacionamiento, en el hueco abierto, y se queda mirando cómo se va el auto.
+
+**Cinemática de victoria (misma duración, 16.5 s; el resto no cambia):**
+- 2.6 s: Freddy en la puerta, si todavía no estaba. Ocurre mientras el jugador se sienta, mirando adentro.
+- 5.4 s: el jugador gira la cabeza hacia la pizzería y lo ve en la puerta (como antes).
+- 6.15 s: la cabeza de Freddy se clava en el auto.
+- 6.4 s: su risa (ya existía).
+- 6.55 s: **sale corriendo**. La mirada lo sigue (ahora apunta a su cabeza real, no a un punto fijo) y vuelve al frente de golpe a los 7.05 s, justo antes de arrancar.
+- 7.4-11.4 s: el auto arranca con Freddy detrás.
+- **8.95-9.95 s: corte a una cámara pegada al maletero, mirando atrás.** Freddy corre hacia ella a pocos metros, con los ojos encendidos, iluminado en rojo por las luces traseras (luz puntual roja nueva en `SalidaExterior`, encendida con los faros), con la puerta de emergencia al fondo.
+  - Primero se probó girar la cabeza del conductor por encima del hombro: desde el asiento se veía sobre todo el techo rojo del auto y Freddy quedaba diminuto en la luneta (capturas). Se descartó.
+- Plano de la calle: el auto pasa y se aleja. El encuadre final, con su empuje lento, queda entre el letrero y el **portón abierto, donde Freddy se quedó inmóvil bajo el farol**. Después, negro y la victoria de siempre.
+
+**Pruebas (`PruebaVictoria`, `GameplayScreen` real con colisión real; ES y EN; completa y omitida):**
+- Freddy en la puerta tiene collider.
+- Caminando hacia él, el jugador se detiene contra él (x=-12.71 con Freddy en -12.05) y no queda incrustado.
+- Tampoco se cuela por el costado al edificio.
+- Al acercarse, Freddy gira hacia el jugador.
+- La amenaza no mata ni termina la partida (`JUGANDO`, sin `escapado`).
+- Durante la persecución, la distancia mínima de Freddy al centro del auto es 3.04 m: no lo alcanza ni se mete dentro.
+- A los 12 s Freddy está `EN_PORTON` en (-20.28, 0, -15.20).
+- La cinemática dura 16.5 s. Omitida con ESC: 3.23 s.
+- Termina en `EscapeVictoryScreen` con `escapado` y escribe la señal de FDAF (§2.66).
+- Capturas revisadas: amenaza de cerca, Freddy en la puerta visto desde el auto, el corte trasero con Freddy corriendo y el portón con Freddy al final.
+
+**Archivos:** `world/FreddyExterior.java` (nuevo), `cinematics/CinematicaVictoria.java`, `world/SalidaExterior.java` (luz trasera), `screens/GameplayScreen.java`, `assets/audio/sfx/freddy_run_step.wav` (nuevo), `tools/audio/synth_freddy_chase.py` (nuevo).
+
+### 2.69 Salpicadero del auto: de bloque rectangular a tablero con forma, sesión 2026-10-23 (tarde)
+
+**Antes** (`prep_car.py`): `car_dashboard` era una caja biselada de 0.30 × 0.30 m a lo ancho del auto. Desde el asiento, en la cinemática, se leía como un bloque rectangular delante del jugador.
+
+**Ahora:** un **perfil lateral extruido** a lo ancho, con bisel de 3 segmentos que redondea las aristas:
+- la cara superior baja suavemente hacia la base del parabrisas;
+- un canto redondeado sobre los indicadores;
+- la cara frontal se retira hacia las rodillas del conductor.
+
+Del lado del conductor se añade una **visera** sobre los indicadores, que proyecta sombra sobre las esferas. La línea del tablero contra el parabrisas, el ojo del conductor (`OJO_CONDUCTOR (0.436, 0.087, 1.153)`, igual que en `exterior.json`), el volante, los asientos y el resto del auto no cambian. Los indicadores (`car_gauges`) se recolocaron pegados a la cara nueva, bajo la visera.
+
+**Regenerado** con Blender 5.1.2 a partir del original de Quaternius (`FDAF assets/source_files/cinematics/escape_victory/downloads/quaternius_car_original.glb`): `assets/models/car_sedan.glb` (0.43 MB).
+
+**Verificación:**
+- Render de Blender desde el ojo del conductor.
+- Capturas del juego dentro de la cinemática (3.3, 4.4 y 7.6 s): el tablero se lee como tal, con la visera y los indicadores encendidos. La proporción con el parabrisas no cambió.
+- `PruebaVictoria` completa: sin regresiones.
+
+**Archivos:** `tools/cinematics/escape_victory/prep_car.py`, `assets/models/car_sedan.glb`.
+
+### 2.70 Faroles del estacionamiento redistribuidos, sesión 2026-10-23 (tarde)
+
+**Antes:** tres faroles en (-22.7, -1.6), (-15.6, -11.6) y (-24.8, -15.2, con parpadeo). El tercero iluminaba la esquina sudoeste (el auto tapado), lejos del portón; el segundo, el centro del estacionamiento. La zona de la persecución y el portón quedaban a media luz.
+
+**Ahora** (`exterior.json`; se mantienen 3 faroles, sin luces nuevas salvo la luz trasera del auto de §2.68):
+
+| Farol | Posición | Qué ilumina |
+|---|---|---|
+| 1 | (-21.4, -0.9), intensidad 58 | el auto y la puerta del conductor (lado oeste), al fondo de los espacios |
+| 2 | (-17.6, -9.4), 46, parpadea | la franja por donde corre Freddy y la ruta del auto |
+| 3 | (-17.6, -15.0), 64 | la barrera y el portón: donde termina Freddy y lo que se ve en el plano final desde la calle |
+
+- La puerta de emergencia y la zona donde aparece Freddy ya tenían su lámpara de pared y el letrero EXIT (sin cambios).
+- **Quedan a oscuras a propósito** la esquina sudoeste (el auto tapado), la esquina noreste junto a la fachada y el fondo detrás del contenedor.
+- Los postes no tocan vallas, contenedor, topes ni la ruta del auto: el farol 3 está a 0.9 m de la valla y a 1 m del contenedor; los faroles 2 y 3, a 2.4 m de la ruta del auto.
+- Los colliders de los postes y los charcos de luz siguen a las nuevas posiciones, porque se generan desde el mismo JSON.
+- Regenerado `assets/models/exterior_parking.glb` con `build_exterior.py`. Antes se comprobó que el build reproduce el GLB anterior byte por byte en tamaño (15 118 932). El nuevo pesa 15 118 852.
+
+**Rendimiento** (`PruebaRendimiento`, 2 corridas, mismo arnés que §2.60/§2.61, ms por cuadro):
+
+| Zona | Ahora | Antes |
+|---|---|---|
+| Estacionamiento | 11.66-11.75 | 11.6-12.8 |
+| Victoria | 15.21-15.43 | 15.2-16.0 |
+| Comedor | 14.3 | 14.2 |
+| Parts and Service | 8.2 | 8.1 |
+| Pirate Cove | 11.4 | 10.8 |
+| Persecución | 12.7-12.9 | 12.2 |
+
+Las diferencias están dentro de la variación entre ejecuciones.
+
+**Verificación visual:** capturas del estacionamiento al salir, de la puerta del conductor, de Freddy en la puerta y del plano final con Freddy en el portón bajo el farol 3.
+
+**Archivos:** `assets/content/maps/exterior.json`, `assets/models/exterior_parking.glb`.
+
+### 2.71 Foco de la ventana de Escape: activación, "Haz clic para entrar" y pausa al perder el foco, sesión 2026-10-23 (tarde)
+
+**Síntoma reportado:** al abrirse Escape en su propia ventana, los controles no respondían hasta hacer clic en ella.
+
+**Causa (investigada):** Escape es otro proceso. Windows solo deja tomar el primer plano (`SetForegroundWindow`, que es lo que hace `glfwFocusWindow`) a quien ya lo tiene o lo heredó, o a cualquiera si hace un rato que el usuario no toca nada. Hay dos caminos de lanzamiento (§1.21):
+- **Distribución** (FDAF → `cmd` → `lwjgl3.bat` → `java`): el permiso se hereda.
+- **Desarrollo** (`gradlew lwjgl3:run`): el proceso del juego lo crea el **daemon de Gradle**, que vive en segundo plano y no tiene ese permiso. La ventana aparece encima, pero el teclado sigue en FDAF.
+
+**Decisión:** FDAF no se minimiza. Se probó esa vía (FDAF cedía el primer plano al recibir una señal de "ventana lista"), pero al cerrar Escape Windows no reactiva una ventana minimizada y el regreso a FDAF, que hoy funciona, quedaba sin foco. Esa variante se descartó y se revirtió. Es Escape quien toma el foco.
+
+**Implementación:**
+- `core/util/EstadoVentana` (nuevo): `core` no conoce el backend. El lanzador informa los cambios de foco y aporta cómo pedirlo. Sin lanzador (arneses, IDE) la ventana se da por enfocada y nada cambia.
+- `Lwjgl3Launcher`:
+  - Un `Lwjgl3WindowAdapter` informa `focusGained`/`focusLost`.
+  - `pedirFoco()` usa `glfwFocusWindow` y, si GLFW sigue sin foco, en Windows aplica la técnica habitual: una pulsación sintética de ALT (`User32.SendInput`, incluido en LWJGL), que libera el bloqueo de primer plano, y un segundo `glfwFocusWindow`.
+  - El log indica qué vía se usó.
+- `BootScreen`: pide el foco en su primer cuadro visible y lo vuelve a pedir a los 0.6 s si todavía no lo tiene.
+- **Red de seguridad, `GameplayScreen`:** mientras la ventana **nunca** tuvo el teclado, la escena queda congelada y oscurecida con "Haz clic para entrar" / "Click to enter" (`window.click`), latiendo suave y con el cursor libre. La introducción no avanza ni empieza la narración. El clic activa la ventana y **se consume**: ese cuadro termina ahí, así que no abre puertas ni recoge objetos. Basta un solo clic, y después sigue el flujo normal (introducción → instrucciones → juego).
+- **ALT+TAB y vuelta:** si en `JUGANDO` la ventana pierde el foco, se abre la pausa de siempre: mundo detenido, audio continuo en pausa, cursor libre. Al volver sigue en pausa y se reanuda con ESC, como siempre. Las cinemáticas siguen corriendo.
+
+**Pruebas:**
+- **Ejecución real:** `Lwjgl3Launcher` lanzado desde un proceso en segundo plano, y además dos simulaciones del lanzamiento desde una ventana Swing en primer plano (con la cadena `cmd /c` de `LanzadorEscape` y con un lanzador ajeno, como el daemon de Gradle). En las tres, `[Ventana] foco pedido (ya lo tenia): concedido` y la ventana Swing pasó a inactiva. **No se pudo reproducir el bloqueo** en esta sesión automatizada: Windows concede el primer plano a cualquiera cuando no hubo entrada reciente del usuario. Por eso **la vía ALT no quedó ejercitada** aquí. Con un jugador real, que acaba de hacer clic en FDAF, el bloqueo sí está activo; esa vía y la pantalla de activación son las que lo cubren.
+- **`PruebaMundo foco`** (`GameplayScreen` real, foco simulado): 8/8.
+  - Sin foco, la introducción no avanza y no hay narración.
+  - El clic activa la ventana y se consume.
+  - Después arranca la introducción.
+  - En `JUGANDO`, perder el foco abre la pausa; el jugador no se mueve; al volver sigue en pausa; ESC reanuda.
+- Capturas de las dos pantallas revisadas.
+- **No verificado:** el caso real con teclado y ratón físicos ni un ALT+TAB humano.
+
+**Archivos:** `core/util/EstadoVentana.java` (nuevo), `lwjgl3/Lwjgl3Launcher.java`, `screens/BootScreen.java`, `screens/GameplayScreen.java`, `i18n/strings*.properties` (`window.click`).
+
+### 2.72 Auditoría de ambos proyectos (segunda ronda), sesión 2026-10-23 (tarde)
+
+Solo hallazgos comprobados en el código, en ejecución o con mediciones de esta sesión. Donde algo es una hipótesis sin reproducir, se dice. Coste: bajo (< 1 h), medio (una sesión), alto (varias). Complementa la auditoría de §2.62; sus puntos abiertos se revisaron y siguen abajo con su estado.
+
+**Corregido en esta sesión (defectos reproducibles relacionados con el pedido):**
+
+| Hallazgo | Evidencia | Sección |
+|---|---|---|
+| Puertas 004 y 005 giraban sobre el picaporte | malla de la hoja: pomos en el canto de la bisagra | §2.63 |
+| Atasco junto a las mesas al bajar del escenario | 10 de 40 casos incrustados, reproducidos con prueba | §2.65 |
+| Freddy se atravesaba en el estacionamiento | sin collider desde §2.49 | §2.68 |
+| `PoseProcedural` sin efecto en huesos animados | capturas "sin"/"con" idénticas; `isAnimated` usa `localTransform` | §2.67 |
+| Bordes blancos del GIF del menú | 76 964 píxeles blancos en el borde, en 15 combinaciones de cuadro y resolución | §1.63 |
+| Noches personalizadas libres para un jugador nuevo | `nocheActual` no es historial | §1.66 |
+| `config.properties` podía quedar a medias | escritura directa sobre el archivo | §1.66 (guardado atómico) |
+| Ventana de Escape sin teclado al abrirse | camino del daemon de Gradle sin permiso de primer plano | §2.71 |
+
+**Prioridad alta (abiertos)**
+
+| # | Proyecto | Hallazgo | Recomendación | Coste | Riesgo |
+|---|---|---|---|---|---|
+| A1 | Escape | **Sigue abierto (§2.62):** `freddy.glb` pesa 114.1 MB, con nueve texturas de 4096² (≈ 576 MB en VRAM, cálculo). La carga de recursos midió 7.8-10.4 s en esta sesión. | Bajar a 2048² y pasar a JPEG las texturas de color, midiendo con `PruebaCarga` antes y después. | Bajo | Bajo |
+| A2 | Ambos | **Sigue abierto:** los arneses (`PruebaMundo` con 12 modos, `PruebaVictoria`, `PruebaDerrota`, `PruebaLogro`, `PruebaLineasIntro`, `PruebaDestelloNyder`… 70 archivos) viven en el scratchpad y hay que copiarlos de sesión en sesión. | Llevar los estables a `tools/tests/` de cada repo, con un script (`-Duser.home` aislado y `MSYS_NO_PATHCONV=1`). | Medio | Bajo |
+| A3 | FDAF | El trabajo ajeno sin publicar (FlatLaf en `Main.java` y `.classpath`, `src/libs/flatlaf-3.6.1.jar`) no compila con `build-portable.bat`, que no añade `src/libs` al classpath. Si se publica tal cual, la distribución portable se rompe. | Al integrarlo, agregar el jar al `javac`/`java` de `build-portable.bat` y a `build-distribucion.bat`. | Bajo | Medio |
+
+**Prioridad media**
+
+| # | Proyecto | Hallazgo | Recomendación | Coste | Riesgo |
+|---|---|---|---|---|---|
+| M1 | FDAF | **Intro de la Noche 1:** AWT la reproduce 0.7-1.0 s más lenta que la suma de sus retardos (medido, §1.64). Su temporizador (20.4 s) corta el reloj final ~1 s antes. Las noches 2-5 difieren menos de 0.1 s. | Reprogramar el fin de la intro desde el momento real de las franjas (ya detectado): tiempo restante = duración total − retardos hasta ese cuadro. | Bajo | Bajo |
+| M2 | Escape | La IA (`ChaseState`) se mueve con `resolveMovement` sin el barrido vertical del escalón (§2.65). Un animatrónico que baje del escenario hacia una mesa podría quedar incrustado. **Hipótesis por lectura de código, no reproducida**; el detector de atascos existente lo reubica. | Usar `resolveMovementConEscalon` también para la IA (con su base Y). | Bajo | Bajo |
+| M3 | Escape | `freddy_music_box.wav` (18.4 MB) sigue cargado como `Sound` (decodificado entero). El audio de `assets/audio` pesa 41 MB. | `Music` (streaming) u OGG. | Bajo | Bajo |
+| M4 | Escape | `GameplayScreen.java` creció a 3160 líneas, y eso que esta sesión sacó lo nuevo a clases propias (`FreddyExterior`, `PoseProcedural`, `EstadoVentana`). | Seguir extrayendo solo al tocar una zona. | Alto | Alto |
+| M5 | FDAF | **Corregido en esta sesión.** Si `ReiniciadorJuego` no podía relanzar el proceso al volver de Escape (`siFalla`), el agradecimiento y la estrella se recogían recién en el **siguiente** arranque. Ahora los dos respaldos (`ControllerMenu.lanzarEscapeDesdeCustomNight` y `ControllerInterfaz.reiniciarJuegoCompleto`) pasan por `ControllerMenu.volverAlMenuSinReiniciar()`, que consume la victoria pendiente antes de mostrar el menú. | — | — | — |
+| M6 | Ambos | **Camino de desarrollo de Escape** (`gradlew lwjgl3:run`): el juego es hijo del daemon de Gradle. Eso explica el problema de foco (§2.71) y, según la memoria del proyecto, deja procesos huérfanos si se corta. La distribución empaquetada no tiene ninguno de los dos problemas. | Para probar, preferir `lwjgl3:installDist` + `lwjgl3.bat`, también en `LanzadorEscape` cuando exista el build. | Medio | Bajo |
+
+**Prioridad baja**
+
+| # | Proyecto | Hallazgo | Recomendación | Coste | Riesgo |
+|---|---|---|---|---|---|
+| B1 | Escape | Faroles, faros y linterna siguen sin sombras (gdx-gltf 2.3.0, §2.62). Freddy corriendo bajo el farol 2 no proyecta sombra propia. | Calcomanía de sombra que lo siga, o aceptar la limitación. | Bajo | Ninguno |
+| B2 | Escape | El corte trasero de la persecución muestra a Freddy muy cerca de la cámara al empezar (9.2 s). Se ve bien en las capturas, pero con otra relación de aspecto podría llenar el cuadro. | Revisar en 21:9 y 4:3. | Bajo | Bajo |
+| B3 | FDAF | `ControllerMenu.java` pasó de 908 a 1129 líneas (intro, destello, logro, noches bloqueadas). | Extraer la secuencia de inicio (selector/NYDER/advertencia) a su propia clase cuando se vuelva a tocar. | Medio | Medio |
+| B4 | FDAF | `Juego.java` del trabajo ajeno vuelve a poner la batería extra desde la Noche 3 (§1.5 documentaba que ya no tenía ese límite). Cambio de diseño pendiente de su autor. | Decidirlo con quien lo escribió antes de publicarlo. | Bajo | Bajo |
+| B5 | Ambos | La documentación de cada sesión vive en un único `CLAUDE.md` de 2600+ líneas. | Partir por proyecto o por año cuando moleste. | Bajo | Ninguno |
+
+**Revisado sin hallazgos nuevos:**
+- Progreso y logros: guardado atómico, migración conservadora, la estrella sobrevive a idioma, volumen y Nueva Partida.
+- i18n de todo lo nuevo, en ES y EN.
+- Liberación de temporizadores y sonidos nuevos al omitir (NYDER, intros, agradecimiento, derrota y victoria).
+- Rendimiento tras los cambios (§2.70).
+- Distribución: `build-portable.bat` compila por dependencias desde `Main` y copia `resources/`; Escape empaqueta `assets/` en su jar.
+- Colisiones: puertas, bordes y sprint, todo en verde (§2.65).
+
+### 1.68 Pruebas de conjunto y publicación v2.12 (FDAF) y `2189857` (Escape), sesión 2026-10-23 (tarde)
+
+Todas con perfil aislado (`-Duser.home`). El `config.properties` real del jugador no se tocó. Tipos de prueba: análisis de malla y GIF con Python, arneses sobre los controladores y pantallas reales (simulación de eventos), ejecución real con temporizadores, gifs y audio reales, capturas de render revisadas y mediciones. **Nadie jugó con teclado y ratón físicos ni escuchó los sonidos nuevos.**
+
+**FDAF**, sobre el árbol exacto del índice (`git checkout-index`, sin el trabajo ajeno: FlatLaf, `Juego.java`, `NYDER.png` y los PNG/carpetas sin seguimiento), compilado desde cero con JDK 1.8.0_271:
+- `VerificarRecursos`: 198 rutas OK, 0 fallos.
+- `OverlayPuertas`: 20/20.
+- `PruebaHover`: 57/57 en ES y EN. Las 5 noches bloqueadas ya no suenan, que es lo esperado por §1.66, y la Noche 1 superada sí.
+- `PruebaHoverVuelta`: 72/72.
+- `FlujoIdioma` ES/EN: menú `v 2.12`.
+- `MedirIdioma`: 0 desbordes.
+- `PruebaIntros`: las 10 intros.
+- `RenderHud`: noches 1/3/5 × 2 idiomas.
+- `PaginasInfo`: 0 problemas.
+- `PruebaIntroLlamada`: un único fin de llamada.
+- `PruebaRendirse2`: toque, mantener y natural.
+- `PruebaLogro`: 26/26 por idioma.
+- `PruebaLineasIntro`: sonido entre −1 y +4 ms de las franjas, una vez por intro.
+- `PruebaDestelloNyder`: ES, EN y omitida.
+- `FondoMenuBordes`: 76 964 → 0 píxeles blancos.
+
+**Escape**, `lwjgl3:installDist` con JDK 21 y arranque real, 18 baterías con **0 fallos**:
+- `PruebaMundo`: puertas, bordes, sprint, aturdir, cortina, intro, escalón, mesas y foco.
+- `PruebaVictoria`: completa y omitida, en ES y EN.
+- `PruebaDerrota`: última vida, omitida y atrapada normal.
+- `PruebaArranque`.
+- `PruebaCarga`: recursos en 10.3 s y nivel en 3.3 s.
+
+Además: `PruebaRendimiento` (§2.70), el modo `diag` de la derrota (§2.67) y la ejecución real del lanzador para el foco (§2.71).
+
+**Recursos:**
+- Nuevos: `fdaf/audio/sfx/nyder_star_sparkle.wav` y `escape/audio/sfx/freddy_run_step.wav`, ambos sintetizados con scripts del repo.
+- Regenerados con Blender 5.1.2 desde sus fuentes: `car_sedan.glb` y `exterior_parking.glb`.
+- Catálogo (`docs/catalogo_recursos.md` y su copia) y espejos de `FDAF assets` actualizados y comparados con `cmp`.
+- Ningún recurso externo nuevo.
+
+**Publicación:**
+- Escape `2189857`, verificado con `git ls-remote`.
+- FDAF: este commit sube `Version.MENOR` de 11 a 12 y publica **v2.12** (§1.32). Agrupa §1.63-§1.68 y la documentación de §2.63-§2.72.
+
+**Pendiente:** ver la auditoría (§2.72). En particular, el caso real de foco con un jugador (vía ALT no ejercitada), la escucha humana de los sonidos nuevos y el trabajo ajeno sin publicar.
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos

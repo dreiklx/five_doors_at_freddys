@@ -35,6 +35,7 @@ public class PnlMenu extends JPanel {
 	private JLabel lblVersion;
 	private JLabel lblLogoNyder;
 	private ImageIcon logoNyderOriginal;
+	private JLabel lblEstrellaEscape;
 
 	public PnlMenu() {
 		setPreferredSize(new Dimension(1600, 900));
@@ -160,7 +161,53 @@ public class PnlMenu extends JPanel {
 			logoNyderOriginal = new ImageIcon(recursoLogo);
 		}
 		pnlMenu.add(lblLogoNyder);
+
+		// Estrella de "Escape completado" (CLAUDE.md §1.66): oculta hasta la
+		// primera victoria de Five Doors Escape. Se coloca en
+		// ubicarEstrellaEscape(), justo a la derecha de "Freddy's".
+		lblEstrellaEscape = new JLabel();
+		lblEstrellaEscape.setVisible(false);
+		pnlMenu.add(lblEstrellaEscape, 0);
 	}
+
+	// Como en FNaF 1, el logro aparece junto al título: a la derecha de la
+	// última palabra ("Freddy's"), centrada en la altura de sus mayúsculas, del
+	// tamaño de esas mayúsculas -- se ve, pero no compite con el título ni toca
+	// ningún botón (el título termina muy por encima de "Nueva Partida"). Se
+	// calcula con la posición real del final del texto en el JTextPane (o, si
+	// todavía no se puede medir, con sus métricas), así que sigue al escalado.
+	public void ubicarEstrellaEscape(boolean visible, String tooltip) {
+		lblEstrellaEscape.setVisible(visible);
+		lblEstrellaEscape.setToolTipText(visible ? tooltip : null);
+		if (!visible) {
+			return;
+		}
+		FontMetrics fm = txtpnFiveDoorsAt.getFontMetrics(txtpnFiveDoorsAt.getFont());
+		int mayuscula = Math.round(fm.getAscent() * 0.72f);
+		int lado = Math.round(mayuscula * 1.25f);
+		java.awt.Rectangle fin = null;
+		try {
+			fin = txtpnFiveDoorsAt.modelToView(txtpnFiveDoorsAt.getDocument().getLength());
+		} catch (Exception e) {
+			fin = null;
+		}
+		int x;
+		int base;
+		if (fin != null && fin.height > 0 && fin.x > 0) {
+			x = txtpnFiveDoorsAt.getX() + fin.x;
+			base = txtpnFiveDoorsAt.getY() + fin.y + fm.getAscent();
+		} else {
+			java.awt.Insets in = txtpnFiveDoorsAt.getInsets();
+			x = txtpnFiveDoorsAt.getX() + in.left + fm.stringWidth("Freddy's");
+			base = txtpnFiveDoorsAt.getY() + in.top + fm.getHeight() * 3 + fm.getAscent();
+		}
+		x += Math.round(mayuscula * 0.45f);
+		int centroY = base - mayuscula / 2;
+		lblEstrellaEscape.setIcon(com.fdaf.util.EstrellaLogro.icono(lado));
+		lblEstrellaEscape.setBounds(x, centroY - lado / 2, lado, lado);
+	}
+
+	public JLabel getLblEstrellaEscape() { return lblEstrellaEscape; }
 
 	public void init(VistaPrincipal vp, PnlMenu menu) {
 		EscalarVista.adaptarMenu(vp, menu);

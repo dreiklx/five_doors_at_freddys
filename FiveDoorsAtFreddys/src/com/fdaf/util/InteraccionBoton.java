@@ -46,13 +46,21 @@ public class InteraccionBoton {
 	// pero reutilizable para cualquier caso futuro similar sin tocar esta
 	// clase de nuevo.
 	public static void aplicarHoverYSonido(JButton boton, JLabel flecha, int offsetX, JComponent elementoAdicional) {
+		aplicarHoverYSonido(boton, flecha, offsetX, elementoAdicional, null);
+	}
+
+	// activo: decide en cada entrada si el botón responde de verdad (p. ej.
+	// una Noche personalizada todavía bloqueada, §1.66): si no, ni sonido ni
+	// flecha -- el clic sigue llegando para poder explicar por qué no se puede.
+	public static void aplicarHoverYSonido(JButton boton, JLabel flecha, int offsetX, JComponent elementoAdicional,
+			BooleanSupplier activo) {
 		boton.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseEntered(MouseEvent e) {
 				// Un botón deshabilitado (p. ej. el menú bloqueado tras el
 				// diálogo de confirmación) no debe sonar ni mostrar la flecha:
 				// sería una interacción engañosa (CLAUDE.md §1.38).
-				if (!boton.isEnabled()) {
+				if (!boton.isEnabled() || (activo != null && !activo.getAsBoolean())) {
 					return;
 				}
 				reproducirSonidoHover();

@@ -34,6 +34,42 @@ public final class TextosInfo {
 	public static String menuComoJugar() { return t("Cómo jugar", "How to Play"); }
 	public static String menuAcercaDe() { return t("Acerca del proyecto", "About the Project"); }
 
+	/* ===================== Noches personalizadas y logro de Escape (§1.66) ===================== */
+
+	public static String nocheBloqueada(int numero) {
+		return t("Noche " + numero + " (Bloqueada)", "Night " + numero + " (Locked)");
+	}
+
+	public static String mensajeNocheBloqueada(int numero) {
+		return t("Supera la Noche " + numero + " en una partida normal para desbloquearla.",
+				"Beat Night " + numero + " in a normal game to unlock it.");
+	}
+
+	public static String estrellaEscapeTooltip() {
+		return t("Completaste Five Doors Escape", "You completed Five Doors Escape");
+	}
+
+	/* ===================== Agradecimiento tras ganar Escape (§1.67) ===================== */
+
+	public static String agradecimientoTitulo() { return t("¡FELICIDADES!", "CONGRATULATIONS!"); }
+
+	public static String[] agradecimientoParrafos() {
+		return ingles() ? new String[] {
+				"You made it! You escaped and completed the Five Doors at Freddy's experience.",
+				"The whole NYDER team thanks you for playing our project and sticking with us until the very end.",
+				"This game was made with dedication by Business Informatics students at the University of Costa Rica, Siquirres Campus.",
+				"Thank you for being part of this experience." }
+				: new String[] {
+				"¡Lo conseguiste! Escapaste y completaste la experiencia de Five Doors at Freddy's.",
+				"Todo el equipo de NYDER te agradece por jugar nuestro proyecto y por acompañarnos hasta el final.",
+				"Este juego fue creado con dedicación por estudiantes de Informática Empresarial de la Universidad de Costa Rica, Recinto de Siquirres.",
+				"Gracias por formar parte de esta experiencia." };
+	}
+
+	public static String agradecimientoFirma() { return t("— Equipo NYDER", "— Team NYDER"); }
+	public static String agradecimientoEstrella() { return t("¡Estrella desbloqueada!", "Star unlocked!"); }
+	public static String agradecimientoContinuar() { return t("Continuar", "Continue"); }
+
 	/* ===================== Selector de idioma (§1.35) ===================== */
 
 	// Aquí el idioma todavía no está elegido: el título se pide para el

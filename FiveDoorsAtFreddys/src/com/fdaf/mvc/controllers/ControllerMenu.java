@@ -60,6 +60,9 @@ public class ControllerMenu {
 	private ControllerInterfaz partidaActiva;
 	private Timer timerIntroActivo;
 	private String rutaIntroActiva;
+	// Sonido de la tableta sincronizado con las franjas blancas de la intro
+	// (CLAUDE.md §1.64): pendiente hasta que suena o la intro termina.
+	private final java.util.concurrent.atomic.AtomicBoolean sonidoFranjasPendiente = new java.util.concurrent.atomic.AtomicBoolean();
 
 	// "Warning activo" = true desde que arranca la secuencia, false
 	// desde el instante en que se muestra el menú -- sin importar si
@@ -157,6 +160,20 @@ public class ControllerMenu {
 	private boolean entradaNyderIniciada = false;
 	private java.awt.Image imagenNyder;
 
+	// Destello de la estrella de la D (CLAUDE.md §1.65), dentro de los
+	// 1300 ms en que NYDER está totalmente visible: espera 120 ms, sube en
+	// 420 ms, se sostiene 60 ms y se apaga en 600 ms (1200 ms en total). El
+	// sonido arranca a los 160 ms para que su subida coincida con el pico de
+	// luz. No alarga la presentación ni toca su orden.
+	private static final int DESTELLO_ESPERA_MS = 120;
+	private static final int DESTELLO_SUBIDA_MS = 420;
+	private static final int DESTELLO_PICO_MS = 60;
+	private static final int DESTELLO_BAJADA_MS = 600;
+	private static final int DESTELLO_SONIDO_MS = 160;
+	private Timer timerDestelloNyder;
+	private volatile Sonido sonidoDestelloNyder;
+	private boolean sonidoDestelloReproducido;
+
 	private void mostrarAdvertenciaInicial() {
 		advertenciaActiva = true;
 		mostrarSelectorIdioma();
@@ -212,6 +229,7 @@ public class ControllerMenu {
 		EscalarVista.adaptarWarning(vp, pantalla);
 		pantalla.setAlpha(0.0f);
 		vp.setContenido(pantalla);
+		prepararDestelloNyder(pantalla);
 
 		// La secuencia arranca cuando el panel negro ya se pintó de verdad
 		// (no al crearlo: la ventana todavía no es visible en ese momento).
@@ -236,6 +254,7 @@ public class ControllerMenu {
 		Timer negro = new Timer(NYDER_NEGRO_MS, e0 -> {
 			((Timer) e0.getSource()).stop();
 			animarFade(pantalla, 0.0f, 1.0f, NYDER_FADE_IN_MS, () -> {
+				iniciarDestelloNyder(pantalla);
 				Timer esperar = new Timer(NYDER_VISIBLE_MS, e1 -> {
 					((Timer) e1.getSource()).stop();
 					animarFade(pantalla, 1.0f, 0.0f, NYDER_FADE_OUT_MS, this::finalizarPresentacionNyder);
@@ -254,11 +273,81 @@ public class ControllerMenu {
 	// la imagen (solo se usa una vez por inicio) y arranca la advertencia.
 	private void finalizarPresentacionNyder() {
 		presentacionNyderActiva = false;
+		detenerDestelloNyder();
 		if (imagenNyder != null) {
 			imagenNyder.flush();
 			imagenNyder = null;
 		}
 		mostrarPantallaAdvertencia();
+	}
+
+	// La máscara de la estrella y el sonido se preparan en segundo plano en
+	// cuanto aparece la pantalla negra de NYDER (antes de la entrada).
+	private void prepararDestelloNyder(com.fdaf.mvc.views.frames.pnl.PnlWarning pantalla) {
+		pantalla.prepararDestelloEstrella();
+		sonidoDestelloReproducido = false;
+		Thread carga = new Thread(() -> sonidoDestelloNyder = new Sonido("sfx/nyder_star_sparkle.wav"),
+				"nyder-sonido-destello");
+		carga.setDaemon(true);
+		carga.start();
+	}
+
+	private void iniciarDestelloNyder(com.fdaf.mvc.views.frames.pnl.PnlWarning pantalla) {
+		if (!presentacionNyderActiva || !pantalla.isDestelloEstrellaListo()) {
+			return;
+		}
+		final long inicio = System.nanoTime();
+		final int total = DESTELLO_ESPERA_MS + DESTELLO_SUBIDA_MS + DESTELLO_PICO_MS + DESTELLO_BAJADA_MS;
+		timerDestelloNyder = new Timer(16, e -> {
+			int t = (int) ((System.nanoTime() - inicio) / 1_000_000L);
+			if (!sonidoDestelloReproducido && t >= DESTELLO_SONIDO_MS) {
+				// una sola vez por presentación, fuera del hilo de Swing
+				sonidoDestelloReproducido = true;
+				final Sonido s = sonidoDestelloNyder;
+				if (s != null) {
+					Thread reproducir = new Thread(s::play, "nyder-destello-play");
+					reproducir.setDaemon(true);
+					reproducir.start();
+				}
+			}
+			float brillo;
+			int u = t - DESTELLO_ESPERA_MS;
+			if (u <= 0) {
+				brillo = 0f;
+			} else if (u < DESTELLO_SUBIDA_MS) {
+				float k = u / (float) DESTELLO_SUBIDA_MS;
+				brillo = k * k;
+			} else if (u < DESTELLO_SUBIDA_MS + DESTELLO_PICO_MS) {
+				brillo = 1f;
+			} else {
+				float k = Math.min(1f, (u - DESTELLO_SUBIDA_MS - DESTELLO_PICO_MS) / (float) DESTELLO_BAJADA_MS);
+				brillo = (1f - k) * (1f - k);
+			}
+			pantalla.setBrilloEstrella(brillo);
+			if (t >= total) {
+				((Timer) e.getSource()).stop();
+				pantalla.setBrilloEstrella(0f);
+			}
+		});
+		timerDestelloNyder.start();
+	}
+
+	// Omitir la presentación (CTRL+S) o su fin natural: corta el destello y,
+	// si el sonido todavía sonaba, lo detiene (en un hilo aparte: Clip.stop
+	// puede bloquear en Java 8, §1.52). Un sonido que ya terminó se cerró solo.
+	private void detenerDestelloNyder() {
+		if (timerDestelloNyder != null) {
+			timerDestelloNyder.stop();
+			timerDestelloNyder = null;
+		}
+		final Sonido s = sonidoDestelloNyder;
+		sonidoDestelloNyder = null;
+		if (s != null && !sonidoDestelloReproducido) {
+			Thread cerrar = new Thread(s::cerrar, "nyder-destello-cerrar");
+			cerrar.setDaemon(true);
+			cerrar.start();
+		}
+		sonidoDestelloReproducido = true;
 	}
 
 	private void mostrarPantallaAdvertencia() {
@@ -381,6 +470,14 @@ public class ControllerMenu {
 		// Durante NYDER, CTRL+S salta solo la presentación: la advertencia
 		// se sigue mostrando completa, como antes.
 		if (presentacionNyderActiva) {
+			// Omitida: si el destello ya sonaba, se corta junto con la imagen.
+			final Sonido destello = sonidoDestelloNyder;
+			if (destello != null && sonidoDestelloReproducido) {
+				sonidoDestelloNyder = null;
+				Thread cerrar = new Thread(destello::cerrar, "nyder-destello-cerrar");
+				cerrar.setDaemon(true);
+				cerrar.start();
+			}
 			finalizarPresentacionNyder();
 			return;
 		}
@@ -390,9 +487,35 @@ public class ControllerMenu {
 	// Se muestra el menú por primera vez y, exactamente aquí, arranca su
 	// música -- nunca antes de que el jugador vea el menú realmente.
 		private void mostrarMenuPrincipal() {
+			// Victoria de Five Doors Escape pendiente (CLAUDE.md §1.66-§1.67):
+			// primero el agradecimiento (y la estrella, si es la primera vez),
+			// después el menú de siempre, ya con la estrella.
+			int victoria = com.fdaf.util.LogroEscape.consumirVictoriaPendiente();
+			if (victoria != com.fdaf.util.LogroEscape.SIN_VICTORIA) {
+				actualizarTextosIdioma();
+				mostrarAgradecimiento(victoria == com.fdaf.util.LogroEscape.PRIMERA_VICTORIA);
+				return;
+			}
 			vp.setContenido(menu);
 			ponerMusicaMenu();
 			iniciarEstaticaMenu();
+		}
+
+		private void mostrarAgradecimiento(boolean primeraVez) {
+			java.net.URL recursoLogo = getClass().getResource("/branding/nyder_logo.png");
+			final java.awt.Image logo = recursoLogo != null ? new javax.swing.ImageIcon(recursoLogo).getImage() : null;
+			final com.fdaf.mvc.views.frames.pnl.PnlAgradecimiento[] pantalla = { null };
+			pantalla[0] = new com.fdaf.mvc.views.frames.pnl.PnlAgradecimiento(logo, primeraVez, () -> {
+				if (logo != null) {
+					logo.flush();
+				}
+				vp.setContenido(menu);
+				ponerMusicaMenu();
+				iniciarEstaticaMenu();
+			});
+			pantalla[0].setBounds(0, 0, menu.getWidth(), menu.getHeight());
+			vp.setContenido(pantalla[0]);
+			pantalla[0].iniciar();
 		}
 
 		// Efecto ambiental TEMPORAL, no estática permanente. Decide en
@@ -439,6 +562,20 @@ public class ControllerMenu {
 	    musicaMenu.subirVolumen(3.5f);
 	}
 
+	// Respaldo cuando el proceso no se pudo relanzar (ReiniciadorJuego, "siFalla"):
+	// vuelve al menú en este mismo proceso, pero antes recoge una victoria de
+	// Escape pendiente (agradecimiento y estrella, §1.66-§1.67, auditoría M5).
+	public void volverAlMenuSinReiniciar() {
+		int victoria = com.fdaf.util.LogroEscape.consumirVictoriaPendiente();
+		if (victoria != com.fdaf.util.LogroEscape.SIN_VICTORIA) {
+			actualizarTextosIdioma();
+			mostrarAgradecimiento(victoria == com.fdaf.util.LogroEscape.PRIMERA_VICTORIA);
+			return;
+		}
+		vp.setContenido(menu);
+		reanudarMusicaMenu();
+	}
+
 	public void reanudarMusicaMenu() {
 		if (musicaMenu != null) {
 			musicaMenu.loop();
@@ -453,10 +590,15 @@ public class ControllerMenu {
 	// sin fundido (no hace falta, es solo texto informativo).
 	private void mostrarMensajeEscapeBloqueado() {
 		boolean ingles = (PreferenciasJuego.idiomaSeleccionado == Idioma.INGLES);
-		pantallaNochePersonalizada.getLblEscapeBloqueado().setText(
-				"<html>" + (ingles
-						? "Unlocks after completing the last night."
-						: "Se desbloquea al completar la última noche.") + "</html>");
+		mostrarMensajeBloqueado(ingles
+				? "Unlocks after completing the last night."
+				: "Se desbloquea al completar la última noche.");
+	}
+
+	// Mismo rótulo y mismo temporizador de 3 s para ESCAPE y para las noches
+	// bloqueadas (§1.66): un mensaje nuevo reemplaza al anterior.
+	private void mostrarMensajeBloqueado(String texto) {
+		pantallaNochePersonalizada.getLblEscapeBloqueado().setText("<html>" + texto + "</html>");
 		pantallaNochePersonalizada.getLblEscapeBloqueado().setVisible(true);
 
 		if (timerMensajeEscapeBloqueado != null && timerMensajeEscapeBloqueado.isRunning()) {
@@ -512,10 +654,7 @@ public class ControllerMenu {
 					// respaldo si el reinicio no pudiera completarse.
 					vp.toFront();
 					vp.requestFocus();
-					com.fdaf.util.ReiniciadorJuego.reiniciar(vp, () -> {
-						vp.setContenido(menu);
-						reanudarMusicaMenu();
-					});
+					com.fdaf.util.ReiniciadorJuego.reiniciar(vp, this::volverAlMenuSinReiniciar);
 				});
 	}
 
@@ -550,8 +689,12 @@ public class ControllerMenu {
 		InteraccionBoton.aplicarHoverYSonido(pantallaVolumen.getBtnBajar(), pantallaVolumen.getLbl(), 0);
 		InteraccionBoton.aplicarHoverYSonido(pantallaVolumen.getBtnAtras(), pantallaVolumen.getLbl(), 0);
 
-		for (JButton btnNoche : pantallaNochePersonalizada.getBtnsNoche()) {
-			InteraccionBoton.aplicarHoverYSonido(btnNoche, pantallaNochePersonalizada.getLbl(), 0);
+		// Una noche bloqueada (§1.66) no suena ni muestra la flecha: no se puede elegir.
+		Noche[] nochesHover = Noche.values();
+		for (int i = 0; i < pantallaNochePersonalizada.getBtnsNoche().length; i++) {
+			Noche noche = nochesHover[i];
+			InteraccionBoton.aplicarHoverYSonido(pantallaNochePersonalizada.getBtnsNoche()[i], pantallaNochePersonalizada.getLbl(), 0,
+					null, () -> PreferenciasJuego.nocheSuperada(noche));
 		}
 		InteraccionBoton.aplicarHoverYSonido(pantallaNochePersonalizada.getBtnAtras(), pantallaNochePersonalizada.getLbl(), 0);
 		InteraccionBoton.aplicarHoverYSonido(pantallaNochePersonalizada.getBtnEscape(), pantallaNochePersonalizada.getLbl(), 0);
@@ -599,12 +742,20 @@ public class ControllerMenu {
 				(ingles ? "Selected Night: " : "Noche seleccionada: ") + numeroNoche);
 		pantallaNochePersonalizada.getBtnAtras().setText(ingles ? "Back" : "Atrás");
 
+		// Noches personalizadas (§1.66): solo las superadas se pueden elegir.
+		// Las bloqueadas se ven en gris con "(Bloqueada)/(Locked)", como ESCAPE.
 		int ordinalNocheActual = PreferenciasJuego.nocheActual.ordinal();
+		Noche[] nochesTexto = Noche.values();
 		for (int i = 0; i < pantallaNochePersonalizada.getBtnsNoche().length; i++) {
-			String etiqueta = (ingles ? "Night " : "Noche ") + (i + 1);
+			boolean superada = PreferenciasJuego.nocheSuperada(nochesTexto[i]);
+			String etiqueta = superada ? (ingles ? "Night " : "Noche ") + (i + 1) : TextosInfo.nocheBloqueada(i + 1);
 			boolean esLaSeleccionada = (i == ordinalNocheActual);
-			pantallaNochePersonalizada.getBtnsNoche()[i].setText(esLaSeleccionada ? "> " + etiqueta : etiqueta);
+			JButton btn = pantallaNochePersonalizada.getBtnsNoche()[i];
+			btn.setText(esLaSeleccionada ? "> " + etiqueta : etiqueta);
+			btn.setForeground(superada ? java.awt.Color.WHITE : new java.awt.Color(140, 140, 140));
 		}
+
+		menu.ubicarEstrellaEscape(PreferenciasJuego.escapeCompletado, TextosInfo.estrellaEscapeTooltip());
 
 		// ESCAPE -- siempre visible (pedido explicito del usuario, genera
 		// expectativa aunque este bloqueado). Bloqueado: texto atenuado
@@ -664,6 +815,11 @@ public class ControllerMenu {
 		for (int i = 0; i < pantallaNochePersonalizada.getBtnsNoche().length; i++) {
 			Noche noche = noches[i];
 			pantallaNochePersonalizada.getBtnsNoche()[i].addActionListener(e -> {
+				if (!PreferenciasJuego.nocheSuperada(noche)) {
+					new Sonido("sfx/button_error.wav").play();
+					mostrarMensajeBloqueado(TextosInfo.mensajeNocheBloqueada(noche.ordinal() + 1));
+					return;
+				}
 				PreferenciasJuego.nocheActual = noche;
 				com.fdaf.util.PersistenciaJuego.guardar();
 				actualizarTextosIdioma();
@@ -688,6 +844,9 @@ public class ControllerMenu {
 				// "Reiniciar TODO el progreso" incluye el desbloqueo de ESCAPE -- consistente
 				// con lo que el propio boton promete, no una excepcion oculta.
 				PreferenciasJuego.escapeDesbloqueado = false;
+				// ...y las Noches personalizadas desbloqueadas (§1.66). La estrella
+				// de Escape completado NO: es un logro, no progreso de partida.
+				java.util.Arrays.fill(PreferenciasJuego.nochesSuperadas, false);
 				com.fdaf.util.PersistenciaJuego.guardar();
 				actualizarTextosIdioma();
 				bloquearBotonesMenuPrincipal(false);
@@ -733,7 +892,22 @@ public class ControllerMenu {
 		rutaIntroActiva = rutaIntro;
 
 		// Cada gif ya trae su tarjeta en el idioma correcto (CLAUDE.md §1.47).
-		JPanel panelIntro = new PnlAplicarImagen(introFresca);
+		// El panel es el ImageObserver del gif: AWT le avisa (FRAMEBITS) cada
+		// vez que muestra un cuadro nuevo, y ahí se mira si ese cuadro es el de
+		// las franjas blancas (§1.64).
+		sonidoFranjasPendiente.set(true);
+		JPanel panelIntro = new PnlAplicarImagen(introFresca) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public boolean imageUpdate(java.awt.Image img, int flags, int x, int y, int w, int h) {
+				if ((flags & java.awt.image.ImageObserver.FRAMEBITS) != 0 && sonidoFranjasPendiente.get()
+						&& esCuadroDeFranjasBlancas(img)) {
+					reproducirSonidoFranjas();
+				}
+				return super.imageUpdate(img, flags, x, y, w, h);
+			}
+		};
 		panelIntro.setBounds(0, 0,
 				EscalarVista.getEscalaX(1600),
 				EscalarVista.getEscalaY(900));
@@ -753,6 +927,61 @@ public class ControllerMenu {
 		timerIntroActivo.start();
 	}
 
+	// Las franjas blancas que preceden a la tarjeta "12:00 AM" (cuadro 40 de
+	// la Noche 1, tras el periódico; cuadro 2 de las noches 2-5; en los dos
+	// idiomas) suenan como la apertura de la tableta: el mismo sonido y el
+	// mismo reproductor (InteraccionBoton.reproducirSonidoHover, que aplica
+	// el volumen y reproduce fuera del hilo de Swing).
+	//
+	// Se sincroniza con el cuadro que AWT muestra de verdad, no con un reloj:
+	// AWT reproduce la intro de la Noche 1 (12-14 MB) ~1 s más lenta que la
+	// suma de sus retardos porque la decodifica sobre la marcha, y contar
+	// avisos FRAMEBITS tampoco sirve (la correspondencia aviso-cuadro cambia
+	// en uno según cómo se pinte el panel; medido). En cada aviso, mientras
+	// el sonido está pendiente, el cuadro actual se dibuja en 160x90 y se
+	// cuentan las filas casi blancas en más de la mitad del ancho: con al
+	// menos 6 (1/15 del alto) es la ráfaga. El periódico, la estática, la
+	// tarjeta y el reloj no llegan. Lo llama el hilo de animación de AWT.
+	private static final int ANCHO_MUESTRA_FRANJAS = 160;
+	private static final int ALTO_MUESTRA_FRANJAS = 90;
+	private java.awt.image.BufferedImage muestraFranjas;
+
+	private boolean esCuadroDeFranjasBlancas(java.awt.Image cuadro) {
+		if (muestraFranjas == null) {
+			muestraFranjas = new java.awt.image.BufferedImage(ANCHO_MUESTRA_FRANJAS, ALTO_MUESTRA_FRANJAS,
+					java.awt.image.BufferedImage.TYPE_INT_RGB);
+		}
+		java.awt.Graphics2D g = muestraFranjas.createGraphics();
+		g.setColor(java.awt.Color.BLACK);
+		g.fillRect(0, 0, ANCHO_MUESTRA_FRANJAS, ALTO_MUESTRA_FRANJAS);
+		g.drawImage(cuadro, 0, 0, ANCHO_MUESTRA_FRANJAS, ALTO_MUESTRA_FRANJAS, null);
+		g.dispose();
+		int filas = 0;
+		for (int y = 0; y < ALTO_MUESTRA_FRANJAS; y++) {
+			int blancos = 0;
+			for (int x = 0; x < ANCHO_MUESTRA_FRANJAS; x++) {
+				int c = muestraFranjas.getRGB(x, y);
+				if (((c >> 16) & 0xFF) > 200 && ((c >> 8) & 0xFF) > 200 && (c & 0xFF) > 200) {
+					blancos++;
+				}
+			}
+			if (blancos * 2 > ANCHO_MUESTRA_FRANJAS) {
+				filas++;
+			}
+		}
+		return filas >= ALTO_MUESTRA_FRANJAS / 15;
+	}
+
+	private void reproducirSonidoFranjas() {
+		if (sonidoFranjasPendiente.compareAndSet(true, false)) {
+			com.fdaf.util.InteraccionBoton.reproducirSonidoHover();
+		}
+	}
+
+	private void detenerSonidoLineasBlancas() {
+		sonidoFranjasPendiente.set(false);
+	}
+
 	// Único punto real de "la intro terminó, empieza el juego" -- lo
 	// dispara tanto el timer natural (duración real del gif) como el atajo CTRL+S. Nunca
 	// hay dos rutas distintas para esta transición.
@@ -762,6 +991,7 @@ public class ControllerMenu {
 			timerIntroActivo.stop();
 		}
 		timerIntroActivo = null;
+		detenerSonidoLineasBlancas();
 
 		// El gif de la intro ya no se ve: se libera para que su hilo de
 		// animación de AWT no siga decodificando detrás de la partida.
@@ -835,6 +1065,8 @@ public class ControllerMenu {
 				vp.setContenido(opciones);
 			} else if (actual == opciones) {
 				vp.setContenido(menu);
+			} else if (actual instanceof com.fdaf.mvc.views.frames.pnl.PnlAgradecimiento) {
+				((com.fdaf.mvc.views.frames.pnl.PnlAgradecimiento) actual).continuarDesdeTeclado();
 			} else if (actual == pantallaInfo && !introduccionActiva) {
 				// "Cómo jugar" y "Acerca del proyecto" vuelven al menú; la introducción no reacciona a ESC.
 				vp.setContenido(menu);

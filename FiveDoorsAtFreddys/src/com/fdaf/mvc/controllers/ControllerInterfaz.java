@@ -1345,6 +1345,12 @@ public class ControllerInterfaz implements JuegoListener {
 		// se queda en NOCHE_5. Al inicio del método, antes de cualquier
 		// efecto visual o de audio, para que quede persistido sin
 		// importar qué haga el jugador después en esta pantalla.
+		// Historial de noches superadas (§1.66): desbloquea su Noche
+		// personalizada. Se guarda junto con el avance de abajo (o aparte si era
+		// la Noche 5, que no avanza).
+		PreferenciasJuego.nochesSuperadas[PreferenciasJuego.nocheActual.ordinal()] = true;
+		com.fdaf.util.PersistenciaJuego.guardar();
+
 		int siguienteOrdinal = PreferenciasJuego.nocheActual.ordinal() + 1;
 		if (siguienteOrdinal < com.fdaf.mvc.models.juego.Noche.values().length) {
 			PreferenciasJuego.nocheActual = com.fdaf.mvc.models.juego.Noche.values()[siguienteOrdinal];
@@ -1426,9 +1432,11 @@ public class ControllerInterfaz implements JuegoListener {
 			controllerMenuPadre.limpiarPartidaActiva();
 		}
 		com.fdaf.util.ReiniciadorJuego.reiniciar(vistaPrincipal, () -> {
-			vistaPrincipal.setContenido(menu);
 			if (controllerMenuPadre != null) {
-				controllerMenuPadre.reanudarMusicaMenu();
+				// recoge también una victoria de Escape pendiente (auditoría M5, §2.72)
+				controllerMenuPadre.volverAlMenuSinReiniciar();
+			} else {
+				vistaPrincipal.setContenido(menu);
 			}
 		}, barraRetro);
 	}

@@ -180,7 +180,7 @@ public class PnlSelectorIdioma extends JPanel {
 		Graphics2D g2 = (Graphics2D) g.create();
 		Image fondo = CargarImagenes.menu != null ? CargarImagenes.menu.getImage() : null;
 		if (fondo != null) {
-			g2.drawImage(fondo, 0, 0, getWidth(), getHeight(), this);
+			PnlAplicarImagen.dibujarFondoMenu(g2, fondo, getWidth(), getHeight(), this);
 		}
 		g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
 		g2.setColor(Color.BLACK);

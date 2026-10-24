@@ -57,7 +57,9 @@ public class PnlNochePersonalizada extends JPanel {
 		for (int i = 0; i < 5; i++) {
 			JButton btnNoche = new JButton("Noche " + (i + 1));
 			estilizarBoton(btnNoche, fuenteBoton);
-			btnNoche.setBounds(227, posicionesY[i], 350, 70);
+			// 640 de ancho (antes 350): cabe "> Noche 1 (Bloqueada)" (§1.66) y
+			// sigue terminando antes de la columna de ESCAPE (x = 920).
+			btnNoche.setBounds(227, posicionesY[i], 640, 70);
 			pnlNochePersonalizada.add(btnNoche);
 			btnsNoche[i] = btnNoche;
 		}
