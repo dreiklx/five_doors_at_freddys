@@ -47,8 +47,8 @@ run() {
     grep -v "^\[\(GLITCH\|CARGA\|DEBUG\|LOGRO\|INTRO\|PERSISTENCIA\)" "$OUT/$n.log" | tail -${TAILN:-15}
     # una prueba que se corta a medias no escribe "FALLO": avisar si termino mal o sin su resumen (CLAUDE.md §1.73)
     if [ "$salida" -ne 0 ]; then echo "AVISO: $n termino con codigo $salida"; AVISOS=$((AVISOS + 1)); fi
-    case "$1" in
-        PruebaLogro|PruebaLineasIntro|PruebaDestelloNyder|OverlayPuertas|PruebaHover|PruebaHoverVuelta|VerificarRecursos)
+    case "$n" in
+        PruebaLogro*|PruebaLineasIntro*|PruebaDestelloNyder*|OverlayPuertas|PruebaHover*|VerificarRecursos|PruebaReinicio|FondoMenuBordes)
             grep -q "FALLOS:\|RESULTADO:" "$OUT/$n.log" || { echo "AVISO: $n no llego a escribir su resumen (prueba incompleta)"; AVISOS=$((AVISOS + 1)); } ;;
     esac
 }
@@ -71,6 +71,8 @@ TAILN=6 run PruebaDestelloNyder_saltar PruebaDestelloNyder "$(w "$OUT/reg/nyder"
 run PaginasInfo PaginasInfo "$REG/pag"
 TAILN=25 run PruebaIntroLlamada PruebaIntroLlamada "$REG" INGLES 5
 for M in toque mantener natural; do TAILN=8 run PruebaRendirse2_$M PruebaRendirse2 "$(w "$OUT/reg/rend")" $M ESPANOL; done
-TAILN=3 run FondoMenuBordes FondoMenuBordes "$(w "$OUT/cap")"
+TAILN=4 run FondoMenuBordes FondoMenuBordes "$(w "$OUT/cap")"
+# el relanzamiento del juego conserva -Duser.home (§1.74); usa la lista de procesos de Windows
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) TAILN=8 run PruebaReinicio -Dprueba.reinicio=reg$$ PruebaReinicio ;; esac
 echo "AVISOS: $AVISOS"
 echo FIN_REGRESION

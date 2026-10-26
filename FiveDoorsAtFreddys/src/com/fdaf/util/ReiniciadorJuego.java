@@ -134,7 +134,22 @@ public class ReiniciadorJuego {
 			// reinicio de proceso, no de un lanzamiento externo real -- evita que la
 			// advertencia inicial (PnlWarning) reaparezca en cada noche (pedido explicito
 			// del usuario 2026-08-09, ver ControllerMenu).
-			ProcessBuilder pb = new ProcessBuilder(javaBin, "-cp", classpath, "com.fdaf.init.Main", "--reinicio-interno");
+			// Las mismas opciones de la JVM con que se arranco este proceso (CLAUDE.md §1.74): sin ellas el relanzado
+			// perdia, por ejemplo, un -Duser.home de las pruebas y abria el progreso real. Se omiten las de depuracion
+			// (el puerto de Eclipse ya estaria ocupado por este proceso).
+			java.util.List<String> comando = new java.util.ArrayList<>();
+			comando.add(javaBin);
+			for (String arg : java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments()) {
+				if (!arg.startsWith("-agentlib") && !arg.startsWith("-javaagent") && !arg.startsWith("-Xrunjdwp")
+						&& !arg.equals("-Xdebug")) {
+					comando.add(arg);
+				}
+			}
+			comando.add("-cp");
+			comando.add(classpath);
+			comando.add("com.fdaf.init.Main");
+			comando.add("--reinicio-interno");
+			ProcessBuilder pb = new ProcessBuilder(comando);
 			pb.directory(new File(System.getProperty("user.dir")));
 			pb.start();
 			return true;

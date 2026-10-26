@@ -3244,6 +3244,8 @@ Ocupaban unos 576 MB de VRAM sin mipmaps (cálculo). Los otros tres personajes u
   - **Gotcha:** con `MSYS_NO_PATHCONV=1`, Git Bash ya no convierte las rutas que se le pasan a `javac`. Las listas de fuentes van en un `@archivo`, con rutas de Windows entre comillas y barras normales.
 - `.gitignore`: `/tools/tests/out/`.
 
+> **⚠️ CORREGIDO (§1.75):** la afirmación de abajo era inexacta. `FondoMenuBordes` no funcionaba desde el repositorio: dependía de 70 cuadros PNG extraídos a mano que solo existían en el scratchpad, y fallaba al leer el primero. Su salida no se revisó en esa corrida. Ahora extrae los cuadros del propio GIF del juego.
+
 **Verificado:** `run_tests.sh rapida` desde el repositorio. Las 20 pruebas se compilaron y se ejecutaron, todas en OK, con las mismas cifras que la regresión del scratchpad:
 - `VerificarRecursos`: 198 rutas OK;
 - `PruebaHover`: 57 OK;
@@ -3331,7 +3333,7 @@ Prioridad: **A** = arreglar antes de la próxima entrega; **M** = conviene; **B*
 | B6 | Escape | Los ciclos de caminar retargeteados son asimétricos (Freddy apoya a 0.63 y 0.91 s de un ciclo de 1 s; Bonnie y Foxy a 0.17/0.83). El sonido lo reproduce fielmente y se oye "cojo", igual que se ve. | Corregir los clips en Blender si molesta (§2.6, pipeline Rokoko). | Medio | Medio |
 | B7 | Escape | Las cadenas antiguas de `strings*.properties` siguen sin tildes ("menu", "Musica" en otras pantallas…), aunque la fuente sí tiene los glifos (§2.75). | Corregirlas en una pasada, revisando cada pantalla en capturas. | Bajo | Bajo |
 | B8 | FDAF | `VerificarRecursos` lista los 160 cuadros de `videos/surrender/` como "sin referencia" porque se cargan con un nombre armado (`%04d`). Es un falso positivo del arnés, no del juego. | Enseñarle al arnés el patrón de la secuencia. | Bajo | Ninguno |
-| B10 | FDAF | En una corrida de la regresión (§1.73), `PruebaLogro_ESPANOL` terminó justo después del `ERROR_MEDIA_INVALID` intermitente del vídeo de victoria, sin escribir su resumen; repetida dos veces, completa. No se sabe si el corte viene del arnés o de JavaFX, y no se reprodujo en el juego. | `run_tests.sh` ya lo marca como `AVISO`. Investigarlo si vuelve a aparecer. | Bajo | Bajo |
+| B10 | FDAF | **Resuelto en §1.74 (v2.14).** En una corrida de la regresión (§1.73), `PruebaLogro_ESPANOL` se cortó tras el `ERROR_MEDIA_INVALID`. La causa era que el juego se reiniciaba a sí mismo sin las opciones de la JVM (`-Duser.home`) y salía del perfil aislado. | — | — | — |
 | B9 | Ambos | `.glb` va por Git LFS en Escape (`.gitattributes`). Cada versión de `freddy.glb` ocupa cuota de LFS (114 MB la anterior, 36 MB la nueva). | Nada que hacer ahora; tenerlo en cuenta antes de iterar modelos grandes. | — | — |
 
 **Publicado:**
@@ -3380,6 +3382,54 @@ Prioridad: **A** = arreglar antes de la próxima entrega; **M** = conviene; **B*
 - una prueba sin resumen esperado (`RenderHud`): ningún aviso.
 
 **Archivos:** `tools/tests/run_tests.sh` y este `CLAUDE.md`.
+
+### 1.74 El relanzamiento del juego conserva las opciones de la JVM (escapaba del perfil aislado de las pruebas), sesión 2026-10-26
+
+**Hallazgo:** tras publicar v2.13 quedaba un Java vivo, creado a las 08:19:07 desde el árbol de la regresión: `java -cp … com.fdaf.init.Main --reinicio-interno`, **sin `-Duser.home`**.
+- Era el juego relanzado por `ReiniciadorJuego.lanzarNuevaInstancia()`, corriendo con el **perfil real** del usuario.
+- La cadena:
+  1. `PruebaLogro_ESPANOL` simula ganar una noche;
+  2. el vídeo de victoria falló (`ERROR_MEDIA_INVALID`, el intermitente ya conocido);
+  3. el flujo pasó enseguida a `reiniciarJuegoCompleto()`;
+  4. el relanzamiento usó solo `java -cp <classpath> Main` y el proceso de prueba hizo `System.exit(0)`.
+- Esto explica por completo B10 (§1.73, §2.79): la prueba "cortada" no venía de JavaFX, sino de que el juego se reinició a sí mismo.
+- **Perfil real:** `config.properties` (205 bytes) y `handoff.json` siguen con su última escritura del 23/10 a las 20:54, antes de esta sesión. El proceso escapado se detuvo sin que hubiera escrito nada.
+  - No se puede saber si las escrituras del 23/10 fueron del usuario jugando o de una fuga igual en la sesión anterior.
+
+**Corrección (`ReiniciadorJuego.lanzarNuevaInstancia`):** la instancia nueva recibe las mismas opciones de la JVM con que se arrancó la actual (`RuntimeMXBean.getInputArguments()`).
+- Se omiten las de depuración (`-agentlib`, `-javaagent`, `-Xrunjdwp`, `-Xdebug`), porque el puerto de Eclipse ya estaría ocupado por el proceso que termina.
+- Para el jugador no cambia nada (la distribución arranca sin opciones especiales, o con las mismas en las dos instancias). Para las pruebas, el relanzado se queda en el perfil aislado.
+- Es la única línea de código de FDAF tocada; el resto del flujo de reinicio queda igual.
+
+**Prueba nueva (`tools/tests/src/PruebaReinicio.java`, solo Windows, en `run_tests.sh`):**
+- Arranca con `-Duser.home=<aislado>` y una marca `-Dprueba.reinicio=<id>`, y llama a `lanzarNuevaInstancia()` por reflexión.
+- Busca el hijo en la lista de procesos de Windows (solo procesos `java*`: el propio PowerShell contiene la marca, y en el primer intento la prueba se encontraba a sí misma) y comprueba que lleva `--reinicio-interno`, `-Duser.home` y la marca.
+- Cierra solo ese hijo.
+- **Resultado:** 5/5 OK con la corrección.
+- **Contraprueba con el código de v2.13:** 3 FALLO; el hijo sale sin las opciones, y por eso ni siquiera aparece con la marca.
+  - Ese hijo quedó corriendo con el perfil real. Se identificó por su classpath exclusivo (`scratchpad\reinicio\viejo\build`) y se detuvo; el perfil siguió sin cambios.
+  - **Lección:** una contraprueba de este defecto abre el perfil real por definición. Hay que hacerla, como mucho, una vez y vigilando el proceso.
+
+**`run_tests.sh`:** la comprobación de "resumen escrito" (§1.73) usa ahora el nombre de la prueba (así cubre las que llevan opciones `-D` delante), e incluye `PruebaReinicio`.
+
+**Archivos:** `src/com/fdaf/util/ReiniciadorJuego.java`, `tools/tests/src/PruebaReinicio.java` (nuevo) y `tools/tests/run_tests.sh`.
+
+### 1.75 `FondoMenuBordes` funciona desde el repositorio (extrae los cuadros del GIF del juego), sesión 2026-10-26
+
+**Hallazgo** (gracias al aviso de §1.73): en la regresión de v2.14, `FondoMenuBordes` terminó con código 1 (`IIOException: Can't read input file!`).
+- El arnés copiado a `tools/tests` en §1.71 leía 70 PNG (`f00.png`…`f69.png`) que se habían extraído a mano del GIF del menú en una sesión anterior y que solo existían en el scratchpad.
+- Desde el repositorio no podía funcionar nunca. En la corrida `rapida` de §1.71 su salida no se revisó, así que esa sección afirmaba de más; se marcó la corrección allí.
+
+**Cambio:**
+- El arnés extrae los cuadros del propio recurso del juego (`/backgrounds/menu_background.gif`) con el lector GIF de ImageIO.
+- Compone cada cuadro en su posición sobre un lienzo acumulado, respetando la disposición `restoreToBackgroundColor`, como lo muestra un visor.
+- Escribe un veredicto `OK/FALLO` y `FALLOS: N` (antes solo imprimía cifras) y entra en la lista de pruebas con resumen obligatorio de `run_tests.sh`.
+
+**Verificado:** 70 cuadros; píxeles casi blancos en el borde: **antes 76 964 (15 combinaciones de cuadro y resolución), después 0**.
+- Son exactamente las cifras medidas en §1.68 con los cuadros extraídos aparte: la extracción equivale a la de entonces.
+- `OK`, salida 0, 17 s.
+
+**Archivos:** `tools/tests/src/FondoMenuBordes.java` y `tools/tests/run_tests.sh`.
 
 ---
 
