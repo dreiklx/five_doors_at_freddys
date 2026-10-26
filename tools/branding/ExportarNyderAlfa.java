@@ -19,7 +19,13 @@ import com.fdaf.mvc.views.frames.pnl.PnlWarning;
  * No incluye los 250 ms de negro previos (en el juego son pantalla vacia).
  *
  * Uso (con las clases de FDAF compiladas en el classpath, ver exportar_nyder_alfa.sh):
- *   java ExportarNyderAlfa <carpeta_salida> [ancho=1920] [alto=800] [fps=30]
+ *   java ExportarNyderAlfa <carpeta_salida> [ancho=1920] [alto=800] [fps=30] [fraccion=1.0] [completa]
+ * fraccion: ancho maximo del logo respecto del lienzo (el juego usa 0.55 en pantalla completa, ControllerMenu).
+ * completa: incluye tambien los cuadros extremos con alfa 0 (para videos sobre fondo liso que deben empezar y
+ * terminar en el fondo, exportar_nyder_fondos.sh, CLAUDE.md §1.76).
+ * letras=RRGGBB (7.o argumento, opcional): recolorea SOLO las letras del logo (pixeles grises, saturacion < 0.2) antes
+ * de pasarlo a PnlWarning. La estrella, su mascara, el halo, el chispazo y los tiempos no cambian. Sirve para la
+ * variante sobre fondo blanco, donde las letras blancas originales no se ven.
  */
 public class ExportarNyderAlfa {
 
@@ -32,9 +38,14 @@ public class ExportarNyderAlfa {
         int ancho = a.length > 1 ? Integer.parseInt(a[1]) : 1920;
         int alto = a.length > 2 ? Integer.parseInt(a[2]) : 800;
         int fps = a.length > 3 ? Integer.parseInt(a[3]) : 30;
+        double fraccion = a.length > 4 ? Double.parseDouble(a[4]) : 1.0;
+        boolean completa = a.length > 5 && a[5].equals("completa");
         Image logo = new ImageIcon(ExportarNyderAlfa.class.getResource("/branding/nyder_games_splash.png")).getImage();
+        if (a.length > 6 && a[6].startsWith("letras=")) {
+            logo = recolorearLetras(logo, Integer.parseInt(a[6].substring(7), 16));
+        }
         // fraccion 1.0: el logo ocupa todo el ancho; el alto del lienzo deja margen arriba y abajo para el chispazo
-        PnlWarning panel = new PnlWarning(logo, 1.0);
+        PnlWarning panel = new PnlWarning(logo, fraccion);
         panel.setOpaque(false);
         panel.setSize(ancho, alto);
         panel.prepararDestelloEstrella();
@@ -48,9 +59,9 @@ public class ExportarNyderAlfa {
         int totalMs = ENTRADA_MS + VISIBLE_MS + SALIDA_MS;
         // del primer al ultimo cuadro con algo visible: los extremos exactos del fundido (alfa 0) serian cuadros
         // vacios, asi que la secuencia empieza en t = 1/fps y termina un cuadro antes del final de la salida
-        int cuadros = Math.round(totalMs * fps / 1000f) - 1;
+        int cuadros = Math.round(totalMs * fps / 1000f) + (completa ? 1 : -1);
         for (int i = 0; i < cuadros; i++) {
-            float t = (i + 1) * 1000f / fps;
+            float t = (completa ? i : i + 1) * 1000f / fps;
             float alfa;
             if (t < ENTRADA_MS) {
                 alfa = t / ENTRADA_MS;
@@ -72,6 +83,25 @@ public class ExportarNyderAlfa {
         }
         System.out.println("cuadros " + cuadros + " a " + fps + " fps (" + totalMs + " ms), " + ancho + "x" + alto);
         System.exit(0);
+    }
+
+    /** Copia del logo con los pixeles grises (las letras) en el color dado, conservando su alfa (el suavizado). */
+    static Image recolorearLetras(Image original, int rgb) {
+        BufferedImage img = new BufferedImage(original.getWidth(null), original.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = img.createGraphics();
+        g.drawImage(original, 0, 0, null);
+        g.dispose();
+        for (int y = 0; y < img.getHeight(); y++) {
+            for (int x = 0; x < img.getWidth(); x++) {
+                int c = img.getRGB(x, y);
+                int r = (c >> 16) & 255, gr = (c >> 8) & 255, b = c & 255;
+                int max = Math.max(r, Math.max(gr, b)), min = Math.min(r, Math.min(gr, b));
+                if ((c >>> 24) > 0 && (max == 0 || (max - min) / (float) max < 0.2f)) {
+                    img.setRGB(x, y, (c & 0xFF000000) | (rgb & 0xFFFFFF));
+                }
+            }
+        }
+        return img;
     }
 
     /** La misma curva que ControllerMenu.iniciarDestelloNyder, en ms desde que termina el fundido de entrada. */

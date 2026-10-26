@@ -76,6 +76,8 @@ NOCHE_5(2, 10)
 - **Coleccionables:** 10 `TipoColeccionable` fijos, inventario de 10 slots en `PnlTableta`. Estados visuales: silueta bloqueada (`archivoBloqueado`) si posible-pero-no-encontrado-esta-noche, **X gris** (RGB 95,95,95 — deliberadamente ni negro puro ni blanco, elegido para no confundirse ni con la silueta negra ni con hallazgos reales; `Font.SANS_SERIF BOLD` tamaño 68) si el tipo no existe esta noche (`tipo.ordinal() >= cantidadColeccionables`), ícono real si ya se encontró. Clic en un slot muestra detalle grande (`lblMostrar`) + descripción bilingüe (`TipoColeccionable.getDescripcion(boolean ingles)`) en `lblDescripcion`.
 - **Mecánica de batería extra (agregada en esta sesión):** `TipoPuerta.BATERIA` — **reinterpretación dinámica de puertas `NADA` en el momento real de apertura** (dentro de `Juego.procesarPuerta`, NO en la generación del árbol, para que la evaluación use las vidas actuales reales). Condición original documentada en esta sesión: `nocheActual.ordinal() >= 2` (Noche 3+) Y probabilidad según vidas actuales. **[ACTUALIZADO 2026-07-30, verificado contra código real]:** `Juego.calificaParaBateria()` NO contiene ningún gate de noche — solo valida `vidas == 1 || vidas == 2` y consulta la tabla directamente. La tabla `PROBABILIDAD_BATERIA` tiene valores no-cero para Noche 1 y 2, así que la mecánica está activa **desde la Noche 1**, no desde la Noche 3. No se determinó si el gate se quitó deliberadamente o si nunca llegó a implementarse — la tabla completa de probabilidades por vidas actuales sigue siendo correcta:
 
+  > **[ACTUALIZADO 2026-10-26, §1.78]:** los valores de esta tabla están desactualizados desde la Noche 2. Los vigentes en el código son: N1 8 % (1 vida) / 5 % (2 vidas), N2 30/22 %, N3 46/28 %, N4 50/32 %, N5 62/42 %. La simulación de dificultad está en §1.78.
+
   | Noche | 2 vidas | 1 vida |
   |---|---|---|
   | 1 | 5% | 8% |
@@ -3329,7 +3331,7 @@ Prioridad: **A** = arreglar antes de la próxima entrega; **M** = conviene; **B*
 | A4 | Ambos | Antes de esta publicación, el trabajo ajeno sigue sin publicar: FlatLaf, `Juego.java` (batería desde la Noche 3), `NYDER.png`, los íconos sin seguimiento, `if3001 - pf - grupo#1/` y `dev/` en Escape. Los commits de esta sesión no lo incluyen. | Que su autor decida. `build-portable.bat` ya está preparado para FlatLaf (§1.72). | Bajo | Medio |
 | M7 | Escape | Los pasos (§2.73) no tienen oclusión: un animatrónico detrás de una pared suena igual que uno en un pasillo abierto (solo distancia y paneo). | Atenuar si un rayo cámara-animatrónico cruza un collider estático (filtro de volumen; libGDX `Sound` no tiene pasabajos). | Medio | Bajo |
 | M8 | Escape | El volumen de Escape (§2.75) es independiente del de FDAF (escala 1-10 en `config.properties`): quien bajó el volumen en FDAF lo encuentra al 100 % en Escape. | Pasar el volumen general de FDAF en el `handoff` y usarlo como valor inicial si Escape no tiene preferencias propias. | Bajo | Bajo |
-| M9 | Escape | `pizzeria.glb` (71 MB) tiene una textura de 4096² (`main_material_metallicRoughness`, ≈64 MB de VRAM); el resto del archivo es geometría (1.3 M triángulos). | `reducir_texturas_glb.py ... 2048` y revisar el mapa en capturas. | Bajo | Bajo |
+| M9 | Escape | **Resuelto en §2.80** (eran dos texturas de 4096² de `main_material`, ahora de 2048²). `pizzeria.glb` (71 MB) tiene una textura de 4096² (`main_material_metallicRoughness`, ≈64 MB de VRAM); el resto del archivo es geometría (1.3 M triángulos). | `reducir_texturas_glb.py ... 2048` y revisar el mapa en capturas. | Bajo | Bajo |
 | B6 | Escape | Los ciclos de caminar retargeteados son asimétricos (Freddy apoya a 0.63 y 0.91 s de un ciclo de 1 s; Bonnie y Foxy a 0.17/0.83). El sonido lo reproduce fielmente y se oye "cojo", igual que se ve. | Corregir los clips en Blender si molesta (§2.6, pipeline Rokoko). | Medio | Medio |
 | B7 | Escape | Las cadenas antiguas de `strings*.properties` siguen sin tildes ("menu", "Musica" en otras pantallas…), aunque la fuente sí tiene los glifos (§2.75). | Corregirlas en una pasada, revisando cada pantalla en capturas. | Bajo | Bajo |
 | B8 | FDAF | `VerificarRecursos` lista los 160 cuadros de `videos/surrender/` como "sin referencia" porque se cargan con un nombre armado (`%04d`). Es un falso positivo del arnés, no del juego. | Enseñarle al arnés el patrón de la secuencia. | Bajo | Ninguno |
@@ -3430,6 +3432,363 @@ Prioridad: **A** = arreglar antes de la próxima entrega; **M** = conviene; **B*
 - `OK`, salida 0, 17 s.
 
 **Archivos:** `tools/tests/src/FondoMenuBordes.java` y `tools/tests/run_tests.sh`.
+
+### 1.76 La presentación de NYDER GAMES exportada sobre fondos lisos (negro, blanco y azul marino), sesión 2026-10-26
+
+**Pedido:** tres videos de la animación completa del juego (letras, estrella de la D, brillo y destello, sonido, duración, transiciones y composición), con fondo negro, blanco y azul marino oscuro, en `Desktop\Nyder`. La versión transparente (§1.69) se conserva.
+
+**Por qué no se reutilizó la secuencia PNG transparente:**
+- La animación y el brillo de §1.69 son los del juego, pero la composición no: el logo está a todo el ancho en un lienzo de 1920 × 800.
+- En el juego, el logo ocupa el **55 % del ancho** de una pantalla negra de 1920 × 1080 (`ControllerMenu`: `new PnlWarning(imagenNyder, 0.55)`).
+- Como se pidió conservar la composición, se volvió a renderizar con la misma clase del juego.
+
+**Cambios (`tools/branding/`):**
+- `ExportarNyderAlfa.java`: argumentos opcionales nuevos. Sin ellos, el resultado es la exportación transparente de §1.69, sin cambios.
+  - `fraccion` (5.º): ancho máximo del logo en el lienzo.
+  - `completa` (6.º): incluye los cuadros extremos con alfa 0.
+  - `letras=RRGGBB` (7.º): recolorea solo los píxeles grises del logo, conservando su alfa.
+    - En `nyder_games_splash.png` la separación es limpia: 293 752 píxeles con saturación < 0.1 (letras blancas) y 11 623 con saturación > 0.35 (estrella azul, de media `#5253FB`), sin ninguno intermedio.
+    - Se recolorea la imagen antes de pasársela a `PnlWarning`, así que la máscara de la estrella, el halo y el chispazo no cambian.
+- `exportar_nyder_fondos.sh` (nuevo):
+  - Renderiza la secuencia a 1920 × 1080, 30 fps y fracción 0.55, con los extremos incluidos (84 cuadros, 2.75 s).
+  - La compone con FFmpeg sobre un fondo liso, con los 250 ms de fondo previos que tiene el juego y 250 ms al final.
+  - Codifica en MP4 H.264 High `yuv420p` (CRF 14, `+faststart`) con AAC de 192 kb/s y el destello sonoro con el mismo retardo que en el juego.
+  - Copia también el WAV del destello.
+
+**Resultado (en `Desktop\Nyder\`, junto a los archivos que ya había, sin tocarlos):**
+- `nyder_games_black.mp4`, `nyder_games_navy.mp4` (`#0B1A33`), `nyder_games_white.mp4` y `nyder_games_white_dark_letters.mp4`, de 116-137 KB cada uno, 3.27 s, 1920 × 1080, 30 fps, con audio.
+- `nyder_star_sparkle.wav` y `README_nyder_games.md`.
+- **Cuarta variante, no pedida explícitamente:** las letras del logo original son blancas, y en `nyder_games_white.mp4` (la animación exacta) solo se ven la estrella y su brillo. Por eso se entrega también la versión blanca con las letras en `#16161C`. La exacta se conserva tal como se pidió.
+- Registrado en el README de `FDAF assets/branding/nyder_games_animation/` y en el catálogo. Los videos no se duplican en `FDAF assets`.
+
+**Verificación:**
+- **Fidelidad con el juego:** se dibujó el mismo `PnlWarning` opaco sobre negro (como en el juego) y, aparte, transparente y compuesto sobre negro (como en la exportación), con alfa 0.4/0.5/1 y brillo 0/0.5/1. Diferencia media de 0.0006/255 como mucho y máxima de 3/255, solo en el halo del destello (redondeo). La versión negra es la presentación del juego.
+- **Cuadros decodificados de los cuatro MP4** (hoja de contacto en t = 0, 0.70, 1.59, 2.30 s y el último cuadro): el primero y el último son del color liso del fondo (negro 0-0; blanco 253-255; azul marino 10-51 por canal); el fundido, el pico de brillo y la salida aparecen en los cuatro.
+- **Brillo:** en el video negro, la luz de la zona de la estrella llega al máximo a 1.633 s. Lo previsto era 0.25 s + 0.8 s + 0.12 s + 0.42 s = 1.59 s, más una meseta de 60 ms.
+- **Sonido:** se hace audible a 1.332 s en el AAC. El WAV original tarda 0.122 s en superar el mismo umbral, así que el archivo empieza a 1.210 s, exactamente el retardo programado (0.25 s + 0.96 s).
+- La presentación de FDAF no se tocó.
+- No se reprodujeron los videos con oídos ni ojos humanos: la verificación es por análisis de los archivos decodificados.
+
+**Archivos:** `tools/branding/ExportarNyderAlfa.java` y `tools/branding/exportar_nyder_fondos.sh` (nuevo); `docs/catalogo_recursos.md`; fuera del repositorio, `Desktop\Nyder\` y el README de `FDAF assets/branding/nyder_games_animation/`.
+
+### 2.80 M9 resuelto: las texturas de 4096² del mapa reducidas a 2048², sesión 2026-10-26
+
+**Estado al empezar:** pendiente. `assets/models/pizzeria.glb` era idéntico al original (`FDAF assets/source_files/3d_models/LibGDX_Ready/Pizzeria.glb`).
+
+**Lo que había (corrige el dato de §2.79):**
+- No era una textura de 4096², sino dos, las dos del mismo material, `main_material`, que usan las paredes (`Object_4`) y el parche del techo (`TechoPrincipal_Patch`):
+  - `main_material_baseColor`: 4096², escala de grises (`L`), PNG de 220 KB;
+  - `main_material_metallicRoughness`: 4096², paleta (`P`), PNG de 2.35 MB.
+- La auditoría de §2.79 solo vio la segunda, porque el filtro con el que se listaron ocultaba las imágenes de pocos KB.
+- El resto de las 27 imágenes del mapa ya era de 2048 o menos y no se tocó.
+
+**Qué resolución necesita:**
+- El atlas tiene bloques planos y franjas de cuadros (las baldosas de ajedrez de las paredes).
+- Medido en la imagen: cada cuadro mide 13-17 px a 4096. A 2048 quedan en 7-8 px, nítidos salvo un píxel de transición; a 1024 bajarían a unos 4 px y se emborronarían.
+- Pérdida al reducir a 2048 y volver a ampliar: media de 0.71/255 (color) y 0.51/255 (metal/rugosidad).
+- **Se eligió 2048**, como en `freddy.glb` (§2.77).
+
+**Hecho:**
+- `python tools/assets/reducir_texturas_glb.py <original> … 2048`: la misma herramienta de §2.77, sin cambios.
+- Comprobado que el JSON es idéntico y que solo cambiaron los bytes de esas dos imágenes; todos los demás bufferViews (geometría, el resto de texturas) son idénticos byte a byte.
+- Imágenes: 220 → 115 KB y 2351 → 963 KB. El archivo pasa de 74.7 a 73.1 MB.
+- La variante está copiada como `LibGDX_Ready/Pizzeria_texturas2048.glb`. El original con 4096² se conserva en `LibGDX_Ready/Pizzeria.glb` y en el historial de git (LFS). Catálogo actualizado.
+
+**Impacto:**
+- **VRAM** (cálculo, RGBA8 sin mipmaps): dos texturas de 64 MB pasan a 16 MB, unos 96 MB menos. Es la ganancia real.
+- **Carga** (`PruebaCarga`, alternando versiones en la misma sesión): 2048 → 8.40 / 7.39 s; 4096 → 7.92 / 7.78 s. **Sin diferencia medible**, dentro del ruido entre corridas. Estas PNG ya eran pequeñas, a diferencia de las de Freddy.
+- **Visual** (`DiagRender`, con la misma cámara antes y después): oficina hacia las dos puertas, pasillo, comedor y escenario. Diferencia media de 0.013-0.245/255 y máxima de 4/255; en la comparación lado a lado no se distinguen (`m9_comparacion.png`).
+
+**Archivos:** `assets/models/pizzeria.glb` (Escape); `docs/catalogo_recursos.md` (FDAF); `LibGDX_Ready/Pizzeria_texturas2048.glb` (`FDAF assets`).
+
+### 1.77 Sonido hover solo en los botones de interfaz (fuera de las puertas, luces, objetos, huecos sin obtener y Rendirse), sesión 2026-10-26
+
+**Pedido:** el hover estaba en controles que son interacción de la partida, no un menú. Debía quitarse de:
+- los botones de puerta y de luz;
+- el objeto coleccionable que aparece en la puerta;
+- los huecos de la tableta de objetos no obtenidos;
+- la barra de Rendirse.
+
+Debía conservarse en los botones de interfaz (menú, navegación, opciones, idioma, confirmar y cancelar, cómo jugar, acerca de, abrir la tableta…), sin tocar el recurso, el volumen ni los sonidos propios de cada acción.
+
+**Cambios (todos los hover de la partida se registraban con `InteraccionBoton.aplicarSonidoHover`):**
+- `ControllerInterfaz.conectarPuertas` y `conectarLuces`: fuera el hover de los cuatro botones. Sus `ActionListener` y el sonido de la puerta o la luz al usarlos no cambian. Se borró `puertasYLucesResponden()`, que solo usaban esos hover.
+- `conectarLuces`: fuera el hover del overlay del objeto de la puerta (§1.38). El clic para recogerlo y su sonido siguen.
+- `conectarClicColeccionable`: el hover de cada hueco suena solo si el objeto **ya se obtuvo** en esta partida (`coleccionableObtenido`: `Inventario.buscarPorTipo(tipo).isEncontrado()`), además de las condiciones de antes (partida en curso, hueco que existe esta noche).
+  - Una silueta sin obtener o una X ya no suenan al pasar por encima.
+  - El clic suena como antes en todos los casos: el sonido de detalle en los existentes y el de error en las X.
+- `ControllerCamara`: fuera el hover de la barra de Rendirse (§1.38). Su "mantener pulsado" no cambia.
+- **Se conservan** sin cambios: el menú principal, los diálogos de confirmación, Opciones, Idioma, Volumen, Noche personalizada, Cómo jugar y Acerca de (`PnlInfo`), el selector de idioma, el agradecimiento, el botón de colgar la llamada, los botones de Game Over y el sonido de abrir la tableta (`mostrarTransicionTablet`).
+
+**Verificación** (`PruebaHover` y `PruebaHoverVuelta`, componentes reales con `MOUSE_ENTERED` simulado, comprobando si arranca el clip compartido del hover; árbol compilado con las versiones publicadas de los archivos ajenos, perfil aislado):
+- `PruebaHover`: **59/59 en ES y EN**. Nuevas expectativas:
+  - puertas, luces, objeto revelado, hueco sin obtener, hueco con X y barra de Rendirse: "no suena";
+  - el mismo hueco tras marcarlo obtenido: "suena";
+  - hueco obtenido con la partida terminada: "no suena".
+  - Todos los botones de menú, diálogo y colgar siguen sonando.
+- `PruebaHoverVuelta`: **72/72 en ES y EN**. Abrir y cerrar las pantallas repetidamente no acumula listeners.
+- Análisis de código: los sonidos de acción de las puertas y las luces no pasan por `aplicarSonidoHover` y no se tocaron.
+
+**Archivos:** `ControllerInterfaz.java`, `ControllerCamara.java` y `tools/tests/src/PruebaHover.java`.
+
+### 1.78 Auditoría de dificultad de FDAF (simulación con las clases reales), sesión 2026-10-26
+
+**Pedido:** evaluar con datos si la dificultad está equilibrada: progresión entre noches, baterías, energía, coleccionables, aleatoriedad, recuperación, Noche 5 y jugador nuevo frente a veterano. Corregir solo errores demostrados; los ajustes subjetivos, recomendarlos con datos.
+
+**Reglas reales (análisis del código publicado):**
+- **No hay reloj, ni gasto de energía, ni IA.**
+  - La noche se gana al recoger todos los coleccionables (`Juego.gano`) y se pierde al quedarse sin vidas.
+  - "Energía" y "batería" en la interfaz son las vidas (íconos `bateria1-4`, tope `VIDAS_MAXIMAS = 4`).
+  - Los animatrónicos no se mueven: el contenido de cada puerta se fija al generar el árbol.
+  - Por eso no aplican los "intervalos de movimiento" ni la "duración de la batería" del pedido.
+- **Árbol** (`GeneradorArbol`, `Arbol.construirCompleto`):
+  - Mientras queden coleccionables pendientes, cada puerta nueva es, con 1/3 de probabilidad cada una: un coleccionable, "sin coleccionable" (50 % animatrónico, 50 % nada) o nada.
+  - Después se agregan de 3 a 7 puertas sin coleccionable (50 % animatrónico) y una más si hace falta para que el total sea impar.
+  - El árbol se rellena por niveles en ese orden, así que **los coleccionables quedan en los niveles altos y los profundos son 50 % animatrónico**.
+- **Recorrido:**
+  - Abrir una puerta elige el hijo izquierdo o el derecho (`elegirIzquierda/Derecha`, en el momento de abrir), y su contenido solo se ve con la puerta abierta y la luz encendida.
+  - **No hay ninguna información antes de elegir**, así que un jugador veterano no tiene ventaja sobre uno nuevo: la dificultad es pura probabilidad.
+  - Al llegar a una hoja, se genera un árbol nuevo con los coleccionables que falten.
+- **Baterías:** una puerta "nada" se convierte en batería al abrirla si quedan 1 o 2 vidas, con la probabilidad de `PROBABILIDAD_BATERIA[noche][vidas-1]` (publicada: N1 0.08/0.05, N2 0.30/0.22, N3 0.46/0.28, N4 0.50/0.32, N5 0.62/0.42, para 1 y 2 vidas).
+  - La tabla de §1.5 está desactualizada desde la N2.
+- **Noches** (`Noche`): vidas / coleccionables = N1 4/5, N2 3/6, N3 3/7, N4 2/8, N5 2/10.
+
+**Simulador (`tools/tests/src/SimulacionDificultad.java`, nuevo):**
+- Usa `Juego`, `GeneradorArbol`, `Arbol` y la tabla reales; solo fija las semillas por reflexión.
+- Política del jugador: puerta al azar, revelar siempre y recoger lo que salga. Es la única política con sentido, porque no hay información previa.
+- 20 000 partidas por noche, ~2 s en total.
+- Semillas 1 y 2: las cifras coinciden con ±1 punto.
+
+| Noche | Vidas / objetos | **Gana** | Puertas reveladas (media / p90) | Animatrónicos | Baterías | Vidas al ganar | Pierde con ≥ 80 % de objetos | Pierde con ≤ 20 % | Árboles |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 4 / 5 | **40.3 %** | 14.5 / 21 | 3.36 | 0.18 | 2.03 | 24.4 % | 8.3 % | 5.5 |
+| 2 | 3 / 6 | **31.0-32.1 %** | 15.2 / 24 | 3.40 | 1.00 | 1.93 | 19.1 % | 12.1 % | 5.6 |
+| 3 | 3 / 7 | **33.3 %** | 17.8 / 28 | 3.89 | 1.56 | 2.00 | 16.5 % | 9.4 % | 6.2 |
+| 4 | 2 / 8 | **25.6 %** | 17.1 / 31 | 3.64 | 2.17 | 2.05 | 12.4 % | 17.4 % | 5.8 |
+| 5 | 2 / 10 | **27.5 %** | 21.4 / 38 | 4.44 | 3.03 | 2.13 | 18.2 % | 22.2 % | 6.8 |
+
+**Conclusiones:**
+1. **La progresión no es monótona.**
+   - La N3 es más fácil que la N2, porque su tabla de baterías es mucho más generosa (0.46 frente a 0.30) con las mismas 3 vidas.
+   - La N5 es más fácil que la N4, porque las baterías al 62/42 % compensan los 2 coleccionables de más.
+   - **La noche más difícil es la 4, no la 5.**
+2. **La Noche 5 no es desproporcionada:** 27.5 %, apenas por encima de la N4.
+   - Es la más larga (21 puertas de media, 38 en el p90) y la que más pierde "pronto" (22 % con ≤ 2 objetos, porque con 2 vidas dos animatrónicos seguidos terminan la noche), pero las baterías la sostienen: 3 de media.
+3. **La Noche 1 es dura para ser la primera:** el 60 % de las partidas se pierden, con sus baterías casi nulas (0.18 de media). La tabla dice "Noche 1 — SIN CAMBIOS", así que se respetó.
+4. **Las derrotas "casi ganadas"** (≥ 80 % de los objetos) son entre el 12 % y el 24 % de todas las partidas: frustrantes, porque no dependen del jugador.
+5. **No hay partidas imposibles ni bucles:** ninguna partida llegó al tope de 5000 puertas. El p90 de puertas va de 21 a 38.
+6. **Jugador nuevo y veterano:** sin información previa, la experiencia y el resultado son los mismos. La "habilidad" no existe en el sistema de puertas.
+7. **Cambio ajeno pendiente (`Juego.java` local, baterías solo desde la N3; B4):** simulado, **dejaría la N2 en el 16.4 %** (la mitad), de lejos la más difícil, y la N1 en el 37.1 %. Si se publica, la curva empeora mucho.
+
+**Errores demostrados:** ninguno en la lógica. La única inexactitud es documental: la tabla de §1.5.
+
+**Recomendaciones (no aplicadas: son ajustes de equilibrio subjetivos):**
+- **Tabla de baterías** que deja la curva suave y monótona sin tocar la N5: N1 0.40/0.30, N2 0.46/0.34, N3 0.44/0.28, N4 0.56/0.38, N5 0.62/0.42.
+  - Simulada (semillas 1 y 2): **N1 53 %, N2 39 %, N3 33 %, N4 29-30 %, N5 27 %**.
+  - Variante con la N2 más alta (0.50/0.38) y la N1 a 0.36/0.26: 51 / 41-42 / 33 / 29-30 / 28 %.
+  - Es un cambio de una sola tabla (`Juego.PROBABILIDAD_BATERIA`). Antes de aplicarlo habría que confirmar con el usuario lo de "Noche 1 — SIN CAMBIOS".
+- **Dar algo de información antes de elegir** (por ejemplo, un indicio sonoro o visual tenue al encender la luz con la puerta cerrada): convertiría la suerte en habilidad y diferenciaría al veterano. Es un cambio de diseño, no de equilibrio.
+- **No publicar el gate de la N3** del `Juego.java` local sin compensar la N2.
+
+**Archivos:** `tools/tests/src/SimulacionDificultad.java` (nuevo; herramienta de análisis, no forma parte de la regresión). El juego no cambia.
+
+### 2.81 Manos de Freddy al caminar: las palmas miran al cuerpo, no al frente, sesión 2026-10-26
+
+**Pedido:** Freddy caminaba con las manos orientadas hacia delante, en una postura poco natural. Las manos debían quedar hacia los lados del cuerpo y acompañar la zancada, sin torsiones en codos u hombros, y sin tocar innecesariamente otras animaciones.
+
+**Diagnóstico (renders reales del clip, `tools/tests/src/DiagPose.java`, nuevo):**
+- `DiagPose` dibuja una hoja de contacto de un clip desde frente, tres cuartos y lado, con correcciones de rotación local opcionales por hueso. Las aplica como `PoseProcedural`, escribiendo `localTransform` (memoria `feedback-gdx-gltf-animated-nodes-localtransform`) y ocultando nodos si se pide.
+- En `Freddy_Walk` las palmas miran a la cámara frontal durante todo el ciclo, con las muñecas abiertas hacia fuera, como en un gesto de "ta-da".
+- **`Freddy_Idle` tiene exactamente el mismo defecto.** Es un error de giro del antebrazo en el retargeting desde Mixamo (§2.6), no de la orientación del modelo.
+- Esqueleto: brazo `j_*_arm_02`, antebrazo `j_*_arm_01` (hijo a +2.42 en X local), mano `j_*_hand_*`. El eje de los huesos del brazo es **+X local** en los dos lados.
+
+**Corrección elegida:**
+- Pronación del antebrazo: **+90° alrededor de X local en `j_r_arm_01_021` y `j_l_arm_01_036`**. La mano la sigue.
+- Se probaron los dos sentidos en cada lado: -90° deja una mano con la palma al frente. Con +90° en los dos, desde el frente las manos se ven de canto (palmas hacia los muslos) y desde el lado se ven la palma y el dorso.
+- Codos y hombros sin cambios.
+- **Se aplica también a `Freddy_Idle`:** si solo se corrigiera `walk`, las manos darían un giro de 90° en cada paso de caminar a reposo (aturdimiento, puerta de emergencia, portón). Verificado igual.
+- No se tocaron los otros dos clips del archivo (las capas de Mixamo sin uso) ni ningún otro hueso.
+
+**Herramienta nueva (`tools/assets/corregir_pose_glb.py`):**
+- Multiplica en el sitio cada keyframe de rotación de un hueso en un clip por el giro corrector local (q · c).
+- Se niega a editar un acceso compartido con otro canal o en `CUBICSPLINE`.
+- Uso: `python corregir_pose_glb.py entrada salida "Freddy_Walk:j_r_arm_01_021:1,0,0,90" …`.
+- Aplicada sobre el `freddy.glb` de §2.77 (texturas de 2048): 25 keyframes por antebrazo en `walk` y 240 en `idle`.
+- **Comprobado:** respecto de la versión anterior solo cambiaron esos 4 bufferViews; mallas, piel, texturas y el resto de canales son idénticos byte a byte.
+
+**Verificación (capturas):**
+- Hojas de contacto del GLB corregido, `walk` (6 fases × 3 vistas) e `idle` (6 fases): las manos acompañan la zancada con la palma hacia el cuerpo. Coinciden con la vista previa en tiempo de ejecución.
+- Las de antes y después están en `freddy_manos_antes.png` y `freddy_manos_despues.png`.
+- El jumpscare, la derrota y la persecución usan estos mismos clips, así que heredan la corrección. La cabeza, el torso y la mandíbula (`PoseProcedural`) no dependen de los antebrazos.
+- **No probado en partida con una persona:** la evaluación es por capturas del clip y del juego.
+
+**Archivos y recursos:**
+- `assets/models/freddy.glb` y `tools/assets/corregir_pose_glb.py` y `tools/tests/src/DiagPose.java` (nuevos).
+- En `FDAF assets/source_files/3d_models/LibGDX_Ready/`: `Freddy_juego.glb` (idéntico al del juego). Se conservan el original con 4096² (`Freddy.glb`) y la versión intermedia (`Freddy_texturas2048.glb`).
+
+### 2.82 Chica sostiene el cupcake con la mano izquierda levantada, sesión 2026-10-26
+
+**Pedido:** Chica caminaba con los brazos a los lados y el cupcake en la mano izquierda, como pegado. La mano izquierda debía quedar algo levantada, en una pose de sostenerlo a propósito, sin que el cupcake flote ni atraviese el cuerpo, y sin tocar la mano derecha.
+
+**Cómo está asociado (análisis del GLB):**
+- No hay ningún nodo llamado "cupcake". Sus mallas (material `Chica_Cupcake_Eyes`, más el plato, la vela y otras piezas) son hijas de la cadena `Bone.016` (brazo) → `.017` (antebrazo) → `.018` (mano) → `.039` → `.059` → `.061` → `.063/.066`, que sale de la columna.
+- Es decir: el cupcake ya está emparentado con la mano izquierda y la sigue; el problema era solo la pose del brazo.
+- Huesos al estilo Blender: el eje del hueso es **+Y local** (antebrazo +12.66 Y, mano +10.17 Y).
+
+**Antes (renders):** con el brazo estirado, el cupcake cuelga ladeado a la altura del muslo, con el plato vertical, y en algunos cuadros atraviesa la pierna.
+
+**Corrección (probada con `DiagPose` antes de aplicarla):**
+- Antebrazo `Bone.017`: **-65° alrededor de Z local** (flexión del codo hacia delante).
+  - Las otras tres opciones probadas, X ±80 y Z +80, llevaban el antebrazo hacia atrás o hacia el costado.
+  - Con -80 cruzaba demasiado hacia el centro del cuerpo.
+- Mano `Bone.018`: **-90° alrededor de Y local** (giro sobre el eje del antebrazo). El plato queda horizontal y el cupcake derecho encima.
+  - +90 y X ±70 lo dejaban de lado, boca abajo o tapado por la mano.
+- Mismo criterio que con Freddy (§2.81): se aplica a `Chica_Walk` y también a `Chica_Idle`, para que el brazo no salte al pasar de caminar a reposo. Verificado en los dos.
+- Brazo derecho y resto del esqueleto sin cambios.
+- Aplicado con `tools/assets/corregir_pose_glb.py` (§2.81): 32 keyframes por hueso en `walk` y 299 en `idle`.
+- El GLB corregido coincide con la vista previa en tiempo de ejecución: diferencia media de 0.008/255 en `walk` y 0 en `idle`.
+
+**Verificación:**
+- Hojas de contacto (6 fases de `walk` × 3 vistas, 4 de `idle`): el cupcake va derecho sobre el plato horizontal, delante del cuerpo a la altura de la cintura y el pecho, con un leve balanceo del brazo al andar. No atraviesa el torso ni las piernas en ninguna vista.
+- **En el juego real** (`PruebaMundo personajes`, Chica caminando hacia el jugador con la linterna encendida): se ve sosteniéndolo levantado.
+- Capturas: `chica_cupcake_antes.png`, `chica_cupcake_despues_walk.png`, `chica_cupcake_despues_idle.png`, `personajes_hoja.png`.
+
+**Archivos:** `assets/models/chica.glb`; en `FDAF assets/.../LibGDX_Ready/`: `Chica_juego.glb` (idéntico). `Chica.glb` original conservado.
+
+### 2.83 Bonnie sin la guitarra en las manos, sesión 2026-10-26
+
+**Pedido:** la guitarra que Bonnie lleva al caminar no se veía bien; retirarla del personaje sin tocar el esqueleto ni la animación, y sin quitar la guitarra como coleccionable de FDAF (imágenes, inventario, recogida).
+
+**Dónde está (análisis del GLB):** 15 nodos sin piel (`Cube`, `Cube.001`…`Cube.009`, `Cylinder`…`Cylinder.003`, `Sphere`), con las mallas de la "V" roja, emparentados con la mano derecha (`bip_hand_R_bonnie.qc_skeleton`). Es un accesorio emparentado al exportar, como los que documenta la memoria del proyecto. No son huesos ni tienen piel.
+
+**Cambio (sin modificar el modelo):**
+- `EntityDefinition.nodosOcultos` (nuevo, lista de nombres de nodos).
+- `EntityFactory.createEntity` quita las partes dibujables de esos nodos y de sus hijos solo en esa instancia. Los nodos siguen en el esqueleto, la animación no cambia, y si un nombre no existe se avisa en el registro.
+- `bonnie.json` lista los 15 nodos de la guitarra.
+- Bonnie no tiene collider propio fuera de su `CollisionComponent` estándar, que no depende de mallas. La retirada no afecta a colisiones, IA ni animaciones.
+- **El coleccionable "guitarra de Bonnie" de FDAF no se tocó** (es otro proyecto, otras imágenes y otra mecánica).
+
+**Verificación:**
+- `DiagPose` con esos nodos ocultos (`walk` 4 fases × 3 vistas e `idle`): no queda ninguna pieza de la guitarra. Las manos quedan relajadas a los lados, sin una postura de agarre extraña, así que no hizo falta corregir el brazo.
+- **En el juego real** (`PruebaMundo personajes`, modo nuevo):
+  - Bonnie camina hacia el jugador sin guitarra (captura);
+  - comprobación automática de que esos nodos no tienen partes dibujables (0);
+  - los cuatro animatrónicos están en `walk` durante las capturas: 5/5 OK;
+  - ningún aviso de nodo inexistente en el registro.
+
+**Archivos:** `content/EntityDefinition.java`, `ecs/EntityFactory.java`, `assets/content/entities/bonnie.json` y `tools/tests/src/PruebaMundo.java` (modo `personajes`, que también captura a Freddy y a Chica para §2.81 y §2.82).
+
+### 2.84 Tablero del auto rehecho: dentro de la cabina, sin asomar por los lados ni por el parabrisas, sesión 2026-10-26
+
+**Pedido:** el tablero de la cinemática de victoria se veía muy mal. Sobresalía por los lados del coche y hacia delante, como un bloque rectangular ajeno al vehículo. Se pidió inspeccionar la geometría real, no solo la cámara, y preferir un interior sencillo y convincente.
+
+**Inspección (geometría real, no supuesta):**
+- `DiagPose` con el modelo estático, desde frente, tres cuartos y lado: el tablero es **una losa gris que asoma sobre el capó, atraviesa la base del parabrisas y sale por los dos lados de la cabina**.
+- Medido en Blender (`medir_coche.py`, solo lectura):
+  - parabrisas con su borde inferior en z = 0.879 (y = -0.951) e inclinación dy/dz = 1.67;
+  - ventanillas delanteras en |x| = 0.836, línea de cintura en z = 0.891;
+  - el tablero de §2.68/§2.69 llegaba a |x| = **0.939** (`ancho - 0.25`, el ancho del auto entero, no el de la cabina) y su cara superior pasaba **por encima del vidrio**: a y = -0.6 el vidrio está a z = 1.089.
+- Desde el asiento (c02-c10), eso se leía como una losa alta y plana con un reborde delante del volante.
+- No era un problema de cámara, así que no se tocaron la cámara, el asiento ni el ojo del conductor.
+
+**Corrección (`tools/cinematics/escape_victory/prep_car.py`):** el tablero (v3) sale de la propia carrocería en lugar de alturas fijas.
+- Del borde inferior y la inclinación del parabrisas (caras de vidrio con normal hacia delante y arriba) y del ancho del vidrio y de las ventanillas delanteras.
+- **Ancho:** el menor de los dos, menos 3.5 cm por lado (semiancho de 0.776 frente a 0.939). Con 7 cm quedaba a la vista una cuña roja del panel de la puerta.
+- **Perfil:**
+  - arranca 3 cm detrás del borde del vidrio;
+  - la cara superior sube con una curva suave hasta 11 cm sobre ese borde, recortada automáticamente para quedar al menos 3.5 cm detrás del vidrio;
+  - tiene un reborde redondeado, una cara casi vertical para los indicadores y la parte baja hacia las rodillas.
+- **Visera** sobre los indicadores, del lado del conductor y también detrás del vidrio. Los **indicadores** (`car_gauges`) se recolocan sobre la cara nueva.
+- **Sin cambios:** volante, asientos, piso, puerta, ruedas, carrocería, materiales, luces y el resto de piezas.
+- **Comprobado** sobre el GLB: solo cambiaron las mallas de `car_interior` y `car_gauges`. El ojo del conductor sigue en (0.436, 0.087, 1.153).
+- Regenerado con Blender 5.1 desde el original de Quaternius (`downloads/quaternius_car_original.glb`).
+
+**Verificación:**
+- **Exterior** (render de frente, tres cuartos y lado, antes y después, `coche_exterior_antes_despues.png`): el tablero ya no asoma por ningún lado; solo se ve a través del parabrisas, como un tablero de verdad.
+- **Cinemática real** (`PruebaVictoria completa`, ES y EN, todo en OK):
+  - en los planos interiores (c02-c10, c14) el tablero es bajo e inclinado, los indicadores encendidos se ven a través del volante, y se ven el capó y la escena;
+  - el plano exterior de la entrada (c01) no cambia: el bloque acolchado de abajo a la derecha es el respaldo del asiento;
+  - el arranque, la persecución y el plano final siguen igual;
+  - capturas en `tablero_antes_despues.png` y `tablero_v3_final.png`.
+- **Pendiente menor:** a la izquierda del volante todavía asoma un borde fino del panel rojo de la puerta en algunos planos.
+
+**Archivos:**
+- `tools/cinematics/escape_victory/prep_car.py` y `assets/models/car_sedan.glb`.
+- `tools/tests/src/DiagPose.java`: admite modelos sin animación (`-`).
+- En `FDAF assets`: `source_files/cinematics/escape_victory/car_sedan.glb` actualizado; la versión anterior en `_archive/old_versions/escape_car_sedan_tablero_v2.glb`.
+
+### 2.85 Pasos v2: metal pesado golpeando el suelo, sesión 2026-10-26
+
+**Pedido:** los pasos de §2.73 no gustaron. Se pedía un **metal pesado golpeando el suelo**, con masa e impacto y no una lata, tanto en la persecución de Freddy como en los cuatro del interior, con identidad propia cada uno. Sin subir simplemente el volumen y sin sonidos chillones.
+
+**Qué tenía la v1 (medido):**
+- Casi solo un golpe grave más resonancias del suelo.
+- Con ponderación A (cómo pesa cada banda para el oído), los agudos de 2-6 kHz eran el 2-10 %, y **su cola tardaba de 150 a 315 ms en caer 30 dB**: reverberación y servo con brillo largo, que encaja con lo de "chillón".
+- No había un cuerpo metálico reconocible.
+- El sonido metálico original, de antes de §2.73, tenía un 13.9 % de agudos ponderados: era la "lata".
+
+**Diseño v2 (`tools/audio/synth_animatronic_steps.py`, reescrito; mismos 20 archivos y nombres en `assets/audio/sfx/steps/`, así que el juego no cambia):**
+1. **Golpe sub** de 42-72 Hz según el personaje, con caída de tono y saturación suave: la masa.
+2. **Cuerpo metálico:** modos inarmónicos de una placa gruesa de acero (proporciones 1, 2.5, 4, 5, 6.5, 8.5…) sobre una base grave de 135-240 Hz. Los modos altos se apagan antes que los bajos y no hay ninguno por encima de 2.6 kHz. Suena a acero macizo, no a lámina.
+3. **Contacto:** un chasquido de banda media (0.6-3 kHz) de menos de 15 ms, la definición del impacto.
+4. **Mecánica secundaria:** traqueteo de articulaciones (de 1 a 3 microgolpes entre 15 y 110 ms después) y servo, filtrados.
+5. **Cola corta:** sala de la pizzería o rebote abierto en el estacionamiento, filtrada por debajo de 1.4-1.5 kHz para que no quede brillo.
+- Una compresión suave da más cuerpo sin subir el pico (normalizado a -1 dBFS).
+- La señal seca se desvanece en su último cuarto. Sin eso, el modo grave del acero se cortaba de golpe antes de la cola y producía un chasquido (detectado en el espectrograma).
+- **Identidad de cada uno:**
+  - Freddy en el estacionamiento: el más pesado, contacto áspero y rebote abierto.
+  - Freddy en el interior: macizo y lento, con sala.
+  - Bonnie: acero algo más agudo, traqueteo y servo marcados (mecánico).
+  - Chica: cuerpo más largo y un modo grave de armazón hueco (110-118 Hz).
+  - Foxy: el más agudo, seco y corto, con raspado (urgente).
+- Cuatro variaciones por personaje, con semilla fija.
+
+**Medido (archivos, ponderación A):**
+
+| | 120-400 Hz | 400 Hz-2 kHz (cuerpo metálico) | 2-6 kHz (brillo) | Caída de 30 dB en 2-6 kHz |
+|---|---|---|---|---|
+| Persecución v1 → **v2** | 41.6 → 39.2 % | 38.2 → **53.4 %** | 6.9 → **1.5 %** | 83 → 64 ms |
+| Freddy interior v1 → v2 | 36.7 → 49.4 % | 49.1 → 45.0 % | 9.9 → **1.4 %** | 314 → **60** ms |
+| Bonnie v1 → v2 | 62.9 → 26.1 % | 24.7 → **61.3 %** | 5.3 → 4.4 % | 219 → 78 ms |
+| Chica v1 → v2 | 63.3 → 27.6 % | 29.5 → **63.7 %** | 3.3 → **0.3 %** | 233 → 120 ms |
+| Foxy v1 → v2 | 68.0 → 22.2 % | 21.6 → 54.0 % | 1.8 → 9.2 % (raspado) | 147 → 87 ms |
+
+- En el espectrograma (`pasos_v2_espectrogramas.png`): bandas horizontales nítidas por debajo de ~1.2 kHz (los modos del acero) y un transitorio corto. La v1 tenía colas de ruido difuso hasta más de 4 kHz.
+- **Chasquidos:** el mayor salto local de energía aguda después del ataque es ×2.8 (los microgolpes del traqueteo, previstos). Todos los archivos terminan en 0.
+- Tamaño: 1.7 MB los 20 archivos.
+
+**Sincronización y comportamiento:** sin cambios de código respecto de §2.73 (apoyo real del pie, sin sonido en reposo, aturdimiento, pausa ni jumpscares, atenuación, paneo, ganancia suavizada en el corte de cámara, sin duplicados). Verificado de nuevo en la regresión completa: `mundo_pasos` y la persecución de `victoria_completa`.
+
+**Recursos:** la v1 se archivó en `FDAF assets/_archive/old_versions/escape_steps_v1/`, el espejo `escape/audio/sfx/steps/` está actualizado y el catálogo también.
+
+**No se escuchó con oídos humanos.** Todo lo dicho sobre el timbre sale del diseño de las capas y del análisis de los archivos (espectro ponderado, caídas, espectrogramas). Falta la validación auditiva real.
+
+### 2.86 Estado de los pendientes al cerrar la sesión del 2026-10-26
+
+**Hecho en esta sesión:**
+- FDAF: §1.76 (videos de NYDER), §1.77 (hover) y §1.78 (auditoría de dificultad).
+- Escape: §2.80 (M9), §2.81 (manos de Freddy), §2.82 (cupcake de Chica), §2.83 (guitarra de Bonnie), §2.84 (tablero) y §2.85 (pasos v2).
+
+**Sigue pendiente** (con su prioridad; las de §2.79 que no se nombran siguen igual):
+
+| Id | Proyecto | Pendiente | Prioridad |
+|---|---|---|---|
+| A4 | Ambos | El trabajo ajeno sin publicar sigue igual (FlatLaf, `Juego.java` con baterías desde la N3, `NYDER.png`, íconos, `if3001…`, `dev/`). **Nuevo dato (§1.78):** el gate de la N3 dejaría la N2 en un 16 % de victorias. | Alta (decisión de su autor) |
+| D1 | FDAF | Recomendación de equilibrio (§1.78): tabla de baterías N1 0.40/0.30, N2 0.46/0.34, N3 0.44/0.28, N4 0.56/0.38, N5 sin cambios, para una curva 53 → 39 → 33 → 30 → 27 %. No aplicada: choca con el comentario "Noche 1 — SIN CAMBIOS" y es un ajuste subjetivo. | Media (decisión del usuario) |
+| D2 | FDAF | El sistema de puertas no da información antes de elegir, así que la habilidad no influye (§1.78). | Media (diseño) |
+| T1 | Escape | Tablero (§2.84): en algunos planos asoma un borde fino del panel rojo de la puerta a la izquierda del volante. | Baja |
+| P1 | Escape | Los pasos v2 (§2.85) no se escucharon con oídos humanos: falta validación auditiva real. | Media |
+| P2 | Escape | Los ciclos de caminar siguen siendo asimétricos (B6 de §2.79); se nota en el ritmo de las pisadas. | Baja |
+| M1, M3, M4, M6, M7, M8 | — | Sin cambios respecto de §2.79. | — |
+| B11 | FDAF | `PruebaDestelloNyder` en inglés falló una vez en la regresión completa: el brillo muestreado llegó a 0.93 en lugar de 1.0, y por eso falló también la comparación de capturas. El destello mantiene el máximo solo 60 ms y la prueba lo muestrea con un temporizador, que con la máquina cargada cae fuera de la meseta. Repetida sola 3 veces: 5/5 OK cada vez (máximo de 1.00). Es intermitente y del arnés; el juego no cambió en esta sesión (`PnlWarning` y `ControllerMenu` sin cambios desde v2.12).  Recomendación: exigir ≥ 0.9 al brillo muestreado, o leer el pico de la curva teórica (`ControllerMenu`) en vez de muestrearlo. | Baja |
+
+
+**Cerrados:** M9 (§2.80) y B10 (§1.74).
+
+**Regresiones de esta sesión** (antes de publicar):
+- **FDAF**, sobre el índice exportado (v2.15, sin trabajo ajeno ni `src/libs`): 32 ejecuciones, código de salida 0, `AVISOS: 0`. 203 líneas OK y 2 FALLO, ambas de B11 (repetida 3 veces: OK). `PruebaHover` 59 + 59, `PruebaHoverVuelta` 72 + 72, `VerificarRecursos` 198 rutas, `PruebaReinicio` 5/5, `FondoMenuBordes` OK.
+- **Escape** (`run_tests.sh` completo, con el modo nuevo `personajes`): 21/21 ejecuciones con `FALLOS: 0`, 1634 líneas OK y 0 FALLO. Incluye `mundo_pasos` (pasos v2 con la misma sincronización), `mundo_personajes` (§2.81-§2.83) y la victoria completa y omitida en los dos idiomas (tablero v3, persecución con pasos v2).
+- Al terminar no quedó ningún proceso de prueba vivo; solo el daemon de Gradle, que es normal.
 
 ---
 

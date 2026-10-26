@@ -77,16 +77,20 @@ public class PruebaHover { static int ok = 0, fallos = 0; static Clip clip; stat
     esperar("COLGAR / MUTE CALL", j.getLblMuteCall(), true);
     click(j.getLblMuteCall()); click(j.getLblMuteCall());
     System.out.println("tras colgar (2 clics): llamada activa=" + cjg.isLlamadaActiva() + " boton visible=" + j.getLblMuteCall().isVisible());
-    esperar("PUERTA izq tras colgar", j.getBotonIzq(), true); esperar("PUERTA der", j.getBotonDer(), true); esperar("LUZ izq", j.getLuzIzq(), true); esperar("LUZ der", j.getLuzDer(), true);
+    // §1.77: puertas, luces, objeto de la puerta, huecos sin obtener y barra de Rendirse no tienen hover
+    esperar("PUERTA izq tras colgar (sin hover, 1.77)", j.getBotonIzq(), false); esperar("PUERTA der (sin hover)", j.getBotonDer(), false); esperar("LUZ izq (sin hover)", j.getLuzIzq(), false); esperar("LUZ der (sin hover)", j.getLuzDer(), false);
     esperar("COLGAR ya oculto", j.getLblMuteCall(), false);
     JLabel ov = j.getLblOverlay();
     edt(() -> { ov.setIcon(new ImageIcon(new java.awt.image.BufferedImage(10, 10, 2))); ov.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); ov.setVisible(true); });
-    esperar("Objeto recogible revelado", ov, true);
+    esperar("Objeto recogible revelado (sin hover, 1.77)", ov, false);
     edt(() -> ov.setCursor(Cursor.getDefaultCursor())); esperar("Overlay mostrando jumpscare", ov, false); edt(() -> { ov.setVisible(false); ov.setIcon(null); });
     edt(() -> vp.setContenido(t)); Thread.sleep(300);
-    esperar("Tableta: hueco existente (Peluche Freddy)", t.getPELUCHE_FREDDY(), true); esperar("Tableta: hueco con X en Noche 1 (Balloon Boy)", t.getBALLOONBOY(), false);
-    esperar("Tableta: barra Rendirse", t.getPbarRendirse(), true);
-    edt(() -> cjg.setJuegoTerminado(true)); esperar("Rendirse con la partida terminada", t.getPbarRendirse(), false);
+    esperar("Tableta: hueco sin obtener (Peluche Freddy)", t.getPELUCHE_FREDDY(), false); esperar("Tableta: hueco con X en Noche 1 (Balloon Boy)", t.getBALLOONBOY(), false);
+    edt(() -> { com.fdaf.mvc.models.coleccionables.Coleccionable c = cjg.getJuego().getInventario().buscarPorTipo(com.fdaf.mvc.models.coleccionables.TipoColeccionable.PELUCHE_FREDDY);
+        if (c == null) { c = new com.fdaf.mvc.models.coleccionables.Coleccionable(com.fdaf.mvc.models.coleccionables.TipoColeccionable.PELUCHE_FREDDY); cjg.getJuego().getInventario().agregar(c); } c.setEncontrado(true); });
+    esperar("Tableta: hueco ya obtenido (Peluche Freddy)", t.getPELUCHE_FREDDY(), true);
+    esperar("Tableta: barra Rendirse (sin hover, 1.77)", t.getPbarRendirse(), false);
+    edt(() -> cjg.setJuegoTerminado(true)); esperar("Rendirse con la partida terminada", t.getPbarRendirse(), false); esperar("Hueco obtenido con la partida terminada", t.getPELUCHE_FREDDY(), false);
     edt(() -> vp.setContenido(j)); esperar("PUERTA con la partida terminada", j.getBotonIzq(), false);
     edt(() -> ci[0].detenerSonidosJuego());
     System.out.println("RESULTADO: " + ok + " OK, " + fallos + " fallos"); System.exit(0); }

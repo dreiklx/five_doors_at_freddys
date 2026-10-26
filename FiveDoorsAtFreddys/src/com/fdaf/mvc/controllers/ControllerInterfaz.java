@@ -211,22 +211,16 @@ public class ControllerInterfaz implements JuegoListener {
 	// DOOR/LIGHT solo suenan al pasar el cursor cuando de verdad responden:
 	// ni durante la llamada (ControllerJuego los ignora) ni con la partida
 	// terminada (CLAUDE.md §1.38).
-	private boolean puertasYLucesResponden() {
-		return !controllerJuego.isJuegoTerminado() && !controllerJuego.isLlamadaActiva();
-	}
-
 	private void conectarPuertas() {
 		pnlJuego.getBotonIzq().addActionListener(e -> siPartidaActiva(() -> controllerJuego.abrirIzquierda()));
 		pnlJuego.getBotonDer().addActionListener(e -> siPartidaActiva(() -> controllerJuego.abrirDerecha()));
-		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(pnlJuego.getBotonIzq(), this::puertasYLucesResponden);
-		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(pnlJuego.getBotonDer(), this::puertasYLucesResponden);
+		// Sin sonido hover (CLAUDE.md §1.77): las puertas y las luces son interaccion de la partida, no un menu.
+		// Su propio sonido al usarlas (puerta, luz) no cambia.
 	}
 
 	private void conectarLuces() {
 		pnlJuego.getLuzIzq().addActionListener(e -> siPartidaActiva(() -> controllerJuego.revelarIzquierda()));
 		pnlJuego.getLuzDer().addActionListener(e -> siPartidaActiva(() -> controllerJuego.revelarDerecha()));
-		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(pnlJuego.getLuzIzq(), this::puertasYLucesResponden);
-		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(pnlJuego.getLuzDer(), this::puertasYLucesResponden);
 
 		pnlJuego.getLblOverlay().addMouseListener(new MouseAdapter() {
 			@Override
@@ -234,11 +228,7 @@ public class ControllerInterfaz implements JuegoListener {
 				siPartidaActiva(() -> controllerJuego.recogerColeccionable());
 			}
 		});
-		// El mismo overlay muestra también los jumpscares a pantalla completa:
-		// solo suena cuando contiene un objeto recogible (cursor de mano).
-		JLabel overlay = pnlJuego.getLblOverlay();
-		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(overlay, () -> !controllerJuego.isJuegoTerminado()
-				&& overlay.getIcon() != null && overlay.getCursor().getType() == Cursor.HAND_CURSOR);
+		// El objeto que aparece en la puerta no tiene sonido hover (§1.77); recogerlo sigue sonando como siempre.
 	}
 
 	/*
@@ -835,10 +825,16 @@ public class ControllerInterfaz implements JuegoListener {
 				manejarClicColeccionable(tipo);
 			}
 		});
-		// Solo los huecos que existen esta noche: los marcados con X
-		// responden al clic con el sonido de error, no son un control válido.
+		// Hover solo en los objetos ya obtenidos (§1.77): un hueco sin obtener (silueta) o inexistente esta noche
+		// (X) no suena al pasar por encima. El clic sigue sonando como antes en todos los casos.
 		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(label, () -> !controllerJuego.isJuegoTerminado()
-				&& tipo.ordinal() < PreferenciasJuego.nocheActual.getCantidadColeccionables());
+				&& tipo.ordinal() < PreferenciasJuego.nocheActual.getCantidadColeccionables()
+				&& coleccionableObtenido(tipo));
+	}
+
+	private boolean coleccionableObtenido(TipoColeccionable tipo) {
+		com.fdaf.mvc.models.coleccionables.Coleccionable c = controllerJuego.getJuego().getInventario().buscarPorTipo(tipo);
+		return c != null && c.isEncontrado();
 	}
 
 	private void manejarClicColeccionable(TipoColeccionable tipo) {

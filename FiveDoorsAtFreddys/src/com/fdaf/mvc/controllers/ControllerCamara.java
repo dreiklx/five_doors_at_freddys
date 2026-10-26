@@ -202,9 +202,8 @@ public class ControllerCamara {
 			}
 		});
 
-		// Control de "mantener pulsado": suena al entrar como cualquier otro
-		// botón (CLAUDE.md §1.38); el comportamiento de la barra no cambia.
-		com.fdaf.util.InteraccionBoton.aplicarSonidoHover(pnlTableta.getPbarRendirse(), () -> !juegoTerminado());
+		// La barra de Rendirse ya no suena al pasar por encima (CLAUDE.md §1.77; antes §1.38): es un control de la
+		// partida, no un boton de menu. Su comportamiento de "mantener pulsado" no cambia.
 
 		pnlTableta.getPbarRendirse().addMouseListener(new MouseAdapter() {
 
