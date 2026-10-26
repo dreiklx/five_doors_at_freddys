@@ -75,8 +75,14 @@ set TMP_DIR=%SCRIPT_DIR%build-portable-tmp
 if exist "%TMP_DIR%" rmdir /s /q "%TMP_DIR%"
 mkdir "%TMP_DIR%\classes" >nul
 
+REM Bibliotecas locales (CLAUDE.md §1.72): si hay .jar en src\libs (p. ej. un tema de Swing como FlatLaf), se
+REM compilan en el classpath y se incluyen DENTRO del jar ejecutable, para que la carpeta portable siga siendo un
+REM unico "java -jar". Sin src\libs el comportamiento es exactamente el de antes.
+set LIBS_CP=
+if exist "%SCRIPT_DIR%src\libs\*.jar" set LIBS_CP=-cp "%SCRIPT_DIR%src\libs\*"
+
 echo Compilando...
-"%JDK8%\bin\javac.exe" -encoding UTF-8 -d "%TMP_DIR%\classes" -sourcepath "%SCRIPT_DIR%src" "%SCRIPT_DIR%src\com\fdaf\init\Main.java"
+"%JDK8%\bin\javac.exe" -encoding UTF-8 %LIBS_CP% -d "%TMP_DIR%\classes" -sourcepath "%SCRIPT_DIR%src" "%SCRIPT_DIR%src\com\fdaf\init\Main.java"
 if errorlevel 1 (
     echo ERROR: fallo la compilacion.
     rmdir /s /q "%TMP_DIR%"
@@ -85,6 +91,15 @@ if errorlevel 1 (
 
 echo Copiando recursos...
 xcopy /e /i /q "%SCRIPT_DIR%src\com\fdaf\resources\*" "%TMP_DIR%\classes\" >nul
+
+if exist "%SCRIPT_DIR%src\libs\*.jar" (
+    echo Incluyendo las bibliotecas de src\libs en el jar...
+    pushd "%TMP_DIR%\classes"
+    for %%L in ("%SCRIPT_DIR%src\libs\*.jar") do "%JDK8%\bin\jar.exe" xf "%%~fL"
+    REM sin firmas ni manifiesto de las bibliotecas: el jar final lleva el suyo ^(Main-Class^)
+    del /q META-INF\*.SF META-INF\*.RSA META-INF\*.DSA META-INF\MANIFEST.MF 2>nul
+    popd
+)
 
 echo Empaquetando jar...
 pushd "%TMP_DIR%\classes"

@@ -170,10 +170,11 @@ public class PnlMenu extends JPanel {
 		pnlMenu.add(lblEstrellaEscape, 0);
 	}
 
-	// Como en FNaF 1, el logro aparece junto al título: a la derecha de la
-	// última palabra ("Freddy's"), centrada en la altura de sus mayúsculas, del
-	// tamaño de esas mayúsculas -- se ve, pero no compite con el título ni toca
-	// ningún botón (el título termina muy por encima de "Nueva Partida"). Se
+	// Como en FNaF 1, el logro aparece junto al título: una estrella BLANCA a
+	// la derecha de la última palabra ("Freddy's"), del MISMO alto visual que
+	// esa palabra (de la parte de arriba de la F al final de la y, medido con
+	// el contorno real de los glifos) y alineada con ella (CLAUDE.md §1.70; la
+	// primera versión, §1.66, era dorada y del tamaño de las mayúsculas). Se
 	// calcula con la posición real del final del texto en el JTextPane (o, si
 	// todavía no se puede medir, con sus métricas), así que sigue al escalado.
 	public void ubicarEstrellaEscape(boolean visible, String tooltip) {
@@ -182,9 +183,11 @@ public class PnlMenu extends JPanel {
 		if (!visible) {
 			return;
 		}
-		FontMetrics fm = txtpnFiveDoorsAt.getFontMetrics(txtpnFiveDoorsAt.getFont());
-		int mayuscula = Math.round(fm.getAscent() * 0.72f);
-		int lado = Math.round(mayuscula * 1.25f);
+		java.awt.Font fuente = txtpnFiveDoorsAt.getFont();
+		FontMetrics fm = txtpnFiveDoorsAt.getFontMetrics(fuente);
+		java.awt.geom.Rectangle2D palabra = fuente
+				.createGlyphVector(new java.awt.font.FontRenderContext(null, true, true), "Freddy's").getVisualBounds();
+		int alto = (int) Math.round(palabra.getHeight());
 		java.awt.Rectangle fin = null;
 		try {
 			fin = txtpnFiveDoorsAt.modelToView(txtpnFiveDoorsAt.getDocument().getLength());
@@ -195,16 +198,21 @@ public class PnlMenu extends JPanel {
 		int base;
 		if (fin != null && fin.height > 0 && fin.x > 0) {
 			x = txtpnFiveDoorsAt.getX() + fin.x;
-			base = txtpnFiveDoorsAt.getY() + fin.y + fm.getAscent();
+			// la línea base sale del fondo de la caja real de la línea (el
+			// JTextPane reparte el interlineado distinto de fm.getAscent():
+			// medido, quedaba 10 px más arriba)
+			base = txtpnFiveDoorsAt.getY() + fin.y + fin.height - fm.getDescent();
 		} else {
 			java.awt.Insets in = txtpnFiveDoorsAt.getInsets();
 			x = txtpnFiveDoorsAt.getX() + in.left + fm.stringWidth("Freddy's");
 			base = txtpnFiveDoorsAt.getY() + in.top + fm.getHeight() * 3 + fm.getAscent();
 		}
-		x += Math.round(mayuscula * 0.45f);
-		int centroY = base - mayuscula / 2;
-		lblEstrellaEscape.setIcon(com.fdaf.util.EstrellaLogro.icono(lado));
-		lblEstrellaEscape.setBounds(x, centroY - lado / 2, lado, lado);
+		// separación de un cuarto de su alto; arriba de la estrella = arriba de la F
+		x += Math.round(alto * 0.25f);
+		int arriba = base + (int) Math.round(palabra.getY());
+		javax.swing.Icon icono = com.fdaf.util.EstrellaLogro.iconoBlanco(alto);
+		lblEstrellaEscape.setIcon(icono);
+		lblEstrellaEscape.setBounds(x, arriba, icono.getIconWidth(), icono.getIconHeight());
 	}
 
 	public JLabel getLblEstrellaEscape() { return lblEstrellaEscape; }

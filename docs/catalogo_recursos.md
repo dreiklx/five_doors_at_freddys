@@ -198,6 +198,17 @@ Sin cambios y fuera de este catálogo: `images/nyder/` (`NYDER.png` con cambios 
 | `sounds/random/risa_niña.wav` | Excluido a propósito del grupo de sonidos aleatorios (§1.5) |
 | `sounds/random/robotvoice.wav` | Excluido a propósito del grupo de sonidos aleatorios; su original es el mismo archivo que `escape/audio/sfx/golden_freddy_robot_voice_original.wav` |
 
+## Recursos de marca exportados (fuera de los juegos)
+
+Viven solo en `FDAF assets/branding/` (no en los repositorios); se regeneran con `tools/branding/` (CLAUDE.md §1.69).
+
+| Archivo | Tipo | Contenido | Origen |
+|---|---|---|---|
+| `branding/nyder_games_animation/nyder_games_alpha.webm` | video VP9 con alfa + Opus | Presentacion de NYDER GAMES (fundidos + destello), 1920x800, 30 fps, 2.73 s | `fdaf/branding/nyder_games_splash.png` + `PnlWarning`, `tools/branding/exportar_nyder_alfa.sh` |
+| `branding/nyder_games_animation/nyder_games_alpha_prores4444.mov` | ProRes 4444 con alfa + PCM | La misma animacion para editores de video | idem |
+| `branding/nyder_games_animation/png_sequence/nyder_games_0001..0082.png` | PNG RGBA | Maestro sin perdida | idem |
+| `branding/nyder_games_animation/nyder_star_sparkle.wav` | sfx | Copia del destello (`audio/sfx/nyder_star_sparkle.wav`) | sintetizado (`tools/audio/synth_nyder_sparkle.py`) |
+
 ## Five Doors Escape — recursos en uso
 
 Ruta relativa a `five_doors_escape/assets/`. Los JSON de `content/` (definiciones de entidades y del mapa, `content/balance/flashlight.json` con el balance del aturdimiento, §2.58) y los `.properties` de `i18n/` conservan sus nombres: son identificadores de código.
@@ -207,7 +218,7 @@ Ruta relativa a `five_doors_escape/assets/`. Los JSON de `content/` (definicione
 | `models/bonnie.glb` | `models/Bonnie.glb` | modelo | - | Bonnie (retargeting Walking/Breathing Idle) | `source_files/3d_models/LibGDX_Ready/Bonnie.glb` (idéntico) |
 | `models/chica.glb` | `models/Chica.glb` | modelo | - | Chica (retargeting Walking/Breathing Idle) | `source_files/3d_models/LibGDX_Ready/Chica.glb` (idéntico) |
 | `models/foxy.glb` | `models/Foxy.glb` | modelo | - | Foxy (retargeting Walking/Breathing Idle) | `source_files/3d_models/LibGDX_Ready/Foxy.glb` (idéntico) |
-| `models/freddy.glb` | `models/Freddy.glb` | modelo | - | Freddy (retargeting Walking/Breathing Idle) | `source_files/3d_models/LibGDX_Ready/Freddy.glb` (idéntico) |
+| `models/freddy.glb` | `models/Freddy.glb` | modelo | - | Freddy (retargeting Walking/Breathing Idle), texturas reducidas a 2048² (§2.77) | `source_files/3d_models/LibGDX_Ready/Freddy_texturas2048.glb` (idéntico); original con texturas 4096²: `source_files/3d_models/LibGDX_Ready/Freddy.glb`, regenerable con `tools/assets/reducir_texturas_glb.py` |
 | `models/golden_freddy.glb` | `models/GoldenFreddy.glb` | modelo | - | Golden Freddy (estatico, sin animaciones) | `source_files/3d_models/Golden Freddy/tmg_withered_golden_freddy.glb` (idéntico) |
 | `models/key.glb` | `models/Llave.glb` | modelo | - | Llave de la puerta de salida | `source_files/3d_models/llave.glb` (idéntico) |
 | `models/pizzeria.glb` | `models/Pizzeria.glb` | modelo | - | Mapa de la pizzeria (con techo propio) | `source_files/3d_models/LibGDX_Ready/Pizzeria.glb` (idéntico) |
@@ -245,7 +256,11 @@ Ruta relativa a `five_doors_escape/assets/`. Los JSON de `content/` (definicione
 | `audio/sfx/defeat_drag.wav` | (nuevo, §2.50) | sfx | - | Tiron de arrastre por el piso | `escape/audio/sfx/defeat_drag.wav`; sintetizado (`tools/cinematics/escape_defeat/synth_defeat_audio.py`) |
 | `audio/sfx/defeat_body_thud.wav` | (nuevo, §2.50) | sfx | - | Golpe del cuerpo sobre el escenario | `escape/audio/sfx/defeat_body_thud.wav`; sintetizado (`tools/cinematics/escape_defeat/synth_defeat_audio.py`) |
 | `audio/sfx/defeat_servo.wav` | (nuevo, §2.50) | sfx | - | Servo del animatronico al inclinarse | `escape/audio/sfx/defeat_servo.wav`; sintetizado (`tools/cinematics/escape_defeat/synth_defeat_audio.py`) |
-| `audio/sfx/freddy_run_step.wav` | (nuevo, §2.68) | sfx | - | Pasos metalicos de Freddy corriendo detras del auto en la victoria | `escape/audio/sfx/freddy_run_step.wav`; sintetizado (`tools/audio/synth_freddy_chase.py`) |
+| `audio/sfx/steps/freddy_chase_step_1.wav` … `_4.wav` | (nuevo, §2.73) | sfx | - | Pisadas de Freddy corriendo sobre el asfalto detras del auto (perfil "carrera"). Reemplaza a `freddy_run_step.wav` (metalico, temporizador fijo; copia en `_archive/old_versions/escape_freddy_run_step_v1.wav`); 4 variaciones, sincronizadas con la animacion (`PasosAnimatronicos`) | `escape/audio/sfx/steps/`; sintetizado (`tools/audio/synth_animatronic_steps.py`) |
+| `audio/sfx/steps/freddy_step_1.wav` … `_4.wav` | (nuevo, §2.73) | sfx | - | Pisadas de Freddy dentro de la pizzeria: graves y lentas; 4 variaciones, sincronizadas con la animacion (`PasosAnimatronicos`) | `escape/audio/sfx/steps/`; sintetizado (`tools/audio/synth_animatronic_steps.py`) |
+| `audio/sfx/steps/bonnie_step_1.wav` … `_4.wav` | (nuevo, §2.73) | sfx | - | Pisadas de Bonnie: mecanicas (articulacion y servo); 4 variaciones, sincronizadas con la animacion (`PasosAnimatronicos`) | `escape/audio/sfx/steps/`; sintetizado (`tools/audio/synth_animatronic_steps.py`) |
+| `audio/sfx/steps/chica_step_1.wav` … `_4.wav` | (nuevo, §2.73) | sfx | - | Pisadas de Chica: pesadas, armazon hueco que resuena; 4 variaciones, sincronizadas con la animacion (`PasosAnimatronicos`) | `escape/audio/sfx/steps/`; sintetizado (`tools/audio/synth_animatronic_steps.py`) |
+| `audio/sfx/steps/foxy_step_1.wav` … `_4.wav` | (nuevo, §2.73) | sfx | - | Pisadas de Foxy: secas y rapidas, con raspado; 4 variaciones, sincronizadas con la animacion (`PasosAnimatronicos`) | `escape/audio/sfx/steps/`; sintetizado (`tools/audio/synth_animatronic_steps.py`) |
 | `audio/sfx/defeat_light_short.wav` | (nuevo, §2.50) | sfx | - | Cortocircuito del foco del escenario | `escape/audio/sfx/defeat_light_short.wav`; sintetizado (`tools/cinematics/escape_defeat/synth_defeat_audio.py`) |
 | `audio/sfx/interior_door_open.wav` | (nuevo, §2.56) | sfx | - | Puerta interior abatible abriendose | `escape/audio/sfx/interior_door_open.wav`; sintetizado (`tools/audio/synth_world_audio.py`) |
 | `audio/sfx/interior_door_close.wav` | (nuevo, §2.56) | sfx | - | Puerta interior abatible cerrandose | `escape/audio/sfx/interior_door_close.wav`; sintetizado (`tools/audio/synth_world_audio.py`) |

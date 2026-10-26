@@ -1,0 +1,3 @@
+# Los scripts de Windows necesitan CRLF: con LF puro cmd.exe pierde caracteres al leer el archivo (CLAUDE.md §1.72)
+*.bat text eol=crlf
+*.cmd text eol=crlf

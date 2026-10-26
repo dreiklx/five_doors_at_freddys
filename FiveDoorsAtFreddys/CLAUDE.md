@@ -2915,6 +2915,472 @@ Además: `PruebaRendimiento` (§2.70), el modo `diag` de la derrota (§2.67) y l
 
 **Pendiente:** ver la auditoría (§2.72). En particular, el caso real de foco con un jugador (vía ALT no ejercitada), la escucha humana de los sonidos nuevos y el trabajo ajeno sin publicar.
 
+### 1.69 La presentación de NYDER GAMES exportada como video con transparencia, sesión 2026-10-23 (noche)
+
+**Pedido:** un recurso reutilizable fuera de FDAF con solo las letras de NYDER GAMES, la estrella de la D y su destello, con **fondo transparente real**, sin el negro de la pantalla de inicio.
+
+**Cómo se construye el efecto (investigado):** no existe una animación original ni una secuencia previa. Se compone en tiempo real en `PnlWarning` (§1.65):
+- el PNG del logo (`branding/nyder_games_splash.png`, 2172 × 724 RGBA) con el alfa del fundido lineal (`ControllerMenu.animarFade`);
+- una máscara de la estrella obtenida por color del propio PNG, aclarada según el brillo;
+- un halo radial y una cruz de cuatro puntas.
+
+**Exportación (`tools/branding/`, nuevo):**
+- `ExportarNyderAlfa.java` dibuja cada cuadro con **la misma clase del juego** (`PnlWarning(logo, 1.0)` con `setOpaque(false)`) sobre una `BufferedImage` ARGB vacía. Usa los tiempos reales: entrada 800 ms, visible 1300 ms y salida 650 ms, con el destello de 120/420/60/600 ms de §1.65.
+- No se redibuja nada, así que la tipografía, los colores, el suavizado y el destello son idénticos a los del juego.
+- Se omiten el cuadro del inicio y el del final con alfa 0 exacto (serían cuadros vacíos).
+- `exportar_nyder_alfa.sh` compila solo `PnlWarning` y sus dependencias con JDK 8 y renderiza la secuencia. Después codifica con FFmpeg 7.1 (si no hay uno en el PATH, usa el binario del paquete de Python `imageio-ffmpeg`).
+
+**Formatos elegidos (equilibrio entre compatibilidad, tamaño y calidad):**
+
+| Archivo | Formato | Para qué | Tamaño |
+|---|---|---|---|
+| `nyder_games_alpha.webm` | VP9 `yuva420p` (`-auto-alt-ref 0`, `alpha_mode=1`) + Opus | web, motores, OBS | 1.2 MB |
+| `nyder_games_alpha_prores4444.mov` | ProRes 4444 `yuva444p10le`, alfa de 16 bits (`-qscale:v 9`) + PCM | editores de video | 43 MB (257 MB con la calidad por defecto de `prores_ks`) |
+| `png_sequence/` (82 PNG RGBA) | maestro sin pérdida | volver a codificar, secuencias en motores | 19 MB |
+
+Las tres versiones duran 2.733 s (82 cuadros a 30 fps) en 1920 × 800. El logo ocupa 1920 × 640 centrado; el margen deja sitio al chispazo, que sobresale por arriba. El sonido del destello va sincronizado como en el juego (0.93 s desde el primer cuadro). No se generó HEVC con alfa para Safari: el FFmpeg disponible no lo codifica.
+
+**Ubicación:** `FDAF assets/branding/nyder_games_animation/` (carpeta nueva `branding/` para recursos de marca reutilizables, registrada en el README de `FDAF assets` y en el catálogo). Contiene los tres formatos, el WAV del destello, `verification/` y un `README.md` con formato, resolución, duración, fps, tipo de transparencia, herramienta, original y cómo reutilizarlo. Los videos no están en el repositorio: se regeneran con el script.
+
+**Verificación (análisis de imagen, no a ojo en un editor):**
+- El WebM y el MOV se decodificaron de vuelta a PNG (`libvpx-vp9` para el alfa de VP9). Los dos dan **RGBA**, con el mismo número de cuadros que el maestro.
+- Error de alfa respecto al maestro: medio 0.1-0.2/255. Máximo 24/255 (WebM, en bordes) y 1/255 (MOV).
+- Compuestos sobre **blanco** y sobre **rojo**, la diferencia con el maestro compuesto es como mucho de 4.6-5.0/255 (WebM) y 2.7-3.0/255 (MOV) en el percentil 99.9: sin halos claros ni oscuros en los bordes.
+- En todos los cuadros las esquinas tienen alfa 0. El primer cuadro tiene alfa máximo 0.043 y el último 0.027, es decir, empieza y termina en el fundido, sin cuadros vacíos ni negros.
+- Hoja de prueba con 5 instantes (fundido, subida, pico, bajada y salida) sobre blanco, rojo y rayado: no hay ningún rectángulo, el destello queda en la estrella y los bordes se ven suaves. Las letras son blancas por diseño y sobre blanco solo se distingue la estrella (anotado en el README).
+- **La presentación del juego no cambia:** no se tocó ningún archivo del juego para esto.
+
+**Archivos:** `tools/branding/ExportarNyderAlfa.java` y `tools/branding/exportar_nyder_alfa.sh` (nuevos), `docs/catalogo_recursos.md`; en `FDAF assets`: `branding/nyder_games_animation/` y `README.md`.
+
+### 1.70 Estrella de Escape completado: blanca y del tamaño de "Freddy's", sesión 2026-10-23 (noche)
+
+**Pedido:** la estrella del menú (§1.66) era dorada y del tamaño de las mayúsculas (68 px en 1080p). Debía ser **blanca** y de un tamaño visual equivalente al de la palabra "Freddy's", integrada con el título.
+
+**Cambios:**
+- `EstrellaLogro.pintarBlanca` / `iconoBlanco` (nuevos): la misma estrella de cinco puntas, ahora blanca.
+  - Degradado muy leve (de blanco a 222 de gris abajo), borde oscuro fino y una sombra suave desplazada para que se lea sobre las franjas claras de la estática.
+  - Sin resplandor, porque un halo blanco la emborronaría junto al texto.
+  - El icono se dimensiona por su **contorno visual**: una estrella de radio r mide 1.809 r desde la punta de arriba hasta las de abajo.
+- `PnlMenu.ubicarEstrellaEscape`:
+  - El alto sale del contorno real de los glifos de "Freddy's" (`Font.createGlyphVector(...).getVisualBounds()`), de la parte de arriba de la F al final de la y.
+  - Se coloca un cuarto de su alto a la derecha de la palabra, con su parte de arriba a la altura de la de la F.
+  - La línea base sale del fondo de la caja real de la línea del `JTextPane` (`modelToView`). Con `fm.getAscent()` quedaba 10 px más arriba (medido en la captura).
+- La estrella dorada sigue en la presentación de la pantalla de agradecimiento (§1.67), que no se pidió cambiar.
+
+**Sin cambios:** el desbloqueo persistente (`escapeCompletado`, §1.66), las condiciones para obtenerla y el menú de quien todavía no completó Escape (sin estrella).
+
+**Verificación (render real del menú, `RenderMenuReal`, 1920×1080, perfil aislado):**
+- Píxeles medidos en ES y EN: palabra "Freddy's" de y 399 a 479 (la F empieza en 404); estrella de y 404 a ~477, en x 687-762, con 34 px de separación tras la "s". Es decir, del alto de la palabra, alineada con ella y sin tocar ninguna letra.
+- Sin la estrella desbloqueada, el menú se ve igual que antes.
+- `PruebaLogro`: 26/26 en ES y EN (la estrella no tapa botones y se recupera al volver a abrir).
+- La posición y el tamaño se calculan con las métricas de la fuente ya escalada, así que siguen al escalado de cada resolución. Las otras resoluciones **no se renderizaron**: el escalado de FDAF depende del monitor físico (§1.36).
+
+**Archivos:** `EstrellaLogro.java`, `PnlMenu.java`.
+
+### 2.73 Pasos de los animatrónicos sincronizados con la animación (interior y persecución), sesión 2026-10-23 (noche)
+
+**Pedido:**
+- Los pasos de Freddy en la persecución del estacionamiento (§2.68) sonaban metálicos. Debían ser mucho más pesados, con capas y variación, sincronizados con las pisadas de la animación, atenuados por distancia y sin salto de volumen en el corte de cámara al maletero.
+- Además, pasos para los cuatro animatrónicos dentro de la pizzería, cada uno con su carácter: Freddy grave, Bonnie mecánico, Chica pesado y con resonancia, Foxy urgente.
+- Debían sonar solo al desplazarse, sincronizados y espaciales, y nunca en pausa, jumpscares ni cinemáticas. Sin duplicados y liberando los recursos.
+
+**Antes:** `FreddyExterior` reproducía `freddy_run_step.wav` con un temporizador fijo de 0.31 s, sin relación con la animación. El análisis del archivo daba un 10.7 % de energía entre 1 y 4 kHz, con parciales inarmónicos de 1240/1873/2711/3907 Hz (el "chasquido metálico" de su script). Dentro de la pizzería no había pasos.
+
+**Sonidos nuevos (`tools/audio/synth_animatronic_steps.py`, sintetizados sin audio externo):**
+- 20 WAV en `assets/audio/sfx/steps/`: `{freddy_chase,freddy,bonnie,chica,foxy}_step_{1..4}.wav`, mono 44.1 kHz 16 bit, pico a -1 dBFS, 0.75-1.25 s con la cola de reverberación.
+- Cada pisada tiene cuatro capas:
+  1. impacto grave: seno con caída de tono y saturación suave, para que el peso se oiga también en altavoces sin graves;
+  2. cuerpo estructural: resonancias del suelo o del armazón;
+  3. componente mecánica secundaria: servo o articulación, filtrada por debajo de 0.9-1.8 kHz;
+  4. reverberación corta: sala interior o rebote abierto en el estacionamiento.
+- Cuatro variaciones por personaje, con semilla fija para que sean reproducibles.
+- Carácter de cada uno:
+
+| Sonido | Carácter | Energía 1-4 kHz |
+|---|---|---|
+| `freddy_chase` | asfalto, muy pesado y sordo, roce áspero | 0.2-0.7 % (antes 10.7 %) |
+| `freddy` | grave y lento, el suelo vibra | 0.1-1.5 % |
+| `bonnie` | articulación que encaja y servo presentes, filtrados | 0.4-0.9 % |
+| `chica` | armazón hueco: resonancias de 110-430 Hz que duran 0.12-0.22 s | 0.1-0.7 % |
+| `foxy` | más liviano, seco y rápido, con raspado del pie | 0.2-0.8 % |
+
+- Se quitaron `freddy_run_step.wav` y `tools/audio/synth_freddy_chase.py` (solo generaba ese archivo).
+- Espectrogramas (antes y después): sin líneas tonales por encima de 1 kHz.
+
+**Sincronización (`audio/PasosAnimatronicos`, nuevo):**
+- El apoyo se detecta en la pose real de cada cuadro, después de `sceneManager.update`. Se sigue la altura en el mundo del hueso de cada pie sobre el origen del personaje.
+- La pisada suena cuando el pie, tras haberse levantado más del 60 % de su recorrido vertical, baja al 25 % inferior.
+- Comparado con cuadros renderizados del ciclo:
+  - Freddy apoya el pie izquierdo a 0.63 s y el derecho a 0.91 s. En los cuadros se ve asentarse a 0.60-0.65 y a 0.90-0.95.
+  - Es un único apoyo por pie y por ciclo en los cuatro personajes. Con 20/50 % el pie derecho de Foxy daba dos.
+- **El punto más adelantado del pie NO sirve en estos rigs.** Era la primera hipótesis y era simétrica, pero el pie llega adelante todavía en el aire (paso alto) y apoya 0.35 s después. Se descartó al mirar los cuadros, antes de dar nada por bueno.
+- Al acelerar la animación (Freddy corre al 1.9x), los apoyos se acercan solos.
+- **Calibración al cargar:** el recorrido de cada pie se mide una vez sobre el clip `walk`, en una `Scene` nueva del mismo modelo. Así no se toca la instancia que se dibuja y la primera caminata ya detecta bien sus apoyos. Sin calibrar, la primera pisada de Freddy salía con el pie todavía en el aire (la prueba lo detectó).
+- **Gotcha:** un `ModelInstance` suelto con un `AnimationControllerHack` no aplica la pose (los huesos quedaban en 0). Hace falta `new Scene(model)`, que marca los huesos animados.
+- **Ritmos resultantes** (intervalos entre pisadas): Freddy 0.28/0.72 s, Bonnie y Foxy 0.17/0.83 s, Chica 0.38/0.68 s. Son asimétricos porque así son los ciclos retargeteados: el sonido sigue a lo que se ve.
+
+**Cuándo suena:**
+- Solo con la animación `walk` activa y desplazamiento real (más de 0.25 m/s, velocidad suavizada).
+- Un animatrónico aturdido (pasa a `idle`) o trabado contra una pared no suena.
+- `GameplayScreen` lo actualiza en `JUGANDO` y en la cinemática de victoria (la persecución de Freddy).
+- No se actualiza en pausa, jumpscares, la cinemática de derrota, la cinemática inicial ni las instrucciones.
+- `detenerTodo()` corta lo que suena al entrar al jumpscare, al jumpscare de Golden Freddy y a las dos cinemáticas.
+- La pausa pausa y reanuda las pisadas que estaban sonando (`pausarAudioContinuo`/`reanudarAudioContinuo`).
+- **Volumen y espacialidad:**
+  - El volumen sigue `(1 - d/dMax)²` con la distancia horizontal, pleno a menos de `distanciaMinima`. Las pisadas por debajo del 1 % no se reproducen.
+  - El paneo usa el eje derecho de la cámara (el mismo cálculo que la caja musical).
+  - La ganancia se suaviza con una constante de 0.3 s, de modo que el corte de cámara al maletero no produce un salto.
+- Cada pisada elige una variación distinta de la anterior, con tono (según el perfil) y volumen (88-100 %) aleatorios.
+- Una sola instancia por entidad (registrar dos veces no duplica). Nunca dos pisadas del mismo personaje a menos de 0.1 s.
+
+**Datos (sin nombres en Java):**
+- `EntityDefinition.pasos` es un mapa de perfiles. "interior" está en los cuatro y "carrera" solo en Freddy, con sus sonidos, volumen, distancias y rango de tono.
+- Los huesos de los pies van en `huesos` (`pieIzquierdo`/`pieDerecho`):
+  - Freddy: `j_l_foot_056`/`j_r_foot_052`;
+  - Bonnie y Foxy: `bip_foot_{L,R}_*.qc_skeleton`;
+  - Chica: `Bone.014_Armature_167`/`Bone.015_Armature_186`.
+- `FreddyExterior.iniciarPersecucion` cambia a "carrera". Su temporizador y `SONIDO_PASO` desaparecieron, y `actualizarPersecucion` ya no recibe la cámara.
+- `BootScreen` encola los sonidos de los perfiles (`PasosAnimatronicos.sonidosDe`).
+
+**Verificación:**
+- **Juego real con IA real** (`PruebaMundo pasos`, con el `deltaTime` de la IA fijado al de la prueba): cada animatrónico persigue 3.3 s por el tramo libre más largo (z=1, 17 m). 25/25 OK:
+  - 6 pisadas detectadas y reproducidas cada uno, con los intervalos de arriba;
+  - en cada pisada un pie está apoyado (en el 30 % inferior de su recorrido, medido por la prueba con sus propios datos);
+  - quieto 2 s: 0 pisadas; en pausa 1 s: 0 pisadas;
+  - jumpscare (Bonnie atrapa a los 2.1 s): ninguna pisada durante el susto.
+- **Gotcha del arnés:** `ChaseState` lee `Gdx.graphics.getDeltaTime()`. Con cuadros más rápidos que el tiempo real, los guardias avanzaban 0.4 m en 3 s (y, con razón, no sonaban). Además, a 13 m Bonnie y Foxy (alcance de 15 m) quedaban por debajo del 1 % y no se reproducían. Por eso hay dos contadores, `pisadasDe` (detectadas) y `audiblesDe` (reproducidas).
+- **Persecución real** (`PruebaVictoria completa`):
+  - 18 pisadas en 5.0 s (3.6 por segundo, el ritmo de la animación al 1.9x), todas audibles;
+  - en el corte de cámara la distancia cámara-Freddy salta de 3.0 a 0.2 m, y la ganancia sube de 0.89 a 0.97 en 0.3 s (máximo 0.063 por cuadro);
+  - todo lo demás del recorrido de victoria sigue en OK.
+- **No se escuchó con oídos humanos.** Las afirmaciones sobre el timbre salen del análisis espectral y del diseño de las capas, no de una escucha.
+
+**Archivos:**
+- Nuevos: `audio/PasosAnimatronicos.java`, `tools/audio/synth_animatronic_steps.py` y `assets/audio/sfx/steps/` (20 WAV).
+- Modificados: `EntityDefinition.java`, los 4 JSON de entidades, `FreddyExterior.java`, `CinematicaVictoria.java`, `GameplayScreen.java` y `BootScreen.java`.
+- Eliminados: `assets/audio/sfx/freddy_run_step.wav` y `tools/audio/synth_freddy_chase.py`.
+
+### 2.74 Susto de Freddy en la puerta de emergencia, sesión 2026-10-23 (noche)
+
+**Pedido:** al acercarse a Freddy en el estacionamiento debía haber un susto real, no solo la amenaza de §2.68. Requisitos:
+- activación controlada, una sola vez;
+- movimiento visual, sonido y refuerzo de cámara;
+- sin derrota ni victoria prematura.
+
+**Diseño (`FreddyExterior.actualizarSusto`):**
+- **Activación:**
+  - el jugador a menos de 2.3 m mirándolo (producto escalar entre la mirada y la dirección a Freddy > 0.8);
+  - o a menos de 1.5 m aunque no lo mire.
+  - Se mide contra la posición de la puerta, no contra la del modelo, que se mueve con la embestida.
+  - `sustoHecho` queda en true para el resto de la partida. La amenaza de §2.68 (giro, servo y risa al volver a acercarse) sigue funcionando.
+- **Movimiento** (1.15 s):
+  - Freddy embiste hacia el jugador en 0.12 s, hasta 0.45 m y nunca a menos de 0.9 m del ojo.
+  - Se queda encima hasta 0.5 s y vuelve despacio a la puerta, con interpolación suave.
+  - Mientras dura, gira hacia el jugador a 400 °/s (en la amenaza, a 90 °/s).
+  - Con `PoseProcedural`: torso +16° hacia adelante, mandíbula +22° y la cabeza sacudiéndose (ladeo senoidal de ±9°).
+  - **Su collider no se mueve:** la embestida es solo visual, así que no empuja ni atrapa al jugador.
+- **Sonido**, todo con los recursos ya cargados:
+  - el golpe del cuerpo (`defeat_body_thud`) a tono 0.8;
+  - el servo a 1.15;
+  - el grito del jumpscare a volumen 0.55 y tono 0.82, cortado a los 0.75 s para que el grito completo siga siendo el del jumpscare de verdad.
+  - La risa de la amenaza no se suma encima.
+  - Si se pausa durante el susto, el grito se corta (`detenerSonidosSusto`).
+- **Cámara** (`GameplayScreen.aplicarSustoCamara`, con `getIntensidadSusto()`: sube en 0.08 s y se apaga en el resto):
+  - temblor de posición de hasta 6 cm;
+  - giro de hasta ±3°;
+  - el campo de visión se cierra de 67° a 57°.
+  - Es solo cosmético: la posición del jugador no cambia, y `applyToCamera` repone posición, dirección y `up` en el cuadro siguiente. Al terminar se restaura `FOV_BASE` (nueva constante, 67°).
+- **Sin efectos de juego:** el estado sigue en `JUGANDO`, no se toca `escapado` ni las vidas. Si la cinemática del auto empieza (`iniciarPersecucion`), el susto se cancela y Freddy sale corriendo desde la puerta.
+
+**Verificación** (`PruebaVictoria completa`, recorrido real; 12 comprobaciones nuevas, 37/37 OK en total):
+- a 4.4 m no hay susto;
+- acercándose mirándolo, se activa a 2.25 m;
+- embestida de 0.45 m; la distancia mínima entre el ojo y Freddy es de 1.75 m;
+- el campo de visión llega a 57.2° y vuelve a 67.0°;
+- Freddy vuelve exactamente a la puerta (0.0 m);
+- el estado es siempre `JUGANDO`, sin `escapado`;
+- el collider es idéntico antes y después;
+- al alejarse y volver a acercarse, la intensidad máxima es 0 (una sola vez);
+- el resto del recorrido (colisiones con Freddy, límites del exterior, cinemática) sigue igual.
+- **Capturas:** `07c_susto_embestida` (cámara cerrada, cabeza ladeada, el cuerpo echado fuera del marco) y `07d_susto_vuelve`.
+- **No se jugó ni se escuchó con una persona:** el impacto del susto no está evaluado por un humano.
+
+**Archivos:** `FreddyExterior.java` (el constructor recibe además el grito y el golpe) y `GameplayScreen.java`.
+
+### 2.75 Menú de pausa completo y volumen por categorías en Escape, sesión 2026-10-24
+
+**Pedido:** un menú de pausa real. Antes era un solo botón "Salir al menú principal", sin forma de volver salvo con ESC. Debía tener:
+- Continuar;
+- Volumen: deslizadores general, música y efectos, aplicados al instante y persistentes;
+- Controles: solo las teclas que existen (WASD, ratón, SHIFT para correr, CTRL linterna, E, ESC);
+- Salir o volver al menú, y opcionalmente reiniciar.
+
+Además: internacionalizado, con buen diseño, el mundo realmente congelado, el cursor restaurado y probado con ALT+TAB.
+
+**Volumen (`audio/VolumenAudio`, `audio/SonidoConVolumen`, nuevos):**
+- Tres niveles de 0 a 1, guardados en las preferencias de Escape `five_doors_escape` (las mismas del consejo de carga): `volumen.general`, `volumen.musica`, `volumen.efectos`. Por defecto, 1: la mezcla anterior no cambia para quien no toque nada.
+- La ganancia aplicada es `(general × categoría)²` (curva perceptual).
+- Un solo punto de aplicación: `AssetService.getSound` devuelve cada `Sound` envuelto en un `SonidoConVolumen` de su categoría, uno por ruta. Es música lo que está bajo `audio/music/` (caja musical de Freddy, circo de la victoria); todo lo demás son efectos (voces incluidas).
+  - El juego sigue pidiendo sus volúmenes "de diseño" como antes. El envoltorio los multiplica y recuerda volumen y paneo de las últimas 48 instancias, para reaplicarlos en vivo al mover un deslizador. Así un bucle (caja musical, ambiente nocturno, latidos) cambia al instante, sin reiniciarse.
+  - Sin paneo pedido se reaplica con `setVolume`, porque `setPan` también mueve la fuente en OpenAL.
+  - `dispose()` del envoltorio no libera el sonido real, que sigue siendo del `AssetManager`.
+  - `EscapeVictoryScreen`, que crea su música directamente, también la envuelve.
+- No hubo que tocar ninguna de las 46 llamadas `play`/`loop` del juego.
+
+**Menú (`screens/MenuPausa`, clase nueva para no seguir engordando `GameplayScreen`, pendiente M4):**
+- Paneles:
+  - **principal:** Continuar, Volumen, Controles, Reiniciar partida y Salir al menú principal;
+  - **Volumen:** tres deslizadores con su porcentaje, más Volver;
+  - **Controles:** las mismas seis filas de la pantalla de instrucciones (`instr.*`), así que no puede listar una tecla que no exista;
+  - **confirmación:** para reiniciar y para salir ("Se perderá el progreso de esta partida"). El foco empieza en No, para que un ENTER de más no borre la partida.
+- **Entrada:**
+  - Ratón: pasar por encima elige; clic acepta; los deslizadores se arrastran o se pulsan, con un margen vertical generoso.
+  - Teclado: W/S o flechas para elegir, A/D o flechas para ajustar el volumen un 5 %, E/ENTER/ESPACIO para aceptar.
+  - ESC en un subpanel vuelve al principal; en el principal cierra el menú.
+- **Diseño:** fondo oscurecido al 72 % sobre la escena congelada, panel oscuro con un filete rojo arriba, botón elegido en rojo con una marca a la izquierda, y una línea de ayuda abajo. Escala con la altura de la pantalla (`h/1080`). Tiene su propia `BitmapFont` con filtro lineal (la del HUD usa vecino más cercano y escalada se veía desigual) y la libera en `dispose`.
+- **Textos:** 16 claves nuevas `pause.*` en ES y EN, con ortografía completa ("Música", "¿Salir al menú principal?", "Sí"). La `BitmapFont` por defecto sí tiene los glifos (comprobado: á é í ó ú ñ ¿ ¡), y los `.properties` se leen en UTF-8. `pause.exitToMenu` pasó de "menu" a "menú". El resto de las cadenas antiguas de Escape siguen sin tildes: corregirlas es un cambio aparte.
+- **Persistencia:** se guarda al salir del panel de Volumen, al cerrar el menú, al reiniciar y al salir (solo si cambió algo).
+
+**`GameplayScreen`:**
+- `abrirPausa()` (ESC o pérdida de foco, §2.71) detiene el mundo como antes (`sceneManager.update(0)`, sin `engine.update`), pausa el audio continuo y las pisadas (§2.73), libera el cursor y abre el menú en el panel principal.
+- `reanudarDesdePausa()` (Continuar o ESC) recaptura el cursor. Descarta 2 cuadros de movimiento del ratón (`FirstPersonCameraController.ignorarMovimientoRaton`), porque al recapturar el primer delta es un salto. Después reanuda el audio.
+- **Reiniciar:** crea una `GameplayScreen` nueva con el mismo `AssetService` (sin recargar nada). La vieja no libera los assets en su `dispose` (`conservarAssets`). La nueva salta la introducción (`reinicio=true`) y empieza en las instrucciones.
+- **Salir:** `Gdx.app.exit()`, el mismo cierre que FDAF detecta para volver a su menú (§2.13).
+- Se quitaron `dibujarMenuPausa` y sus constantes.
+
+**Verificación** (`PruebaMundo pausa`, juego real, ratón simulado en el proxy de `Input`):
+- 30/30 OK en español y 30/30 en inglés (perfil aislado `home_esc`).
+- Con Bonnie persiguiendo y W apretada durante 1.5 s en pausa, ni Bonnie, ni el jugador, ni el reloj de juego se movieron. Al reanudar, Bonnie siguió persiguiendo.
+- Navegación con teclado y con ratón (hover y clic en Continuar).
+- Volumen general de 1.0 a 0.8 con 4 pulsaciones de A; ganancia de efectos 0.64.
+- El deslizador de música arrastrado con el ratón quedó en 0.30. El archivo de preferencias quedó con `volumen.general=0.8`, `volumen.musica=0.3` y `volumen.efectos=1.0`.
+- ESC en un subpanel vuelve sin cerrar la pausa. Salir y Reiniciar piden confirmación con No elegido, y No vuelve.
+- Al reanudar: cursor recapturado (`setCursorCatched(true)`) y libre en la pausa.
+- **ALT+TAB simulado** (`EstadoVentana.alCambiarFoco(false)`): abre el menú; al volver el foco, sigue en pausa.
+- Reiniciar con Sí:
+  - pantalla nueva en `INSTRUCCIONES`, con los mismos 11432 colliders y las vidas completas;
+  - el volumen elegido se conserva;
+  - la partida nueva se juega y su pausa funciona.
+- **Gotcha de la prueba:** las zonas del ratón son las del último cuadro dibujado. Tras cambiar de panel hay que dibujar un cuadro antes de leerlas.
+- **Capturas** (1280×720): `pausa_principal_{es,en}`, `pausa_volumen_arrastre_es`, `pausa_controles_{es,en}`, `pausa_confirmar_salida_es` y `pausa_tras_reinicio_es`.
+- **No probado con un humano:** el foco real de Windows sigue sin poder reproducirse en este entorno (memoria `feedback-windows-focus-not-reproducible-in-automation`), y la sensación de los deslizadores con un ratón físico no está probada.
+
+**Archivos:**
+- Nuevos: `audio/VolumenAudio.java`, `audio/SonidoConVolumen.java` y `screens/MenuPausa.java`.
+- Modificados: `AssetService.java`, `EscapeVictoryScreen.java`, `GameplayScreen.java`, `FirstPersonCameraController.java` y `assets/i18n/strings{,_en}.properties`.
+
+### 2.76 Un único consejo en la pantalla de carga de Escape, sesión 2026-10-24
+
+**Pedido:** que la pantalla de carga (`BootScreen`) muestre un solo consejo, con este texto exacto:
+- ES: «Los destellos de la linterna pueden aturdir a los animatrónicos: Foxy necesita 3 ciclos, y Bonnie y Chica necesitan 7.»
+- EN: «Flash the animatronics to stun them: Foxy needs 3 flash cycles, while Bonnie and Chica need 7.»
+
+**Cambios:**
+- `tip.1` tiene ahora ese texto en `strings.properties` y `strings_en.properties`, y se borraron `tip.2` a `tip.7`.
+- `BootScreen.elegirConsejo` devuelve siempre `tip.1`. Se quitaron `CANTIDAD_CONSEJOS` y la rotación con `ultimoConsejo`; la entrada vieja que pueda quedar en las preferencias es inofensiva.
+- Los números coinciden con `content/balance/flashlight.json` (Foxy 3, Bonnie 7, Chica 7 ciclos). Hay un comentario junto al método para mantenerlos alineados si cambia el balance.
+- La tilde de «animatrónicos» se dibuja: la fuente por defecto tiene el glifo.
+
+**Verificación** (`PruebaCarga`, arranque real con perfil aislado; el inglés con un `handoff.json` temporal en el perfil de pruebas, borrado después):
+- el consejo leído es el texto exacto en ES y en EN;
+- en las capturas, el consejo aparece completo y la «ó» se ve: `carga_es_carga_1`, `carga_en_carga_1`;
+- 0 fallos.
+
+**Archivos:** `BootScreen.java`, `assets/i18n/strings{,_en}.properties`.
+
+### 2.77 Pendiente A1 resuelto: texturas de `freddy.glb` reducidas a 2048², sesión 2026-10-24
+
+**Problema (§2.62, §2.72 A1):** `freddy.glb` pesaba 114.1 MB, de los que 105 MB eran nueve PNG de 4096×4096:
+- traje: normal, color, metal/rugosidad;
+- micrófono y sombrero: los mismos tres;
+- endoesqueleto: emisivo, color, metal/rugosidad.
+
+Ocupaban unos 576 MB de VRAM sin mipmaps (cálculo). Los otros tres personajes usan como mucho 2048.
+
+**Herramienta nueva (`tools/assets/reducir_texturas_glb.py`):**
+- Reescribe solo los bytes de las imágenes embebidas mayores que el lado máximo: Lanczos, el mismo formato (PNG optimizado; JPEG a calidad 92 si lo hubiera).
+- Los mapas de normales (los que un material usa como `normalTexture`) se renormalizan tras reescalar, porque promediar normales las acorta.
+- Reubica los bufferViews con alineación de 4 bytes. Todo lo demás queda intacto.
+- **Comprobado:** el JSON es idéntico salvo `bufferViews`/`buffers`, y los 486 bufferViews de datos (mallas, piel, animaciones) son idénticos byte a byte. Solo cambiaron las 9 imágenes.
+
+**Resultado:**
+- `freddy.glb`: 114.1 MB → **36.3 MB**, con las nueve texturas a 2048² (≈144 MB de VRAM, cálculo).
+- No se pasaron las texturas de color a JPEG: a 2048 ya alcanza, y JPEG agregaría artefactos sin ganar casi nada en carga.
+- **El original con 4096² se conserva:**
+  - `FDAF assets/source_files/3d_models/LibGDX_Ready/Freddy.glb` (idéntico al que había en el repositorio);
+  - el historial de git.
+- La versión nueva está copiada como `LibGDX_Ready/Freddy_texturas2048.glb`.
+- Se puede regenerar o cambiar el lado: `python tools/assets/reducir_texturas_glb.py <original> assets/models/freddy.glb 2048`.
+
+**Medido:**
+
+| | 4096² | 2048² |
+|---|---|---|
+| `GLBLoader` del archivo solo (`DiagTexturas`) | 4.1 s | 1.3 s |
+| Carga completa hasta "Preparando la pizzería" (`PruebaCarga`, 2 corridas cada una, la misma sesión) | 11.16 / 11.38 s | 8.23 / 8.32 s (**−27 %**) |
+
+- Rendimiento con 2048 (`PruebaRendimiento`, 1280×720 sin vsync): comedor 76 fps, persecución 88, estacionamiento 84, victoria 72. Son del mismo orden que en §2.72; no era un cuello de botella de fotogramas.
+- **Jumpscare de cerca** (la cara de Freddy a 0.75 m, render de las dos versiones con la misma cámara y luz): diferencia media de 0.17/255, p99 de 3/255. En la comparación lado a lado no se distinguen la piel, los ojos ni el sombrero (`tex_comparacion.png`).
+
+**Archivos:**
+- Nuevo: `tools/assets/reducir_texturas_glb.py`.
+- Modificado: `assets/models/freddy.glb`.
+- Catálogo: fila de `freddy.glb` actualizada, en el repositorio y en la copia.
+
+### 1.71 Pendiente A2 (FDAF): la regresión automática vive en el repositorio, sesión 2026-10-24
+
+**Problema (§2.72 A2):** los arneses de prueba vivían en el scratchpad de cada sesión de Claude y había que copiarlos de una a otra. Nadie más podía ejecutarlos.
+
+**Ahora:** `tools/tests/` en la raíz de `five_doors_at_freddys`.
+- `src/` tiene los 15 arneses que usa la regresión: `VerificarRecursos`, `OverlayPuertas`, `PruebaHover`, `PruebaHoverVuelta`, `FlujoIdioma`, `MedirIdioma`, `PruebaIntros`, `RenderHud`, `PruebaLogro`, `PruebaLineasIntro`, `PruebaDestelloNyder`, `PaginasInfo`, `PruebaIntroLlamada`, `PruebaRendirse2`, `FondoMenuBordes`.
+  - Se revisó que no tengan rutas absolutas ni datos personales.
+  - Los diagnósticos de un solo uso se quedaron fuera.
+- `run_tests.sh` (uso: `JDK8_HOME=<jdk1.8 con JavaFX> sh tools/tests/run_tests.sh [rapida]`):
+  - Compila `FiveDoorsAtFreddys/src` (con los `.jar` de `src/libs`, si hay) y los arneses en `tools/tests/out/`.
+  - Ejecuta cada prueba con `user.home` en `tools/tests/out/home`, recreado para cada una: **nunca toca el progreso real**.
+  - `rapida` ejecuta solo el español.
+  - `BUILD=<carpeta>` prueba un árbol ya compilado (por ejemplo, el índice exportado sin el trabajo ajeno).
+  - Rutas relativas al propio script. En Windows: `cygpath` y `MSYS_NO_PATHCONV=1`.
+  - **Gotcha:** con `MSYS_NO_PATHCONV=1`, Git Bash ya no convierte las rutas que se le pasan a `javac`. Las listas de fuentes van en un `@archivo`, con rutas de Windows entre comillas y barras normales.
+- `.gitignore`: `/tools/tests/out/`.
+
+**Verificado:** `run_tests.sh rapida` desde el repositorio. Las 20 pruebas se compilaron y se ejecutaron, todas en OK, con las mismas cifras que la regresión del scratchpad:
+- `VerificarRecursos`: 198 rutas OK;
+- `PruebaHover`: 57 OK;
+- `PruebaHoverVuelta`: 72 OK;
+- logro, líneas de intro y destello: 0 fallos.
+
+**Archivos:** `tools/tests/src/*.java` (15) y `tools/tests/run_tests.sh` (nuevos); `.gitignore`.
+
+### 1.72 Pendiente A3: el empaquetado admite bibliotecas en `src/libs` y los `.bat` quedan en CRLF, sesión 2026-10-24
+
+**Problema (§2.72 A3):** el trabajo ajeno sin publicar (FlatLaf: `Main.java`, `.classpath` y `src/libs/flatlaf-3.6.1.jar`) no compilaba con `build-portable.bat`, porque el script no añadía `src/libs` al classpath. Si se publicaba tal cual, la carpeta portable y `build-distribucion.bat` (que lo llama) se rompían.
+
+**Cambio (sin integrar el trabajo ajeno, que sigue sin tocarse):** `build-portable.bat` admite ahora cualquier `.jar` de `src\libs`, de forma genérica.
+- Si los hay, se pasan a `javac` (`-cp "src\libs\*"`) y se descomprimen dentro de las clases antes de crear el JAR. La carpeta portable sigue siendo un único `java -jar FiveDoorsAtFreddys.jar`.
+- Se quitan las firmas (`*.SF`, `*.RSA`, `*.DSA`) y el manifiesto de las bibliotecas: el JAR final lleva el suyo, con `Main-Class`.
+- **Sin `src\libs`, el comportamiento es exactamente el de antes.**
+
+**Hallazgo al probarlo:**
+- En esta copia, los tres `.bat` del repositorio estaban con LF puro en el árbol de trabajo. Con LF, `cmd.exe` pierde caracteres al azar: "EM" y "et" en vez de REM y set, reproducido con la copia de prueba.
+- Funcionaba de casualidad, según dónde caían los saltos de línea.
+- Se agregó `.gitattributes` (`*.bat text eol=crlf`, también `*.cmd`) para que cualquier clon los reciba en CRLF sin depender de `core.autocrlf`. Los tres `.bat` del árbol de trabajo se normalizaron.
+- En el índice siguen en LF (lo normal con `text`), así que `build-exe-launcher.bat` y `build-distribucion.bat` no tienen cambios de contenido.
+- Escape ya tenía su `.gitattributes` con la misma regla.
+
+**Verificación:** se ejecutó el script real en una copia que solo cambia las carpetas de entrada y salida, y termina antes de copiar el runtime (cientos de MB) y de generar el `.exe`.
+- **Con `src/libs`** (el árbol de trabajo, con el `Main.java` de FlatLaf): compila, el JAR contiene las 333 clases de `com/formdev`, sin firmas, y `javap` resuelve `com.formdev.flatlaf.FlatDarkLaf` desde el JAR.
+- **Sin `src/libs`** (el árbol publicado, exportado con `git archive HEAD`): compila y el JAR tiene las mismas 442 entradas de siempre, sin FlatLaf.
+- No se generó ni se ejecutó una carpeta portable completa: el paso que se cambió es la compilación y el empaquetado del JAR, y el resto del script quedó igual.
+
+**Para quien publique FlatLaf:** basta con agregar `Main.java`, `.classpath` y el `.jar` de `src/libs`. Los scripts ya no necesitan cambios.
+
+**Archivos:** `FiveDoorsAtFreddys/build-portable.bat` y `.gitattributes` (nuevo).
+
+### 2.78 Pendientes A2 y B5 (Escape): la regresión automática vive en el repositorio, con capturas opacas, sesión 2026-10-24
+
+**Ahora:** `tools/tests/` en `five_doors_escape`.
+- `src/` contiene:
+  - los arneses de la regresión: `PruebaMundo` (modos puertas, bordes, sprint, aturdir, cortina, intro, escalón, mesas, foco, pasos, pausa), `PruebaVictoria`, `PruebaDerrota`, `PruebaArranque`, `PruebaCarga` y `PruebaRendimiento`;
+  - tres diagnósticos útiles para volver a medir, que no forman parte de la regresión: `DiagPisadas` (altura y contactos de los pies en un ciclo, §2.73), `DiagPisadasRender` (vista lateral del ciclo en PNG) y `DiagTexturas` (render de cerca para comparar texturas, §2.77).
+  - Sin rutas absolutas ni datos personales.
+- `run_tests.sh` (uso: `JAVA_HOME=<jdk-21> sh tools/tests/run_tests.sh [modo...]`):
+  - Compila con `gradlew lwjgl3:installDist` y compila los arneses contra sus bibliotecas.
+  - Ejecuta desde `assets/` con `user.home` en `tools/tests/out/home`, recreado en cada prueba: preferencias, `handoff` y señales de prueba nunca salen de ahí.
+  - Sin modos corre toda la regresión (20 ejecuciones). Los modos sueltos van como `mundo:pausa`, `victoria:completa`, `derrota`, `carga`, `rendimiento`…
+  - `.gitignore`: `/tools/tests/out/`.
+- **B5:** `Opaco.aplicar` (nuevo, en los arneses) pone el alfa en 255 antes de guardar cada captura. El framebuffer deja alfa < 1 y los PNG se veían lavados o agujereados en un visor (§2.61), aunque en el juego no pasara nada. Comprobado: capturas con alfa mínimo y máximo de 255.
+- Los arneses del repositorio ya incluyen lo de esta sesión: encolan los sonidos de pasos (como `BootScreen`), los modos `pasos` y `pausa`, el ratón simulado y el `deltaTime` fijo para la IA.
+
+**Verificado:** la regresión completa desde el repositorio dio 20 de 20 ejecuciones con `FALLOS: 0`, 1773 comprobaciones en OK y ningún FALLO. Incluye `mundo_pasos`, `mundo_pausa`, la victoria completa y omitida en los dos idiomas, las tres derrotas, el arranque y la carga.
+
+**Archivos:** `tools/tests/src/*.java` (10) y `tools/tests/run_tests.sh` (nuevos); `.gitignore`.
+
+### 2.79 Auditoría de ambos proyectos (tercera ronda), sesión 2026-10-24
+
+Revisión del estado tras §2.73-§2.78 y §1.69-§1.72, contrastada con el código y con lo medido en esta sesión.
+- **Escape:** regresión completa desde el repositorio, 20/20 ejecuciones con 0 fallos y 1773 OK.
+- **FDAF:** `run_tests.sh rapida`, todo en OK.
+
+Prioridad: **A** = arreglar antes de la próxima entrega; **M** = conviene; **B** = cuando se toque la zona.
+
+**Estado de los pendientes de §2.72:**
+
+| Id | Estado |
+|---|---|
+| A1 (`freddy.glb` 4096²) | **Cerrado** (§2.77): 114 → 36 MB; carga completa de 11.2-11.4 s a 8.2-8.3 s; jumpscare de cerca sin diferencias visibles. |
+| A2 (arneses fuera de los repositorios) | **Cerrado** (§1.71, §2.78): `tools/tests/` con `run_tests.sh` en cada repositorio, perfil aislado y rutas relativas. |
+| A3 (FlatLaf rompería `build-portable.bat`) | **Cerrado** (§1.72): admite `src/libs` de forma genérica, comprobado con y sin la biblioteca. Además, `.bat` en CRLF con `.gitattributes`. |
+| M1 (la intro de la Noche 1 corta ~1 s antes) | **Sigue abierto, revisado.** Para corregirlo hay que conocer el cuadro de las franjas analizando el GIF (12-14 MB) en segundo plano y reprogramar el final. Se tocaría código de GIF/AWT congelado y sensible (§1.7) para ganar ~1 s de la tarjeta final. No se hizo. |
+| M2 (la IA sin el barrido del escalón) | **Descartado por análisis estático.** La caja de los guardias está centrada en sus pies (semialto 0.9 m): sobre el escenario cubre de -0.34 a 1.46 m y sigue chocando con el tablero de las mesas (< 0.8 m). El atasco del jugador (§2.65) venía de su caja centrada en los ojos, que quedaba por encima de la mesa. No se reprodujo porque no puede darse con esa geometría. |
+| M3 (`freddy_music_box.wav` de 18.4 MB como `Sound`) | **Sigue abierto, baja a B.** Son 18 MB de RAM, sin problemas medidos. Pasarlo a `Music` obligaría a duplicar en `Music` el paneo y el volumen de categoría que ahora están en `SonidoConVolumen`. |
+| M4 (tamaño de `GameplayScreen`) | **Sigue abierto.** 3212 líneas (+52 netas): lo nuevo se sacó a clases propias (`MenuPausa`, `PasosAnimatronicos`, `VolumenAudio`), pero el enganche suma. |
+| M5 | Cerrado (§2.72). |
+| M6 (camino de desarrollo con gradle) | **Sigue abierto, revisado.** Usar el `installDist` cuando exista podría lanzar un build viejo si el código cambió después. Habría que comparar fechas con las fuentes y los assets antes de elegirlo. Sin cambio. |
+| B5 de §2.62 (capturas con alfa) | **Cerrado** (§2.78, `Opaco`). |
+| B1-B4, B5 de §2.72 | Sin cambios. |
+
+**Hallazgos nuevos:**
+
+| Id | Proyecto | Hallazgo | Recomendación | Esfuerzo | Riesgo |
+|---|---|---|---|---|---|
+| A4 | Ambos | Antes de esta publicación, el trabajo ajeno sigue sin publicar: FlatLaf, `Juego.java` (batería desde la Noche 3), `NYDER.png`, los íconos sin seguimiento, `if3001 - pf - grupo#1/` y `dev/` en Escape. Los commits de esta sesión no lo incluyen. | Que su autor decida. `build-portable.bat` ya está preparado para FlatLaf (§1.72). | Bajo | Medio |
+| M7 | Escape | Los pasos (§2.73) no tienen oclusión: un animatrónico detrás de una pared suena igual que uno en un pasillo abierto (solo distancia y paneo). | Atenuar si un rayo cámara-animatrónico cruza un collider estático (filtro de volumen; libGDX `Sound` no tiene pasabajos). | Medio | Bajo |
+| M8 | Escape | El volumen de Escape (§2.75) es independiente del de FDAF (escala 1-10 en `config.properties`): quien bajó el volumen en FDAF lo encuentra al 100 % en Escape. | Pasar el volumen general de FDAF en el `handoff` y usarlo como valor inicial si Escape no tiene preferencias propias. | Bajo | Bajo |
+| M9 | Escape | `pizzeria.glb` (71 MB) tiene una textura de 4096² (`main_material_metallicRoughness`, ≈64 MB de VRAM); el resto del archivo es geometría (1.3 M triángulos). | `reducir_texturas_glb.py ... 2048` y revisar el mapa en capturas. | Bajo | Bajo |
+| B6 | Escape | Los ciclos de caminar retargeteados son asimétricos (Freddy apoya a 0.63 y 0.91 s de un ciclo de 1 s; Bonnie y Foxy a 0.17/0.83). El sonido lo reproduce fielmente y se oye "cojo", igual que se ve. | Corregir los clips en Blender si molesta (§2.6, pipeline Rokoko). | Medio | Medio |
+| B7 | Escape | Las cadenas antiguas de `strings*.properties` siguen sin tildes ("menu", "Musica" en otras pantallas…), aunque la fuente sí tiene los glifos (§2.75). | Corregirlas en una pasada, revisando cada pantalla en capturas. | Bajo | Bajo |
+| B8 | FDAF | `VerificarRecursos` lista los 160 cuadros de `videos/surrender/` como "sin referencia" porque se cargan con un nombre armado (`%04d`). Es un falso positivo del arnés, no del juego. | Enseñarle al arnés el patrón de la secuencia. | Bajo | Ninguno |
+| B10 | FDAF | En una corrida de la regresión (§1.73), `PruebaLogro_ESPANOL` terminó justo después del `ERROR_MEDIA_INVALID` intermitente del vídeo de victoria, sin escribir su resumen; repetida dos veces, completa. No se sabe si el corte viene del arnés o de JavaFX, y no se reprodujo en el juego. | `run_tests.sh` ya lo marca como `AVISO`. Investigarlo si vuelve a aparecer. | Bajo | Bajo |
+| B9 | Ambos | `.glb` va por Git LFS en Escape (`.gitattributes`). Cada versión de `freddy.glb` ocupa cuota de LFS (114 MB la anterior, 36 MB la nueva). | Nada que hacer ahora; tenerlo en cuenta antes de iterar modelos grandes. | — | — |
+
+**Publicado:**
+- Escape: `dea1851` (incluye el objeto LFS de `freddy.glb`).
+- FDAF: v2.13, el commit que contiene esta sección: estrella blanca (§1.70), exportación con alfa de NYDER (§1.69), `tools/tests` (§1.71) y `build-portable.bat` con `.gitattributes` (§1.72).
+- En ningún caso se incluye el trabajo ajeno sin publicar.
+
+**No verificado en esta sesión** (dicho explícitamente):
+- ninguna escucha humana de los sonidos nuevos;
+- ninguna partida jugada por una persona;
+- el foco real de Windows con ALT+TAB (simulado con `EstadoVentana`);
+- la carpeta portable completa con runtime y `.exe` (se probó la compilación y el JAR).
+
+### 1.73 Recuperación tras la pérdida de conexión, regresión de v2.13 y aviso de pruebas incompletas, sesión 2026-10-26
+
+**Estado encontrado al retomar** (comprobado con `git status`, `git fetch` y los archivos, no con los resúmenes):
+- **Escape:** `dea1851`, igual a `origin/master`. Solo queda `dev/` (ajeno) sin seguimiento.
+- **FDAF:** en `3c78302` (v2.12), igual al remoto. La v2.13 estaba preparada en el índice y sin commit: §1.69-§1.72, §2.73-§2.79, estrella blanca, `tools/branding`, `tools/tests`, `build-portable.bat`, `.gitattributes` y catálogo.
+  - El índice coincidía con el árbol de trabajo para esos archivos.
+  - El trabajo ajeno (FlatLaf, `Juego.java`, `NYDER.png`, `CargarSonido.java`, los íconos, `src/libs`, `if3001…`) seguía sin preparar e intacto.
+  - `build-exe-launcher.bat` y `build-distribucion.bat` aparecen modificados solo por el cambio de fin de línea a CRLF (§1.72); en el índice no hay cambios de contenido.
+- **La regresión de v2.13 se había cortado** a mitad (`PruebaIntros_INGLES`, ejecución 18). Quedaba un Java de esa prueba (perfil aislado de la regresión) que terminó solo al retomar.
+- Los recursos de NYDER (§1.69) estaban completos en `FDAF assets/branding/` y se volvieron a comprobar: el WebM se decodifica como `yuva420p`, 1920×800, 2.73 s; están el MOV, las 82 PNG y `verification/`.
+
+**Regresión de v2.13, repetida limpia** (índice exportado con `git checkout-index` a una carpeta nueva: sin FlatLaf, sin `src/libs`, `MENOR = 13`; `run_tests.sh` completo, ES y EN):
+- 31 ejecuciones, `FIN_REGRESION`, código de salida 0.
+- 180 líneas OK y 0 FALLO:
+  - `VerificarRecursos`: 198 rutas;
+  - `PruebaHover`: 57 + 57; `PruebaHoverVuelta`: 72 + 72;
+  - `DESBORDES=0` en los dos idiomas;
+  - `PruebaLogro` EN: 24 OK;
+  - líneas de intro y destello de NYDER: 0 fallos;
+  - Rendirse: toque, mantener y natural en OK.
+- **Observación:** en esa corrida, `PruebaLogro_ESPANOL` terminó tras 9 OK, justo después de un `[ERROR VIDEO] ERROR_MEDIA_INVALID` (el fallo intermitente del vídeo de victoria de JavaFX, ya conocido), sin escribir su línea final. No hubo ningún FALLO, pero la prueba quedó incompleta.
+  - Repetida sola dos veces con el mismo árbol: 24 OK, 0 FALLO, salida 0, sin error de vídeo.
+  - Queda como hallazgo: cuando el vídeo falla, el proceso de prueba puede terminar antes de tiempo (B10 en §2.79). No se reprodujo en el juego.
+
+**Cambio: `tools/tests/run_tests.sh` avisa de las pruebas incompletas.** Una prueba que se corta no escribe "FALLO", así que antes pasaba desapercibida. Ahora el script:
+- muestra `AVISO` si el proceso termina con un código distinto de 0;
+- muestra `AVISO` si una prueba que siempre escribe su resumen (`FALLOS:`/`RESULTADO:`: `PruebaLogro`, `PruebaLineasIntro`, `PruebaDestelloNyder`, `OverlayPuertas`, `PruebaHover`, `PruebaHoverVuelta`, `VerificarRecursos`) no lo escribió;
+- imprime `AVISOS: N` al final.
+
+**Verificado** con el `run()` real y dos "java" falsos:
+- uno corta con código 1 y sin resumen: 2 avisos;
+- otro termina bien con resumen: ningún aviso;
+- una prueba sin resumen esperado (`RenderHud`): ningún aviso.
+
+**Archivos:** `tools/tests/run_tests.sh` y este `CLAUDE.md`.
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos

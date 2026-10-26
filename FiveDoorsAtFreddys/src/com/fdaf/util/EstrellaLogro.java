@@ -81,7 +81,52 @@ public final class EstrellaLogro {
 		g.dispose();
 	}
 
-	// Icono de lado fijo para un JLabel (la estrella del menú).
+	// Versión blanca del menú (CLAUDE.md §1.70): blanca como el título, con un
+	// degradado muy leve, un borde oscuro fino y una sombra suave desplazada
+	// para que se lea sobre las franjas claras de la estática. Sin resplandor:
+	// un halo blanco la haría borrosa al lado del texto.
+	public static void pintarBlanca(Graphics2D g0, double cx, double cy, double radio) {
+		Graphics2D g = (Graphics2D) g0.create();
+		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+		double off = Math.max(1.0, radio * 0.06);
+		g.setColor(new Color(0, 0, 0, 90));
+		g.fill(forma(cx + off, cy + off, radio));
+		Path2D estrella = forma(cx, cy, radio);
+		g.setPaint(new GradientPaint((float) cx, (float) (cy - radio), Color.WHITE, (float) cx, (float) (cy + radio * 0.85),
+				new Color(222, 222, 228)));
+		g.fill(estrella);
+		g.setColor(new Color(28, 28, 34, 210));
+		g.setStroke(new BasicStroke((float) Math.max(1.2, radio * 0.05), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		g.draw(estrella);
+		g.dispose();
+	}
+
+	// Icono para el menú cuyo contorno VISUAL mide "alto" píxeles de la punta
+	// superior a las dos inferiores (una estrella de radio r mide 1.809 r de
+	// alto y 1.902 r de ancho), para igualarla con la altura visual de una palabra.
+	public static Icon iconoBlanco(final int alto) {
+		final double r = alto / 1.809;
+		final int ancho = (int) Math.ceil(1.902 * r) + 3;
+		return new Icon() {
+			@Override
+			public void paintIcon(Component c, Graphics g, int x, int y) {
+				pintarBlanca((Graphics2D) g, x + ancho / 2.0 - 1, y + r, r);
+			}
+
+			@Override
+			public int getIconWidth() {
+				return ancho;
+			}
+
+			@Override
+			public int getIconHeight() {
+				return alto + 3;
+			}
+		};
+	}
+
+	// Icono de lado fijo para un JLabel (la estrella dorada).
 	public static Icon icono(final int lado) {
 		return new Icon() {
 			@Override

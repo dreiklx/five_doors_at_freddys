@@ -1,2 +1,5 @@
 *.zip
 /dist-completa/
+
+# salida de tools/tests/run_tests.sh (compilado, capturas, perfil aislado)
+/tools/tests/out/
