@@ -86,6 +86,13 @@ public class Juego {
 	// vidas. La tabla completa vive aquí como dato -- ajustar el balance
 	// en el futuro es editar estos números, no tocar la lógica de abajo.
 	//
+	// [ACTUALIZADO 2026-10-26, CLAUDE.md §1.79] Noches 1-4 ajustadas por pedido
+	// explicito del usuario a partir de la simulacion de §1.78 (20 000
+	// partidas por noche con estas mismas clases): la curva de victorias
+	// queda en ~53/39/33/30/27 % (antes 40/31/33/27/27 %, no monotona).
+	// La Noche 5 ya estaba en el objetivo (27 %) y conserva su fila. Lo de
+	// abajo es la historia de la tabla anterior.
+	//
 	// Noche 1 deliberadamente INTOCADA (pedido explicito del usuario,
 	// sesion 2026-08-09). Noche 2-5 subidas tras una simulacion Monte
 	// Carlo real (100k partidas/noche, reutilizando Juego/GeneradorArbol/
@@ -104,11 +111,11 @@ public class Juego {
 	// asi que "regalar baterias" mas alla de esto no soluciona el
 	// problema de fondo y si vacia la mecanica de tension.
 	private static final double[][] PROBABILIDAD_BATERIA = {
-			{ 0.08, 0.05 }, // Noche 1 -- SIN CAMBIOS
-			{ 0.30, 0.22 }, // Noche 2
-			{ 0.46, 0.28 }, // Noche 3
-			{ 0.50, 0.32 }, // Noche 4
-			{ 0.62, 0.42 }, // Noche 5 -- atencion extra, pedido explicito
+			{ 0.37, 0.27 }, // Noche 1 -- antes 0.08/0.05 (§1.79)
+			{ 0.50, 0.36 }, // Noche 2 -- antes 0.30/0.22
+			{ 0.46, 0.30 }, // Noche 3 -- antes 0.46/0.28
+			{ 0.56, 0.38 }, // Noche 4 -- antes 0.50/0.32
+			{ 0.62, 0.42 }, // Noche 5 -- sin cambios (ya en el objetivo), atencion extra, pedido explicito
 	};
 
 	private boolean calificaParaBateria() {

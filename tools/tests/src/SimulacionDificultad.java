@@ -1,5 +1,4 @@
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.Random;
 
 import com.fdaf.mvc.models.juego.Juego;
@@ -31,9 +30,10 @@ public class SimulacionDificultad {
         fRndGen.setAccessible(true);
         Field fRndBat = Juego.class.getDeclaredField("randomBateria");
         fRndBat.setAccessible(true);
-        Field mods = Field.class.getDeclaredField("modifiers");
-        mods.setAccessible(true);
-        mods.setInt(fRndBat, fRndBat.getModifiers() & ~Modifier.FINAL);
+        // el Random de las baterias es static final: se re-siembra la MISMA instancia (setSeed). Sustituirla por
+        // reflexion no es fiable: la JIT trata el campo como constante y, compilado el metodo, seguia usando la
+        // instancia original sin semilla (variacion de +-1 punto entre corridas con la misma semilla, CLAUDE.md §1.79)
+        Random rndBateria = (Random) fRndBat.get(null);
         Field fTabla = Juego.class.getDeclaredField("PROBABILIDAD_BATERIA");
         fTabla.setAccessible(true);
         double[][] tabla = (double[][]) fTabla.get(null);
@@ -47,17 +47,17 @@ public class SimulacionDificultad {
         }
         System.out.println("variante " + variante + ", " + partidas + " partidas por noche, semilla " + semilla);
         System.out.println("tabla de baterias [1 vida, 2 vidas]: " + java.util.Arrays.deepToString(tabla));
-        System.out.println("noche | vidas | objetos | gana  | puertas reveladas (media, p90) | animatronicos (media) | baterias (media) | vidas al ganar (media) | pierde con >=80% de objetos | pierde con <=20% | arboles (media)");
+        System.out.println("noche | vidas | objetos | gana  | puertas reveladas (media, p90) | animatronicos (media) | baterias (media) | vidas al ganar (media) | pierde con >=80% de objetos | pierde con <=20% | arboles (media) | pierde sin ningun objeto | puertas max | partidas en el tope");
         for (Noche noche : Noche.values()) {
             PreferenciasJuego.nocheActual = noche;
             Random elegir = new Random(semilla * 1000 + noche.ordinal());
-            int ganadas = 0, perdidasCasi = 0, perdidasPronto = 0;
+            int ganadas = 0, perdidasCasi = 0, perdidasPronto = 0, perdidasSinNada = 0, enTope = 0, maxPuertas = 0;
             long sumaPuertas = 0, sumaAnim = 0, sumaBat = 0, sumaVidasFin = 0, sumaArboles = 0;
             int[] puertasHist = new int[2000];
             for (int p = 0; p < partidas; p++) {
                 Juego juego = new Juego();
                 fRndGen.set(fGen.get(juego), new Random(semilla * 7919 + noche.ordinal() * 100003L + p));
-                fRndBat.set(null, new Random(semilla * 104729 + noche.ordinal() * 1000003L + p));
+                rndBateria.setSeed(semilla * 104729 + noche.ordinal() * 1000003L + p);
                 juego.reiniciar();   // regenera el primer arbol con las semillas fijadas
                 int puertas = 0, anim = 0, bat = 0, arboles = 1;
                 Object arbolAntes = juego.getArbol();
@@ -89,8 +89,11 @@ public class SimulacionDificultad {
                 } else {
                     if (encontrados >= Math.ceil(total * 0.8)) perdidasCasi++;
                     if (encontrados <= Math.floor(total * 0.2)) perdidasPronto++;
+                    if (encontrados == 0) perdidasSinNada++;
                 }
                 sumaPuertas += puertas;
+                maxPuertas = Math.max(maxPuertas, puertas);
+                if (puertas >= 5000) enTope++;
                 sumaAnim += anim;
                 sumaBat += bat;
                 sumaArboles += arboles;
@@ -101,11 +104,12 @@ public class SimulacionDificultad {
                 acum += puertasHist[i];
                 if (acum >= partidas * 0.9) { p90 = i; break; }
             }
-            System.out.printf("%s |   %d   |   %2d    | %5.1f%% | %5.1f, %3d | %5.2f | %4.2f | %4.2f | %5.1f%% | %5.1f%% | %4.2f%n",
+            System.out.printf("%s |   %d   |   %2d    | %5.1f%% | %5.1f, %3d | %5.2f | %4.2f | %4.2f | %5.1f%% | %5.1f%% | %4.2f | %4.1f%% | %3d | %d%n",
                     noche, noche.getVidas(), noche.getCantidadColeccionables(), 100.0 * ganadas / partidas,
                     sumaPuertas / (double) partidas, p90, sumaAnim / (double) partidas, sumaBat / (double) partidas,
                     ganadas > 0 ? sumaVidasFin / (double) ganadas : 0, 100.0 * perdidasCasi / partidas,
-                    100.0 * perdidasPronto / partidas, sumaArboles / (double) partidas);
+                    100.0 * perdidasPronto / partidas, sumaArboles / (double) partidas, 100.0 * perdidasSinNada / partidas,
+                    maxPuertas, enTope);
         }
     }
 }

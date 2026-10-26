@@ -76,7 +76,7 @@ NOCHE_5(2, 10)
 - **Coleccionables:** 10 `TipoColeccionable` fijos, inventario de 10 slots en `PnlTableta`. Estados visuales: silueta bloqueada (`archivoBloqueado`) si posible-pero-no-encontrado-esta-noche, **X gris** (RGB 95,95,95 — deliberadamente ni negro puro ni blanco, elegido para no confundirse ni con la silueta negra ni con hallazgos reales; `Font.SANS_SERIF BOLD` tamaño 68) si el tipo no existe esta noche (`tipo.ordinal() >= cantidadColeccionables`), ícono real si ya se encontró. Clic en un slot muestra detalle grande (`lblMostrar`) + descripción bilingüe (`TipoColeccionable.getDescripcion(boolean ingles)`) en `lblDescripcion`.
 - **Mecánica de batería extra (agregada en esta sesión):** `TipoPuerta.BATERIA` — **reinterpretación dinámica de puertas `NADA` en el momento real de apertura** (dentro de `Juego.procesarPuerta`, NO en la generación del árbol, para que la evaluación use las vidas actuales reales). Condición original documentada en esta sesión: `nocheActual.ordinal() >= 2` (Noche 3+) Y probabilidad según vidas actuales. **[ACTUALIZADO 2026-07-30, verificado contra código real]:** `Juego.calificaParaBateria()` NO contiene ningún gate de noche — solo valida `vidas == 1 || vidas == 2` y consulta la tabla directamente. La tabla `PROBABILIDAD_BATERIA` tiene valores no-cero para Noche 1 y 2, así que la mecánica está activa **desde la Noche 1**, no desde la Noche 3. No se determinó si el gate se quitó deliberadamente o si nunca llegó a implementarse — la tabla completa de probabilidades por vidas actuales sigue siendo correcta:
 
-  > **[ACTUALIZADO 2026-10-26, §1.78]:** los valores de esta tabla están desactualizados desde la Noche 2. Los vigentes en el código son: N1 8 % (1 vida) / 5 % (2 vidas), N2 30/22 %, N3 46/28 %, N4 50/32 %, N5 62/42 %. La simulación de dificultad está en §1.78.
+  > **[ACTUALIZADO 2026-10-26, §1.78]:** los valores de esta tabla están desactualizados desde la Noche 2. **[ACTUALIZADO 2026-10-26, §1.79, v2.16]:** los vigentes en el código son N1 37 % (1 vida) / 27 % (2 vidas), N2 50/36 %, N3 46/30 %, N4 56/38 % y N5 62/42 %. Los de v2.15 eran N1 8/5 %, N2 30/22 %, N3 46/28 %, N4 50/32 % y N5 62/42 %. Las simulaciones están en §1.78 y §1.79.
 
   | Noche | 2 vidas | 1 vida |
   |---|---|---|
@@ -3549,9 +3549,11 @@ Debía conservarse en los botones de interfaz (menú, navegación, opciones, idi
   - Abrir una puerta elige el hijo izquierdo o el derecho (`elegirIzquierda/Derecha`, en el momento de abrir), y su contenido solo se ve con la puerta abierta y la luz encendida.
   - **No hay ninguna información antes de elegir**, así que un jugador veterano no tiene ventaja sobre uno nuevo: la dificultad es pura probabilidad.
   - Al llegar a una hoja, se genera un árbol nuevo con los coleccionables que falten.
-- **Baterías:** una puerta "nada" se convierte en batería al abrirla si quedan 1 o 2 vidas, con la probabilidad de `PROBABILIDAD_BATERIA[noche][vidas-1]` (publicada: N1 0.08/0.05, N2 0.30/0.22, N3 0.46/0.28, N4 0.50/0.32, N5 0.62/0.42, para 1 y 2 vidas).
+- **Baterías:** una puerta "nada" se convierte en batería al abrirla si quedan 1 o 2 vidas, con la probabilidad de `PROBABILIDAD_BATERIA[noche][vidas-1]` (publicada en v2.15: N1 0.08/0.05, N2 0.30/0.22, N3 0.46/0.28, N4 0.50/0.32, N5 0.62/0.42, para 1 y 2 vidas; **desde v2.16 (§1.79): 0.37/0.27, 0.50/0.36, 0.46/0.30, 0.56/0.38, 0.62/0.42**).
   - La tabla de §1.5 está desactualizada desde la N2.
 - **Noches** (`Noche`): vidas / coleccionables = N1 4/5, N2 3/6, N3 3/7, N4 2/8, N5 2/10.
+
+> **⚠️ CORREGIDO (§1.79):** el simulador sustituía por reflexión el `Random` de las baterías (`static final`), y la JIT podía seguir usando la instancia sin semilla. Las cifras de esta sección tienen un error de ±1 punto; las exactas, y la tabla ya aplicada, están en §1.79.
 
 **Simulador (`tools/tests/src/SimulacionDificultad.java`, nuevo):**
 - Usa `Juego`, `GeneradorArbol`, `Arbol` y la tabla reales; solo fija las semillas por reflexión.
@@ -3774,7 +3776,7 @@ Debía conservarse en los botones de interfaz (menú, navegación, opciones, idi
 | Id | Proyecto | Pendiente | Prioridad |
 |---|---|---|---|
 | A4 | Ambos | El trabajo ajeno sin publicar sigue igual (FlatLaf, `Juego.java` con baterías desde la N3, `NYDER.png`, íconos, `if3001…`, `dev/`). **Nuevo dato (§1.78):** el gate de la N3 dejaría la N2 en un 16 % de victorias. | Alta (decisión de su autor) |
-| D1 | FDAF | Recomendación de equilibrio (§1.78): tabla de baterías N1 0.40/0.30, N2 0.46/0.34, N3 0.44/0.28, N4 0.56/0.38, N5 sin cambios, para una curva 53 → 39 → 33 → 30 → 27 %. No aplicada: choca con el comentario "Noche 1 — SIN CAMBIOS" y es un ajuste subjetivo. | Media (decisión del usuario) |
+| D1 | FDAF | **Aplicada en §1.79 (v2.16)**, afinada a 0.37/0.27, 0.50/0.36, 0.46/0.30, 0.56/0.38 y la N5 sin cambios: 53/39/33/31/27 %. Texto original: recomendación de equilibrio (§1.78): tabla de baterías N1 0.40/0.30, N2 0.46/0.34, N3 0.44/0.28, N4 0.56/0.38, N5 sin cambios, para una curva 53 → 39 → 33 → 30 → 27 %. No aplicada: choca con el comentario "Noche 1 — SIN CAMBIOS" y es un ajuste subjetivo. | Media (decisión del usuario) |
 | D2 | FDAF | El sistema de puertas no da información antes de elegir, así que la habilidad no influye (§1.78). | Media (diseño) |
 | T1 | Escape | Tablero (§2.84): en algunos planos asoma un borde fino del panel rojo de la puerta a la izquierda del volante. | Baja |
 | P1 | Escape | Los pasos v2 (§2.85) no se escucharon con oídos humanos: falta validación auditiva real. | Media |
@@ -3789,6 +3791,57 @@ Debía conservarse en los botones de interfaz (menú, navegación, opciones, idi
 - **FDAF**, sobre el índice exportado (v2.15, sin trabajo ajeno ni `src/libs`): 32 ejecuciones, código de salida 0, `AVISOS: 0`. 203 líneas OK y 2 FALLO, ambas de B11 (repetida 3 veces: OK). `PruebaHover` 59 + 59, `PruebaHoverVuelta` 72 + 72, `VerificarRecursos` 198 rutas, `PruebaReinicio` 5/5, `FondoMenuBordes` OK.
 - **Escape** (`run_tests.sh` completo, con el modo nuevo `personajes`): 21/21 ejecuciones con `FALLOS: 0`, 1634 líneas OK y 0 FALLO. Incluye `mundo_pasos` (pasos v2 con la misma sincronización), `mundo_personajes` (§2.81-§2.83) y la victoria completa y omitida en los dos idiomas (tablero v3, persecución con pasos v2).
 - Al terminar no quedó ningún proceso de prueba vivo; solo el daemon de Gradle, que es normal.
+
+### 1.79 Tabla de baterías ajustada a la curva 53/39/33/30/27 %, sesión 2026-10-26
+
+**Pedido:** aplicar la tabla de baterías recomendada en §1.78 con estos objetivos de victoria: N1 53 %, N2 39 %, N3 33 %, N4 30 % y N5 27 %. Comprobar primero los valores actuales y conservar las noches que ya estén en el objetivo. No cambiar ninguna otra probabilidad ni mecánica. Volver a simular con las clases reales.
+
+**Antes de cambiar nada:**
+- **Corrección del simulador.** `SimulacionDificultad` sustituía por reflexión el `Random` de las baterías (`static final`). La JIT puede tratar ese campo como constante y, una vez compilado el método, seguía usando la instancia original sin semilla. Por eso la misma semilla variaba ±1 punto entre corridas.
+  - Ahora se re-siembra la misma instancia (`setSeed`). Comprobado: dos corridas con la misma semilla dan cifras idénticas.
+  - Las cifras de §1.78 tenían ese error de ±1 punto; las de esta sección son exactas.
+- **Valores actuales** (tabla de v2.15, medias de las semillas 1, 2 y 3): N1 **40.3 %**, N2 30.6 %, N3 32.5 %, N4 26.6 %, N5 **27.0 %**.
+  - La N5 ya estaba en el objetivo: **su fila no se tocó** (0.62/0.42).
+  - La N1 no estaba (40 % frente a 53 %), así que se ajustó junto con las noches intermedias.
+
+**Tabla aplicada (`Juego.PROBABILIDAD_BATERIA`, [1 vida, 2 vidas]):**
+
+| Noche | Antes | Recomendada en §1.78 | **Aplicada** |
+|---|---|---|---|
+| 1 | 0.08 / 0.05 | 0.40 / 0.30 | **0.37 / 0.27** |
+| 2 | 0.30 / 0.22 | 0.46 / 0.34 | **0.50 / 0.36** |
+| 3 | 0.46 / 0.28 | 0.44 / 0.28 | **0.46 / 0.30** |
+| 4 | 0.50 / 0.32 | 0.56 / 0.38 | **0.56 / 0.38** |
+| 5 | 0.62 / 0.42 | 0.62 / 0.42 | **0.62 / 0.42** (sin cambios) |
+
+- Con el simulador ya exacto, la tabla de §1.78 daba N1 54.5 %, N2 37.7-38.3 % y N3 31.2-32.6 %, a 1-1.5 puntos de los objetivos. Por eso se afinaron solo las noches 1 a 3, probando 3 variantes; las noches 4 y 5 ya cumplían.
+- **No se tocó nada más:** ni vidas, ni coleccionables, ni la generación del árbol, ni las condiciones de la batería (solo con 1 o 2 vidas), ni el tope de 4 vidas. El comentario "Noche 1 — SIN CAMBIOS" se sustituyó por la explicación, por pedido explícito del usuario.
+- El `Juego.java` local tiene además un cambio ajeno sin publicar (las baterías solo desde la N3). **No entra en el commit:** al índice se llevó la versión publicada con solo la tabla y su comentario (`git hash-object` + `update-index`), y el árbol de trabajo conserva el gate ajeno intacto.
+
+**Resultados** (`SimulacionDificultad`, 20 000 partidas por noche, clases reales compiladas desde el índice exportado; semillas 1, 2 y 3):
+
+| Noche | Victorias antes | **Victorias después** | Objetivo | Baterías por partida (antes → después) | Pierde con ≤ 20 % de objetos | Pierde sin ningún objeto | Máximo de puertas |
+|---|---|---|---|---|---|---|---|
+| 1 | 40.1-40.5 % | **53.2-53.7 %** | 53 % | 0.16-0.20 → 0.92-0.96 | 8.1-8.3 → 5.5-5.7 % | 2.1 → 1.4-1.6 % | 51-67 |
+| 2 | 30.2-31.2 % | **38.6-39.8 %** | 39 % | 0.94-0.99 → 1.46-1.55 | 12.1-12.3 → 10.1-10.7 % | 4.1 → 3.5-3.7 % | 53-56 |
+| 3 | 32.3-32.8 % | **32.7-33.5 %** | 33 % | 1.44-1.50 → 1.50-1.56 | 9.7-10.1 → 9.5-10.3 % | 3.3 → 3.1-3.3 % | 57-76 |
+| 4 | 26.5-26.7 % | **30.3-30.8 %** | 30 % | 2.23-2.26 → 2.53-2.55 | 15.9-16.6 → 15.1-15.2 % | 6.8-7.4 → 6.6-6.7 % | 68-73 |
+| 5 | 26.9-27.2 % | **26.9-27.2 %** (idénticas) | 27 % | 2.92-2.97 (sin cambios) | 22.6-24.4 % (sin cambios) | 6.8-7.1 % (sin cambios) | 76-84 |
+
+**Conclusiones:**
+- **La curva es monótona y está en el objetivo** (medias): 53.4 → 39.0 → 33.0 → 30.6 → 27.0 %. Antes era 40.3 → 30.6 → 32.5 → 26.6 → 27.0 %, con la N3 más fácil que la N2 y la N4 más difícil que la N5.
+- **La N5 da cifras idénticas antes y después,** lo que confirma que su fila y el resto de la mecánica no cambiaron.
+- **Sin partidas imposibles:** ninguna de las 300 000 simuladas llegó al tope de seguridad de 5000 puertas (el máximo fue de 84).
+  - Las derrotas tempranas (≤ 20 % de los objetos) y las derrotas sin ningún objeto bajan en las noches 1, 2 y 4, y quedan iguales en la 3 y la 5.
+  - Las derrotas "casi ganadas" (≥ 80 % de los objetos) bajan en la N1 (24.5 → 21-22 %) y quedan parecidas en las demás.
+- **La disponibilidad de baterías no disminuye por noche; aumenta** (0.94 → 1.50 → 1.54 → 2.54 → 2.94 por partida).
+  - Es lo que sostiene la curva: las noches avanzadas tienen menos vidas (4 → 3 → 3 → 2 → 2) y más coleccionables, y la batería solo aparece con 1 o 2 vidas.
+  - Lo que disminuye progresivamente es la tasa de victorias.
+  - Una tabla con baterías decrecientes por noche sería incompatible con los objetivos: con 2 vidas y 8-10 objetos, la N4 y la N5 caerían muy por debajo del 27 %.
+  - La probabilidad de la N2 (0.50) es mayor que la de la N3 (0.46). Aun así, la media de baterías obtenidas es prácticamente igual (1.50 frente a 1.54), porque en la N3 hay que recorrer más puertas.
+- **Cambio más visible:** la N1 pasa del 40 % al 53 %. La primera noche deja de perderse en 6 de cada 10 partidas y se convierte en una introducción más justa.
+
+**Archivos:** `Juego.java` (solo la tabla y su comentario), `tools/tests/src/SimulacionDificultad.java` (semillas corregidas, métricas nuevas: derrotas sin ningún objeto, máximo de puertas y partidas en el tope) y `Version.java`.
 
 ---
 
