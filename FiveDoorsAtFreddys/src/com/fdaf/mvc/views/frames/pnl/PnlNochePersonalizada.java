@@ -81,13 +81,16 @@ public class PnlNochePersonalizada extends JPanel {
 		Font fuenteEscape = Fuentes.obtener(38);
 		btnEscape = new JButton("ESCAPE");
 		estilizarBoton(btnEscape, fuenteEscape);
-		btnEscape.setBounds(920, 314, 550, 70);
+		// En la fila de "Atrás" (CLAUDE.md §1.80): a la altura de "Noche 1" el texto caía justo
+		// sobre el brillo del ojo de Freddy del fondo animado (~x 1227, y 345) y no se leía; a la
+		// altura de "Noche 5" quedaría sobre sus dientes. Esta franja del fondo es oscura.
+		btnEscape.setBounds(920, 729, 550, 70);
 		pnlNochePersonalizada.add(btnEscape);
 
 		lblEscapeBloqueado = new JLabel("");
 		lblEscapeBloqueado.setForeground(Color.WHITE);
 		lblEscapeBloqueado.setFont(Fuentes.obtener(24));
-		lblEscapeBloqueado.setBounds(920, 397, 550, 90);
+		lblEscapeBloqueado.setBounds(920, 800, 600, 90);   // debajo de ESCAPE (ver arriba)
 		lblEscapeBloqueado.setVisible(false);
 		pnlNochePersonalizada.add(lblEscapeBloqueado);
 

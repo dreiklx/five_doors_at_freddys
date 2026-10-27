@@ -53,10 +53,13 @@ public class PnlMenu extends JPanel {
 		txtpnFiveDoorsAt.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 		txtpnFiveDoorsAt.setFocusable(false);
 		txtpnFiveDoorsAt.setOpaque(false);
-		txtpnFiveDoorsAt.setFont(Fuentes.obtener(75));
+		// Jerarquía (CLAUDE.md §1.80): el título iba con la misma fuente, tamaño y color que los
+		// botones y no se distinguía de ellos. Negrita y un blanco algo cálido; mismo tamaño, para
+		// no repetir el recorte de "Freddy's" de §1.25 (la estrella se coloca con estas métricas).
+		txtpnFiveDoorsAt.setFont(Fuentes.obtener(75, java.awt.Font.BOLD));
 		txtpnFiveDoorsAt.setText("Five\r\nDoors\r\nat\r\nFreddy's");
 		txtpnFiveDoorsAt.setBounds(267, 50, 467, 370);
-		txtpnFiveDoorsAt.setForeground(Color.WHITE);
+		txtpnFiveDoorsAt.setForeground(new Color(242, 234, 220));
 		pnlMenu.add(txtpnFiveDoorsAt);
 
 		btnContinuar = new JButton("Continuar");

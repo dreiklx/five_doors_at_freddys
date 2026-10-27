@@ -3843,6 +3843,374 @@ Debía conservarse en los botones de interfaz (menú, navegación, opciones, idi
 
 **Archivos:** `Juego.java` (solo la tabla y su comentario), `tools/tests/src/SimulacionDificultad.java` (semillas corregidas, métricas nuevas: derrotas sin ningún objeto, máximo de puertas y partidas en el tope) y `Version.java`.
 
+### 2.87 Auditoría visual pendiente para la próxima sesión (ambos juegos), sesión 2026-10-26
+
+**Alcance y método:** solo auditoría, sin cambios de código ni de recursos. Hay un único `CLAUDE.md` para los dos proyectos (este archivo); Escape no tiene uno propio.
+- **Pendientes ya registrados:** los vigentes salen de §2.79, §2.86 y §4.
+- **Escape:** capturas de la regresión de §2.78 y siguientes (`five_doors_escape/tools/tests/out/`: carga, `mundo_aturdir`, `victoria_saltar_INGLES`, `derrota_ultima`).
+- **FDAF:** capturas de `five_doors_at_freddys/tools/tests/out/reg/`. **Advertencia:** el menú dice "v 2.12", así que esas capturas son anteriores a v2.13-v2.16 (la regresión de v2.16 escribió las suyas en una copia temporal). Antes de corregir cualquier punto de FDAF, hay que **volver a capturar con `run_tests.sh` sobre el árbol actual**.
+- No se jugó ni se lanzó ninguno de los dos juegos en esta auditoría.
+- **Leyenda:** **[C]** defecto confirmado en una captura; **[S]** mejora sugerida (criterio estético); **[NV]** no verificado visualmente.
+
+**Criterio general:** que los juegos se vean más profesionales y coherentes, no sumar efectos. Cada cambio debe conservar el rendimiento (Escape carga en ~8 s, §2.77) y no tocar código congelado o sensible de GIF/AWT en FDAF (§1.x, M1) sin una prueba que lo cubra.
+
+#### Five Doors Escape (de mayor a menor prioridad)
+
+**VE1 [S] Iluminación plana del comedor y de los pasillos: falta atmósfera de terror.**
+- **Problema:** en `mundo_aturdir/*.png` el comedor tiene una luz uniforme y gris. Las lámparas del techo no parecen encendidas, no hay sombras de contacto bajo los animatrónicos ni las mesas, y no hay niebla ni caída de la luz con la distancia. Bonnie, Chica y Foxy a media distancia se leen como siluetas pequeñas y planas, con la cara apenas visible.
+- **Propuesta:**
+  - bajar la luz ambiental, de modo que la linterna y unos pocos puntos de luz cálidos y localizados lleven la escena;
+  - niebla lineal suave (en el shader de gdx-gltf o con `ColorAttribute.Fog`);
+  - viñeta ligera;
+  - un "blob shadow" (un quad oscuro con alfa) bajo cada animatrónico.
+- **Resultado esperado:** contraste, profundidad y animatrónicos que destacan cuando la linterna los alcanza.
+- **Revisar:** `GameplayScreen` (entorno y luces), la configuración de `SceneManager`/`PBRShaderProvider` de gdx-gltf, `EntityFactory` (sombra falsa) y `pizzeria.glb` (materiales emisivos de las lámparas).
+- **Riesgos:**
+  - jugabilidad: si oscurece demasiado, hay que ver si los mensajes y el escalón siguen visibles;
+  - las pruebas por umbral de brillo (`mundo_foco`, `mundo_cortina`) pueden necesitar umbrales nuevos;
+  - shadow maps reales: no, por coste con 1.3 M triángulos (M9).
+- **Comprobar:**
+  - capturas antes y después de los mismos planos (`mundo_aturdir`, `mundo_personajes`), con el histograma de luminancia;
+  - FPS medidos en `victoria_completa`;
+  - regresión completa.
+
+**VE2 [C] Mensajes de interacción diminutos.**
+- **Problema:** "Press E to …" bajo la mira (`01_puerta_salida_cerrada`, `04_deposito_exit`, `08_puerta_conductor`) y "Mantén ESC para omitir" (`derrota_ultima`) ocupan unos 8-10 px de alto en 1080p. Son casi ilegibles y parecen texto de depuración.
+- **Propuesta:** escalar la fuente con la altura de la pantalla (unos 2.2-2.6 % del alto), con sombra o caja semitransparente y el mismo estilo que el resto de la interfaz (la fuente con tildes de §2.75).
+- **Revisar:** el HUD de `GameplayScreen` (dibujo del mensaje y la mira), `MenuPausa` y la fuente de §2.75.
+- **Riesgos:** que el texto largo en inglés o español se salga del ancho; que tape la mira.
+- **Comprobar:** capturas en ES y EN a 1280×720 y 1920×1080; `mundo_intro` y `victoria_*` siguen OK.
+
+**VE3 [C] Pantalla de victoria pobre: corte directo a negro.**
+- **Problema:** `09_pantalla_victoria.png` es texto plano "YOU ESCAPED / Press ESC to quit" sobre negro, justo después del plano del auto. Es un anticlímax frente a la calidad de la persecución.
+- **Propuesta:** aplicar el diseño **A de §4.2**, ya analizado y recomendado: el auto arranca, plano de los faros y fundido, y después el título con la misma tipografía y color del logo de la pantalla de carga (blanco y salmón).
+- **Revisar:** `EscapeVictoryScreen`, `interactuarConPuertaSalida()`, `prep_car.py` (auto, §2.84) y `victory_circus.wav`.
+- **Riesgos:** la sincronización del audio, que se pueda saltar con ESC, y las pruebas `victoria_completa`/`victoria_saltar`.
+- **Comprobar:** la secuencia de capturas temporizada (como `derrota_ultima`) y las dos pruebas de victoria en ES y EN.
+- **Necesita aprobación del usuario** (§4).
+
+**VE4 [C] Auto y estacionamiento low-poly y sin luz.**
+- **Problema:**
+  - en `06_estacionamiento` y `08_puerta_conductor` el auto rojo tiene facetas muy marcadas, la textura estirada y reflejos de "plástico";
+  - las farolas no dan luz en el suelo;
+  - el asfalto es plano y uniforme;
+  - el segundo auto gris está igual de plano.
+- **Propuesta:**
+  - materiales: más rugosidad y menos metalicidad en la carrocería, y suavizado de normales (`shade smooth` con auto-smooth) al preparar el modelo;
+  - un punto de luz cálido bajo cada farola, con un cono en el suelo hecho con un decal o un quad aditivo;
+  - una textura de asfalto con variación.
+- **Revisar:** `tools/assets/prep_car.py`, el modelo del estacionamiento en `assets/models/` y las luces del exterior en `GameplayScreen`.
+- **Riesgos:**
+  - el tablero (§2.84, T1): no reabrir el panel rojo;
+  - LFS (B9): cada `.glb` nuevo gasta cuota;
+  - Blender: mantener la versión 4.x en todo el proceso (memoria del proyecto).
+- **Comprobar:** los mismos planos `06`/`08`; la carga sigue en ~8 s.
+
+**VE5 [C/NV] Textura rara en el depósito.**
+- **Problema:** en `04_deposito_exit` la pared y la puerta muestran manchas negras geométricas, en bloques, que parecen UV rotas o una textura mal asignada. A esa escala no se distingue si es parte del diseño (señalización) o un defecto.
+- **Propuesta:** inspeccionar el material en Blender (por introspección, no por raycast: memoria del proyecto) y, si es un defecto, reasignar o arreglar las UV.
+- **Revisar:** `pizzeria.glb` (zona del depósito y EXIT) y la fuente en `FDAF assets/source_files/3d_models/`.
+- **Riesgo:** reexportar `pizzeria.glb` puede perder el ajuste de texturas de §2.80; reaplicarlo.
+- **Comprobar:** captura del mismo plano a resolución completa.
+
+**VE6 [S] Animatrónicos a distancia: presencia y animación.**
+- **Pendiente heredado de B6/P2:** el ciclo de caminar es asimétrico y se nota "cojo".
+- **Problema nuevo:** de pie y quietos (`aturdido_*`) se leen pequeños y sin peso: sin sombra (ver VE1) y sin brillo en los ojos a distancia. En cambio, el primer plano de Freddy (`07b_freddy_amenaza`) está muy bien.
+- **Propuesta:**
+  - emisivo sutil en los ojos (pupilas), visible en la oscuridad: un recurso clásico de FNAF;
+  - corregir la asimetría de los clips en Blender (B6).
+- **Revisar:** los materiales de los ojos en `freddy.glb`/`bonnie.glb`/`chica.glb`/`foxy.glb`, la herramienta `corregir_pose_glb.py` y `DiagPose`.
+- **Riesgos:**
+  - el emisivo no debe brillar en el jumpscare de cerca;
+  - las correcciones de manos y cupcake (§2.81, §2.82) viven en los clips Walk/Idle: no pisarlas.
+- **Comprobar:** `mundo_personajes`, `mundo_pasos` (sincronía de los pasos con el apoyo nuevo) y los jumpscares.
+
+**VE7 [S] Muerte definitiva: composición.**
+- **Problema:** en `derrota_ultima/d05` el brazo de Foxy entra en el plano de Bonnie de forma poco limpia; el resto de la secuencia (efecto de la tableta) funciona.
+- **Propuesta:** revisar el encuadre de la cámara de la cinemática para que no entren otros personajes.
+- **Revisar:** la cinemática de la derrota definitiva (§4.3, D3 implementada) en `GameplayScreen`.
+- **Comprobar:** la secuencia `derrota_ultima`.
+
+**VE8 [S] Pulido de la interfaz.**
+- B7: cadenas sin tildes en `strings*.properties`.
+- La pantalla de carga se ve bien (logo y consejo). Falta unificar la tipografía de "YOU ESCAPED" (pixelada) con el logo (sans), y la del menú de pausa.
+- **Comprobar:** capturas de cada pantalla en ES y EN.
+
+**Pendientes heredados que también afectan a la presentación:**
+- T1: borde del panel rojo en el tablero.
+- M7: pasos sin oclusión; es audio, pero afecta a la tensión.
+- Rendimiento: `pizzeria.glb` tiene 1.3 M triángulos (M9). **[NV]** No se midieron los FPS en esta auditoría. Hay que medirlos antes de VE1 o VE4 para tener una referencia.
+
+#### Five Doors at Freddy's, FDAF (de mayor a menor prioridad; capturas de v2.12, hay que volver a capturar)
+
+**VF1 [C] Tipografía incoherente entre pantallas.**
+- **Problema:** conviven al menos cinco estilos:
+  - monoespaciada de máquina de escribir en el menú y la selección de noches;
+  - sans pequeña en el HUD ("Energía restante");
+  - pixelada en "-CÁMARA DESACTIVADA-" y en el reloj de la intro ("12:00 AM / 2da Noche");
+  - sans dorada en "¡FELICIDADES!";
+  - el logotipo de NYDER.
+
+  El título del menú usa la misma fuente y el mismo tamaño que los botones, así que no hay jerarquía.
+- **Propuesta:** definir dos familias, una pixelada o de terminal para los titulares e intros y una legible para la interfaz y los textos. El título del menú debe ir más grande o como logotipo (por ejemplo, el mismo estilo que "FIVE DOORS ESCAPE" en la carga de Escape, para unir los dos juegos).
+- **Revisar:** `PnlMenu` y los paneles de `views/frames/pnl/`, la clase de fuentes en `com.fdaf.util` y `resources/fonts`.
+- **Riesgos:**
+  - `MedirIdioma`/`FlujoIdioma` verifican anchos; el inglés puede no caber;
+  - **la licencia de cualquier fuente nueva**;
+  - el WIP ajeno de FlatLaf (`Main.java`) también cambia el aspecto de Swing: coordinarse con su autor antes de tocar el look and feel.
+- **Comprobar:** `MedirIdioma`, `FlujoIdioma`, `PruebaHover*` y capturas del menú en ES y EN.
+
+**VF2 [C] "ESCAPE (Bloqueado)" se superpone a la luna del fondo.**
+- **Problema:** en la selección de noches (`noches_1y2_ESPANOL.png`) el texto de ESCAPE queda encima del dibujo de la luna, que es parte del fondo animado, y se lee mal.
+- **Propuesta:** mover la columna de ESCAPE o darle una placa o sombra.
+- **Revisar:** el panel de Noche personalizada (§1.x, botón ESCAPE), `PruebaLogro` (comprueba que el texto bloqueado cabe y que la estrella no tapa botones) y `FondoMenuBordes`.
+- **Riesgo:** la estrella de logro y su posición (§1.6x).
+- **Comprobar:** `PruebaLogro` (ES y EN) y la captura.
+
+**VF3 [C/NV] Tableta con el centro en blanco.**
+- **Problema:** en `hud_ESPANOL_3_tableta.png` el área central es un rectángulo blanco grande bajo "-CÁMARA DESACTIVADA- SOLO AUDIO". Puede ser un artefacto del render fuera de pantalla del arnés (no pinta la imagen de la cámara) o un defecto real; **no se pudo distinguir**.
+- **Propuesta:** comprobarlo primero en el juego. Si es real, poner estática o ruido oscuro en lugar del blanco, coherente con "solo audio".
+- **Revisar:** `RenderHud` (arnés) y el panel de la tableta o cámaras.
+- **Comprobar:** captura en el juego real y en `RenderHud`.
+
+**VF4 [S] HUD pequeño y sin integración.**
+- **Problema:** "Energía restante" y su batería ocupan unos 30 px en 1080p, abajo a la izquierda. La barra para abrir la tableta es un contorno fino y "COLGAR" (arriba a la izquierda) es una etiqueta pequeña. Son funcionales, pero parecen de prototipo frente al fondo detallado de la oficina.
+- **Propuesta:** escalar el HUD con la resolución, darle un panel con borde coherente con la tableta y agrandar la batería (`bateria1`-`bateria4`).
+- **Revisar:** `ControllerInterfaz` y la vista del juego (`alActualizarVidas`, íconos de batería, §1.5, tamaño 80×45).
+- **Riesgos:** que tape las puertas o los botones de luz; `OverlayPuertas` y `RenderHud` verifican cajas y posiciones.
+- **Comprobar:** `RenderHud` 1/3/5 y `OverlayPuertas`.
+
+**VF5 [S] "Cómo jugar" y "Acerca de": texto denso y diminuto.**
+- **Problema:** las páginas (`pag_ESPANOL.png`) son bloques de texto pequeño de varios párrafos, sin íconos.
+- **Propuesta:** menos texto por página, títulos más grandes e íconos de los objetos, las puertas y las baterías ya existentes.
+- **Revisar:** `PaginasInfo` (prueba) y su panel.
+- **Comprobar:** `PaginasInfo` en ES y EN.
+
+**VF6 [S] Pantallas de transición.**
+- `rend_preparacion.png`: fondo marrón liso con una barra gris, que parece una pantalla sin terminar. Unificarla con el lenguaje del apagón (diseño R1 de §4.1, ya recomendado).
+- La pantalla "Cargando…" del reinicio: **[NV]**, no hay captura.
+- **Revisar:** `PruebaRendirse2` (tres modos) y `ReiniciadorJuego`.
+
+**VF7 [NV] Puertas, coleccionables, animatrónicos y cinemáticas de FDAF.**
+- Solo se vio el overlay de un coleccionable (`ov_izq_GUITARRA_BONNIE`), que está bien integrado. Las animaciones GIF de las puertas, los jumpscares y el vídeo de victoria no tienen capturas en esta auditoría.
+- **Pendientes conocidos:** M1 (la intro de la Noche 1 corta ~1 s antes), el vídeo de victoria intermitente (`ERROR_MEDIA_INVALID`) y B11 (prueba del destello intermitente).
+- **Para auditarlas** hace falta una sesión con capturas temporizadas de esos momentos (pintando en un `BufferedImage` fuera de pantalla, nunca con `Robot`: memoria del proyecto).
+
+#### Orden recomendado para la próxima sesión
+1. **Volver a capturar FDAF** sobre el árbol actual y **medir los FPS de Escape**: es la referencia.
+2. VE2 y VF2: baratos, defectos confirmados.
+3. VE1: el mayor salto de calidad percibida en Escape.
+4. VF1 y VF4: la coherencia de FDAF.
+5. VE3 (necesita aprobación del diseño A de §4.2), VE4 y VE5.
+6. El resto.
+
+En cada paso, ejecutar la regresión del proyecto tocado, sin incluir el trabajo ajeno (A4) en los commits.
+
+### 2.88 Implementación de la auditoría visual §2.87 (Escape), sesión 2026-10-27
+
+**Pedido:** implementar VE1-VE8 y VF1-VF7 de §2.87, probar y preparar una distribución para que un amigo pruebe los juegos.
+
+**Correcciones a la auditoría §2.87, comprobadas contra el historial y el código antes de cambiar nada:**
+- **VE1:** el comedor no carece de atmósfera. Ya tiene luz en capas (ambiente 0.12, luna fría con sombras reales de 1024², linterna `SpotLightEx`, niebla 5-17 m y viñeta 0.82: §2.27-§2.29). Las capturas `mundo_aturdir` que lo hacían parecer plano están tomadas con la linterna apuntando a los animatrónicos.
+- **VE3:** §4 está **superado**: la victoria ya es una cinemática completa (salida, estacionamiento y auto: §2.49), no el diseño A. Lo único pobre era la pantalla final de texto.
+- **VE4:** el estacionamiento ya tiene charcos de luz bajo los faroles y sombras de contacto (§2.61).
+- **VF6:** la barra gris de Rendirse es el diseño pedido por el usuario (§1.60), no una pantalla sin terminar.
+
+**Medición de referencia antes de los cambios** (`run_tests.sh rendimiento`, `PruebaRendimiento`, misma máquina, ms por cuadro):
+
+| Zona | Tiempo por cuadro (fps) | Draw calls |
+|---|---|---|
+| Comedor | 14.59 ms (69 fps) | 362 |
+| Parts and Service | 8.33 ms (120 fps) | 131 |
+| Pirate Cove | 10.90 ms (92 fps) | 225 |
+| Persecución | 12.26 ms (82 fps) | 345 |
+| Estacionamiento | 11.72 ms (85 fps) | 692 |
+| Victoria | 15.01 ms (67 fps) | 677 |
+
+Carga: recursos 6252 ms, nivel 6156 ms.
+
+#### VE2 y VE8: fuentes nítidas y legibles (defecto confirmado y corregido)
+
+- **Causa real:** todas las pantallas usaban `new BitmapFont()`, la Arial de 15 px que trae libGDX, escalada de ×0.85 a ×8. El mensaje "Presiona E…" medía ~12 px en 1080p, y "ESCAPASTE", "GAME OVER" y "CORRE" se veían pixelados.
+- **`tools/ui/build_bitmap_fonts.py`** (nuevo) rasteriza **Inter** (SIL Open Font License 1.1; se toma de `Blender/<ver>/datafiles/fonts/Inter.woff2`) en formato AngelCode:
+  - `assets/ui/fonts/inter_ui.fnt/.png`: SemiBold, 56 px;
+  - `assets/ui/fonts/inter_title.fnt/.png`: ExtraBold, 128 px;
+  - ASCII, Latin-1 y comillas y rayas tipográficas.
+
+  Sin dependencias nuevas (no se usa `gdx-freetype`).
+- **`util/Fuentes`** (nuevo, como `com.fdaf.util.Fuentes`) carga las dos fuentes con mipmaps.
+  - `s()` y `t()` traducen las escalas antiguas: `setScale(Fuentes.s(1.3f))` ocupa lo mismo que el `setScale(1.3f)` de antes, porque la altura de línea de LSans 15 es 18. Así ninguna maquetación cambió de tamaño.
+  - `porAltoUi()` y `porAltoTitulo()` dimensionan por el alto de la ventana.
+- **Pantallas migradas:** `GameplayScreen` (HUD, instrucciones, ayuda, "Haz clic para entrar"; "CORRE" con la fuente de títulos), `MenuPausa`, `BootScreen`, `NightGameOverScreen`, `EscapeVictoryScreen` y `OmitirCinematica`.
+- **Legibilidad a 1080p:**
+  - el mensaje de interacción se dimensiona por el alto (2.3 %, unos 25 px en 1080p; antes ~12 px), con un desplazamiento bajo la mira proporcional y una sombra real;
+  - "Mantén ESC para omitir" pasa a 2.1 % del alto.
+- **Bug encontrado y corregido (existía antes):** en libGDX 1.14, `font.draw(batch, glyphLayout, …)` usa el color guardado en el `GlyphLayout` al crearlo, no el `setColor` posterior. Por eso:
+  - la "sombra" negra del mensaje de interacción se dibujaba blanca;
+  - el texto de "Mantén ESC para omitir" ignoraba su alfa (no se atenuaba).
+
+  Ahora cada color tiene su propio layout, o el color se fija antes de crearlo.
+- **B7 cerrado:** tildes en `strings.properties`: "Mantén ESC para omitir", "Ratón", "Presta atención" y "Preparando la pizzería...".
+
+#### VE3: pantalla final de victoria (mejora sugerida, implementada)
+
+`EscapeVictoryScreen` (la que sigue a la cinemática del auto) era texto Arial ampliado ×6 sobre negro. Ahora usa el lenguaje de la pantalla de carga:
+- el comedor de `ui/loading_background.jpg` muy oscurecido (32 %), alejándose despacio, con viñeta;
+- el título en Inter ExtraBold (15 % del alto), blanco cálido con resplandor rojo salmón tenue;
+- un filete rojo que crece bajo el título y "Presiona ESC para salir" que aparece a los 3 s y late suave.
+
+Todo entra con fundidos, porque la cinemática termina en negro. No cambian la música, ESC ni el cierre.
+
+`PruebaVictoria` guarda además `09b_pantalla_victoria_4s.png`, ya terminado el fundido (la captura `09` es de 2 cuadros después de abrir la pantalla).
+
+**Verificado:** `run_tests.sh carga mundo:intro mundo:pausa victoria:saltar derrota`, con 0 fallos en todas las pruebas. Comparé las capturas antes y después de la carga, las instrucciones, la pausa, el mensaje de interacción y la victoria en ES y EN.
+
+#### VE5: manchas negras en el depósito (defecto confirmado y corregido)
+
+- **Causa real:** `main_material` no es una textura repetible. Su `baseColor` es un **atlas** de islas grises sobre fondo negro: bloques lisos, las franjas de cuadros y los dibujos.
+  - El panel propio de la pared oeste del depósito (`SalidaExterior.construirPanel`, §2.49) usaba UV sacadas de las coordenadas del mundo (`z/2`, `y/2`) y recorría el atlas entero: bordes de islas y fondo negro.
+  - Además, 42 caras originales de `main_material` del depósito (una sala que el modelo de Sketchfab no estaba pensado para mostrar) caían también sobre bordes de islas.
+  - **No eran detalles intencionales.**
+- **Corrección** (sin tocar `pizzeria.glb` en disco, en el mismo paso que ya retira el hueco y el estante): esas caras y el panel usan un único punto del atlas, `UV_PARED_LISA_U/V` = (0.6475, 0.5068).
+  - Ese punto está dentro de una isla lisa del mismo gris que el resto del edificio (tono 25, radio de 30 px en el atlas de 2048, suficiente para los mipmaps; lo encontré con una transformada de distancia sobre el atlas).
+  - El log dice: "caras del deposito con pared lisa 42".
+- **Verificado:** comparé las capturas `03`, `04` y `05` de `victoria_saltar` antes y después (también aclaradas ×2.5): sin manchas, pared lisa, con el letrero EXIT y el aviso de la barra intactos. La colisión no cambia (solo cambian las UV). `victoria:saltar` sin fallos.
+
+#### VE1 y VE6: sombras de contacto bajo los animatrónicos (mejora implementada)
+
+- La linterna no proyecta sombras en gdx-gltf 2.3.0 (§2.62), así que, iluminados por ella, los animatrónicos parecían flotar.
+- **`world/SombrasContacto`** (nuevo): una mancha oscura de borde suave (un quad con degradado radial, el material de las calcomanías de sangre) bajo cada entidad con `AIComponent`, que sigue su posición.
+  - Se actualiza en el mismo `render()` de la subclase de `SceneManager` que hace el culling, así que vale para todos los estados.
+  - Se excluye de la pasada de sombras.
+  - Cuesta +4 draw calls.
+- **La iluminación de §2.27-§2.29 no se tocó** (ver la corrección de VE1 arriba).
+- **Verificado:** `mundo:personajes`, `mundo:aturdir` y `derrota` sin fallos. En las capturas, Freddy y Chica quedan asentados en el suelo.
+
+#### Lo que se revisó y no se cambió, con su motivo
+
+- **VE4, facetas del auto:** `prep_car.py` ya aplica sombreado suave con aristas marcadas desde 35°. Las facetas son la geometría low-poly del sedán CC0 de Quaternius: quitarlas exige otro modelo, y el pedido dice no reemplazar modelos sin necesidad. La luz bajo los faroles ya existe (§2.61, §2.70). Queda como mejora opcional.
+- **VE6, ojos emisivos:** en Freddy los ojos están dentro del atlas del traje (`FF_SuitTXT`), y en los demás un emisivo iluminaría el globo ocular entero, no la pupila. Requiere pintar texturas nuevas; pendiente.
+- **VE6, ciclos de caminar asimétricos (B6/P2):** requieren rehacer los clips en Blender (riesgo sobre §2.81/§2.82); pendiente.
+- **VE7, brazo de Foxy en la derrota:** a los 7.4 s el jugador está "rodeado por los cuatro" sobre el escenario (diseño de §2.50). No es un defecto.
+
+#### Rendimiento antes y después (VE1-VE8 completos), condiciones equivalentes
+
+`PruebaRendimiento`, misma máquina, alternando HEAD `6c4e277` (worktree limpio) y la versión nueva, dos corridas de cada una (ms por cuadro):
+
+| Zona | Antes (corrida 1 / 2) | Después (corrida 1 / 2) | Draw calls (antes → después) |
+|---|---|---|---|
+| Comedor | 15.56 / 13.97 | 13.95 / 13.43 | 362 → 366 / 358 |
+| Parts and Service | 8.61 / 8.87 | 8.52 / 8.48 | 131 → 135 |
+| Pirate Cove | 10.45 / 10.68 | 10.27 / 10.91 | 225 → 229 / 237 |
+| Persecución | 12.14 / 12.20 | 11.27 / 11.45 | 345 → 349 / 341 |
+| Estacionamiento | 11.82 / 11.31 | 11.42 / 11.47 | 692 → 696 |
+| Victoria | 14.96 / 14.63 | 14.61 / 14.56 | 677 → 681 |
+| Carga (recursos + nivel) | 6.0 + 6.2 s / 5.3 + 4.4 s | 5.4 + 4.4 s / 5.2 + 4.1 s | — |
+
+- **Sin pérdida de rendimiento:** todas las diferencias están dentro de la variación entre corridas.
+- Las sombras de contacto suman 4 draw calls (las variaciones de ±8 en Pirate Cove y el comedor son del recorrido de la IA).
+- Las fuentes nuevas pesan 270 KB de PNG en total.
+
+**Regresión completa de Escape** (`run_tests.sh`, sin modos): **21 pruebas, todas con `FALLOS: 0`**:
+- `mundo`: puertas, bordes, sprint, aturdir, cortina, intro, escalón, mesas, foco, pasos, pausa y personajes;
+- victoria completa y saltada, en ES y EN;
+- derrota: última vida, saltada y normal;
+- arranque;
+- carga.
+
+**Archivos de Escape:**
+- **Nuevos:** `util/Fuentes.java`, `world/SombrasContacto.java`, `tools/ui/build_bitmap_fonts.py`, `assets/ui/fonts/` (dos fuentes y `LICENSE_Inter_OFL.txt`).
+- **Modificados:** `GameplayScreen`, `MenuPausa`, `BootScreen`, `NightGameOverScreen`, `EscapeVictoryScreen`, `OmitirCinematica`, `SalidaExterior`, `assets/i18n/strings.properties` y `tools/tests/src/PruebaVictoria.java`.
+- **Catálogo:** `docs/catalogo_recursos.md` y su copia en `FDAF assets`. Espejo en `FDAF assets/escape/ui/fonts/`.
+
+
+
+### 1.80 Implementación de la auditoría visual §2.87 (FDAF), sesión 2026-10-27 (v2.17)
+
+**Primero, capturas nuevas de la versión actual** (`run_tests.sh rapida` sobre HEAD v2.16 exportado). Las de la auditoría eran de v2.12 y varias conclusiones de §2.87 cambiaron:
+
+| Punto | Estado real en v2.16 | Qué se hizo |
+|---|---|---|
+| **VF1** tipografía | **No hay cinco familias.** Todo el texto dibujado es Consolas (`Fuentes`). "-CÁMARA DESACTIVADA-", el reloj de las intros y "Energía restante" son imágenes y GIF del juego. Lo que sí faltaba era **jerarquía**: el título del menú tenía la misma fuente, tamaño y color que los botones. | Título en **negrita** y blanco cálido (242, 234, 220). Mismo tamaño 75, para no repetir el recorte de "Freddy's" de §1.25. La estrella se coloca con las métricas del título y sigue en su sitio. |
+| **VF2** "ESCAPE (Bloqueado)" | **Confirmado.** En la fila de "Noche 1", el texto caía sobre el brillo del ojo de Freddy del fondo animado (en la base de 1600×900, x≈1227, y≈345). La fila de "Noche 5" tampoco sirve: ahí están los dientes. | ESCAPE pasa a la columna derecha **en la fila de "Atrás"** (920, 729), una franja oscura del fondo. Su mensaje de bloqueo va debajo (920, 800, 600×90). La columna derecha se mantiene, como pidió el usuario (§1.66). |
+| **VF3** tableta en blanco | **No era un defecto del juego.** `camera_static.gif` es oscuro (brillo medio 12-16 de 255 en sus 8 cuadros). El blanco venía del arnés: `drawImage` escalado de un GIF animado es asíncrono, y la primera pasada de `printAll` sobre un panel nunca mostrado no dibuja nada. | `RenderHud.guardar` hace una pasada de calentamiento y espera 600 ms. Ahora la captura muestra la estática real, el rótulo, los coleccionables, la energía y "Rendirse". |
+| **VF4** HUD | Ya mejorado desde v2.12: la batería del HUD mide 253×24 (antes 163×18), "Energía restante" se lee bien a 1080p, y COLGAR y la barra de la tableta son los gráficos del juego. | Sin cambios: no se cambia lo que funciona solo por cambiarlo. |
+| **VF5** "Cómo jugar" | La auditoría lo juzgó por `pag_ESPANOL.png`, que es un **mosaico** de las 13 páginas en miniatura. El cuerpo es Consolas 26 escalada (~31 px en 1080p). | Sin cambios. |
+| **VF6** transiciones | La barra gris de Rendirse es el diseño pedido por el usuario (§1.60). El "Cargando..." del reinicio usa la fuente del juego. | Sin cambios. |
+| **VF7** puertas, sustos y vídeo | Las capturas de `OverlayPuertas` muestran los coleccionables integrados en las puertas. Los GIF de jumpscare y el vídeo de victoria no se pueden capturar sin `Robot` (no viable, memoria del proyecto). El vídeo sigue con su fallo intermitente conocido `ERROR_MEDIA_INVALID` (§1.28): la partida continúa sin él. | Sin cambios. Queda sin verificar visualmente. |
+
+**Verificado:** regresión completa (`run_tests.sh`, ES y EN) sobre el índice de v2.17 exportado (sin FlatLaf, sin `src/libs` y sin el gate ajeno de `Juego.java`): **13 resúmenes con `FALLOS: 0` y `AVISOS: 0`**. Revisé las capturas `menu_estrella` y `noches_*` en los dos idiomas. Sin cambios de dificultad: no se tocó `Juego` ni la persistencia.
+
+**Archivos:** `PnlMenu.java`, `PnlNochePersonalizada.java`, `tools/tests/src/RenderHud.java` y `Version.java` (v2.17).
+
+### 2.89 Cierre de la sesión 2026-10-27: mejoras visuales y versión de prueba para un amigo
+
+**Mejoras implementadas:**
+- **Escape (§2.88):**
+  - fuentes Inter nítidas en todas las pantallas;
+  - mensajes de interacción y de omisión legibles a 1080p;
+  - pantalla final de victoria rediseñada;
+  - depósito sin manchas negras;
+  - sombras de contacto bajo los animatrónicos;
+  - tildes en `strings.properties`.
+- **FDAF (§1.80, v2.17):** jerarquía del título del menú; "ESCAPE (Bloqueado)" legible.
+
+**Problemas corregidos (todos confirmados en capturas antes y después):**
+- **VE2:** fuente Arial de 15 px ampliada.
+- **Bug de color de `GlyphLayout`:** la sombra salía blanca y el alfa se ignoraba.
+- **VE5:** UV del depósito sobre el atlas.
+- **VF2:** ESCAPE caía sobre el ojo del fondo.
+- **VF3 (arnés):** la tableta salía en blanco solo en las capturas.
+
+**Revisado sin cambios, con su motivo (detalle en §1.80 y §2.88):**
+- VE1: la iluminación ya estaba en capas.
+- VE4: el auto es low-poly por su modelo.
+- VE7: el plano de la derrota es el diseño.
+- VF1: ya es una sola familia tipográfica.
+- VF4, VF5 y VF6: ya estaban bien o son diseño pedido.
+
+**Pruebas realizadas:**
+- **FDAF:** regresión completa (ES y EN) sobre el índice de v2.17: 13 resúmenes, `FALLOS: 0`, `AVISOS: 0`.
+  - En la regresión rápida previa sobre v2.16, `PruebaLogro_ESPANOL` se cortó una vez tras `ERROR_MEDIA_INVALID`: es el fallo intermitente conocido del vídeo, no de este cambio.
+- **Escape:** regresión completa, 21 pruebas con `FALLOS: 0`.
+- **Rendimiento:** equivalente, con dos corridas alternadas por versión (tabla en §2.88).
+- **Distribución:** probada desde la carpeta final, con el perfil aislado mediante `JAVA_TOOL_OPTIONS=-Duser.home=…`.
+  - Los `.exe` no admiten `-Duser.home`, pero esa variable la lee cualquier JVM y la heredan los procesos hijos.
+  - Confirmado con `jcmd VM.system_properties`.
+
+**Distribución de prueba:** `C:\Users\dfarl\Desktop\FiveDoors_TestBuild\` (991 MB).
+- **Construcción:** `build-distribucion.bat` desde *worktrees* limpios de los commits de esta sesión. El código empaquetado es idéntico al publicado: la enmienda final de los commits solo añadió esta sección de documentación y `build-exe-escape.bat`, que no forma parte de lo empaquetado (sin FlatLaf, sin `src/libs`, sin el gate ajeno ni `dev/`). Después, `tools/dist/build-exe-escape.bat` (nuevo, en Escape).
+
+| Archivo | Qué es | Probado |
+|---|---|---|
+| `FiveDoorsAtFreddys\FiveDoorsAtFreddys.exe` | launch4j (§1.23) → `runtime\bin\javaw.exe -jar FiveDoorsAtFreddys.jar` (JDK 8 + JavaFX embebido) | Abre la ventana "Five Doors At Freddy's", que responde. Proceso con el runtime de la entrega. El jar es v2.17 (`javap`: `MENOR = 17`). |
+| `FiveDoorsEscape\FiveDoorsEscape.exe` | **Nuevo:** launch4j con `lwjgl3/lib/*.jar` y `runtime` (JDK 21 embebido) | Abre la ventana de Escape, que responde. `java.home` = runtime de la entrega. |
+| FDAF → Escape | `LanzadorEscape` real, desde el jar y el runtime de la entrega | "[ESCAPE] Usando distribucion empaquetada". Escape carga los recursos (8.7 s) y el nivel (9.2 s, 11 431 colisionadores), llega a las instrucciones y su log muestra las 42 caras lisas del depósito. Cero excepciones y cero rutas de `C:\Users\dfarl\git` en los logs. |
+| `LEEME.txt` | Instrucciones mínimas: no hace falta Java, SmartScreen, controles y problemas conocidos | — |
+
+- **Comprobado:** los `.bat` y `.exe` de la entrega no contienen rutas de esta máquina, y la entrega no incluye `config.properties`, `handoff.json` ni señales.
+- El perfil real del usuario (`config.properties` y `handoff.json` del 26/10 a las 10:39, y `.prefs/five_doors_escape` del 23/10) **no cambió**.
+
+**Defecto encontrado en `build-distribucion.bat` (no corregido; el archivo tiene cambios de fin de línea ajenos en la copia local):**
+- pasa el primer argumento sin comillas a `build-portable.bat`, así que una ruta de JDK 8 con espacios (`C:\Program Files\...`) se corta en "C:\Program";
+- **Forma segura de llamarlo:** sin argumentos, con `JAVA8_HOME` y `JAVA21_HOME` definidos.
+- Desde PowerShell, además, los argumentos `""` se descartan.
+
+**Pendientes o no verificables:**
+- **No probado en otra PC:** no hay una segunda máquina; igual que en §1.22.
+- **Interacción real dentro de las ventanas:** no se jugó con teclado ni ratón; `Robot` no es viable en este entorno. Lo visual se verificó con las capturas de los arneses.
+- **Opcionales para otra sesión:** ojos emisivos (requieren texturas nuevas), ciclos de caminar asimétricos (B6/P2) y un modelo de auto con más polígonos.
+- **Vídeo de victoria de FDAF:** sigue con su fallo intermitente (`ERROR_MEDIA_INVALID`, §1.28).
+- **Primera carga de Escape en una PC nueva:** el precalentamiento de shaders tardó 6.1 s en frío (0.6 s con la caché caliente).
+
+**Instrucciones para la versión de prueba:**
+1. Copiar `FiveDoors_TestBuild` completa, sin separar las dos carpetas.
+2. Abrir `FiveDoorsAtFreddys\FiveDoorsAtFreddys.exe`. Para ir directo a Escape: `FiveDoorsEscape\FiveDoorsEscape.exe`.
+3. Si aparece SmartScreen: "Más información" y después "Ejecutar de todas formas" (los `.exe` no están firmados).
+4. **Para reconstruirla:**
+   - con `JAVA8_HOME` y `JAVA21_HOME` definidos, ejecutar `build-distribucion.bat` sin argumentos desde un worktree limpio;
+   - después, `five_doors_escape\tools\dist\build-exe-escape.bat <dist-completa>\FiveDoorsEscape`.
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos

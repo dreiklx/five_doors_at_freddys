@@ -13,5 +13,8 @@ public class RenderHud { public static void main(String[] a) throws Exception {
   } catch (Exception e) { e.printStackTrace(); } }); Thread.sleep(500); System.exit(0); }
   static Object campo(Object o, String n) throws Exception { Field f = o.getClass().getDeclaredField(n); f.setAccessible(true); return f.get(o); }
   static void guardar(JComponent c, String ruta) throws Exception { c.setSize(1920, 1080); c.doLayout(); BufferedImage img = new BufferedImage(1920, 1080, BufferedImage.TYPE_INT_RGB);
+    // drawImage escalado de un GIF animado es asincrono: la primera pasada sobre un panel nunca mostrado no dibuja nada
+    // (la camara de la tableta salia en blanco, CLAUDE.md §2.88). Una pasada de calentamiento y una espera lo resuelven.
+    Graphics2D g0 = img.createGraphics(); c.printAll(g0); g0.dispose(); Thread.sleep(600);
     Graphics2D g = img.createGraphics(); c.printAll(g); g.dispose(); javax.imageio.ImageIO.write(img, "png", new File(ruta)); }
 }

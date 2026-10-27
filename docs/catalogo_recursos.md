@@ -269,3 +269,6 @@ Ruta relativa a `five_doors_escape/assets/`. Los JSON de `content/` (definicione
 | `audio/sfx/animatronic_stun.wav` | (nuevo, §2.58) | sfx | - | Chispazo al aturdir a un animatronico con la linterna | `escape/audio/sfx/animatronic_stun.wav`; sintetizado (`tools/audio/synth_world_audio.py`) |
 | `ui/loading_background.jpg` | (nuevo, §2.59) | ui | - | Fondo de la pantalla de carga | `escape/ui/loading_background.jpg`; generado (`tools/loading/make_loading_assets.py`) |
 | `ui/loading_title.png` | (nuevo, §2.59) | ui | - | Titulo de la pantalla de carga | `escape/ui/loading_title.png`; generado (`tools/loading/build_loading_title.py`) |
+| `ui/fonts/inter_ui.fnt` + `.png` | (nuevo, §2.88) | ui | - | Fuente de interfaz de Escape (Inter SemiBold 56 px, AngelCode) | `escape/ui/fonts/`; generado (`tools/ui/build_bitmap_fonts.py`), licencia OFL 1.1 en `LICENSE_Inter_OFL.txt` |
+| `ui/fonts/inter_title.fnt` + `.png` | (nuevo, §2.88) | ui | - | Fuente de titulos de Escape (Inter ExtraBold 128 px) | `escape/ui/fonts/`; generado (`tools/ui/build_bitmap_fonts.py`) |
+| `ui/fonts/LICENSE_Inter_OFL.txt` | (nuevo, §2.88) | ui | - | Licencia SIL OFL 1.1 de Inter | `escape/ui/fonts/` |
