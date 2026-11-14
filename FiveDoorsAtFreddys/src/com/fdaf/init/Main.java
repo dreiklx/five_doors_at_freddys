@@ -13,6 +13,8 @@ public class Main {
 	private static final String ARG_REINICIO_INTERNO = "--reinicio-interno";
 
 	public static void main(String[] args) {
+		// Copia de la consola en ~/.fivedoorsatfreddys/logs/fdaf.log (CLAUDE.md §1.81): desde el .exe no hay consola.
+		com.fdaf.util.RegistroArchivo.instalar();
 		System.setProperty("awt.useSystemAAFontSettings", "off");
 		System.setProperty("swing.aatext", "false");
 	    PersistenciaJuego.cargar();

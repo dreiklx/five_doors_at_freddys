@@ -3,6 +3,9 @@ package com.fdaf.util;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.SwingUtilities;
 
@@ -54,12 +57,24 @@ public class LanzadorEscape {
 	private static final String RUTA_RELATIVA_DISTRIBUCION_ESCAPE =
 			".." + File.separator + "FiveDoorsEscape";
 
+	// Clase principal de Escape (lwjgl3/build.gradle, application.mainClass). La distribucion se lanza con el java del
+	// runtime y "-cp lib\*" (CLAUDE.md §1.81), no con lwjgl3\bin\lwjgl3.bat: ese .bat de Gradle arma una linea con
+	// los 55 jars en ruta absoluta y, si la carpeta del juego tiene una ruta de mas de ~110 caracteres (Descargas,
+	// OneDrive, un .zip extraido en una subcarpeta), cmd la rechaza ("La linea escrita es demasiado larga") y Escape
+	// nunca arranca. Con el comodin y el directorio de trabajo en lwjgl3\ la linea mide lo mismo en cualquier ruta.
+	private static final String CLASE_PRINCIPAL_ESCAPE = "com.fivedoorsescape.lwjgl3.Lwjgl3Launcher";
+
+	// Un solo Escape a la vez: la transicion no puede lanzar un segundo proceso aunque se dispare dos veces.
+	private static final AtomicBoolean escapeEnCurso = new AtomicBoolean(false);
+	private static volatile Process procesoEscape;
+
 	private static File resolverDistribucionEmpaquetada() {
 		try {
 			File carpetaDist = new File(System.getProperty("user.dir"), RUTA_RELATIVA_DISTRIBUCION_ESCAPE).getCanonicalFile();
 			File runtimeJava = new File(carpetaDist, "runtime" + File.separator + "bin" + File.separator + "java.exe");
-			File scriptLanzador = new File(carpetaDist, "lwjgl3" + File.separator + "bin" + File.separator + "lwjgl3.bat");
-			if (runtimeJava.isFile() && scriptLanzador.isFile()) {
+			File carpetaLib = new File(carpetaDist, "lwjgl3" + File.separator + "lib");
+			File[] jars = carpetaLib.listFiles((dir, nombre) -> nombre.endsWith(".jar"));
+			if (runtimeJava.isFile() && jars != null && jars.length > 0) {
 				return carpetaDist;
 			}
 		} catch (IOException e) {
@@ -124,6 +139,10 @@ public class LanzadorEscape {
 	// salida (cierre del proceso), asi que este metodo no necesita
 	// distinguir entre ellas.
 	public static void lanzar(Idioma idioma, int vidasFinales, Runnable alTerminar) {
+		if (!escapeEnCurso.compareAndSet(false, true)) {
+			System.out.println("[ESCAPE] Ya hay un Five Doors Escape en curso: no se lanza otro.");
+			return;
+		}
 		escribirTraspaso(idioma, vidasFinales);
 
 		// Por si quedo de una sesion anterior (no deberia, pero evita un falso positivo si algo
@@ -138,15 +157,29 @@ public class LanzadorEscape {
 				if (carpetaDistribucion != null) {
 					// Distribucion empaquetada (build-distribucion.bat): runtime JDK 21 propio +
 					// gradlew lwjgl3:installDist ya construido -- nunca gradlew, nunca internet,
-					// nunca depende de la estructura de carpetas del repo Git.
-					File runtimeJava = new File(carpetaDistribucion, "runtime");
+					// nunca depende de la estructura de carpetas del repo Git. Se lanza el java del runtime
+					// directamente (sin cmd ni lwjgl3.bat, ver CLASE_PRINCIPAL_ESCAPE): Escape es hijo directo
+					// de este proceso, que esta en primer plano, y su salida queda en logs/escape.log.
+					File runtimeBin = new File(carpetaDistribucion, "runtime" + File.separator + "bin");
+					File javaEscape = new File(runtimeBin, "javaw.exe");
+					if (!javaEscape.isFile()) {
+						javaEscape = new File(runtimeBin, "java.exe");
+					}
 					File carpetaLwjgl3 = new File(carpetaDistribucion, "lwjgl3");
-					File script = new File(carpetaLwjgl3, "bin" + File.separator + "lwjgl3.bat");
+					List<String> comando = new ArrayList<>();
+					comando.add(javaEscape.getAbsolutePath());
+					comando.add("-cp");
+					comando.add("lib" + File.separator + "*");
+					comando.add(CLASE_PRINCIPAL_ESCAPE);
 
-					System.out.println("[ESCAPE] Usando distribucion empaquetada: " + carpetaLwjgl3.getAbsolutePath());
-					pb = new ProcessBuilder("cmd", "/c", script.getAbsolutePath());
+					File registro = RegistroArchivo.preparar("escape.log");
+					System.out.println("[ESCAPE] Usando distribucion empaquetada: " + carpetaLwjgl3.getAbsolutePath()
+							+ " (registro: " + registro.getAbsolutePath() + ")");
+					pb = new ProcessBuilder(comando);
 					pb.directory(carpetaLwjgl3);
-					pb.environment().put("JAVA_HOME", runtimeJava.getAbsolutePath());
+					pb.environment().put("JAVA_HOME", new File(carpetaDistribucion, "runtime").getAbsolutePath());
+					pb.redirectErrorStream(true);
+					pb.redirectOutput(ProcessBuilder.Redirect.appendTo(registro));
 				} else {
 					// Camino de desarrollo (repo Git real, gradlew) -- comportamiento identico al
 					// que ya existia antes de que se investigara la distribucion empaquetada.
@@ -157,6 +190,7 @@ public class LanzadorEscape {
 						System.out.println("[ESCAPE] No se encontro " + gradlew.getAbsolutePath()
 								+ " -- clona five_doors_escape como carpeta hermana de five_doors_at_freddys "
 								+ "(ver SETUP.md en la raiz del repositorio) antes de completar la Noche 5.");
+						escapeEnCurso.set(false);
 						return;
 					}
 
@@ -170,14 +204,20 @@ public class LanzadorEscape {
 						System.out.println("[ESCAPE] No se encontro un JDK 21 instalado -- se usara el JAVA_HOME/PATH "
 								+ "actual del sistema, que puede no ser compatible con Five Doors Escape.");
 					}
+					pb.inheritIO();
 				}
-				pb.inheritIO();
 
+				long inicio = System.currentTimeMillis();
 				Process proceso = pb.start();
-				proceso.waitFor();
+				procesoEscape = proceso;
+				int codigo = proceso.waitFor();
+				System.out.println("[ESCAPE] Five Doors Escape termino (codigo " + codigo + ", "
+						+ (System.currentTimeMillis() - inicio) / 1000 + " s)");
 			} catch (IOException | InterruptedException e) {
 				System.out.println("[ESCAPE] No se pudo lanzar Five Doors Escape: " + e.getMessage());
 			} finally {
+				procesoEscape = null;
+				escapeEnCurso.set(false);
 				File archivoSalidaCompleta = new File(ARCHIVO_SALIDA_COMPLETA);
 				if (archivoSalidaCompleta.exists()) {
 					archivoSalidaCompleta.delete();
@@ -189,6 +229,16 @@ public class LanzadorEscape {
 				}
 			}
 		}, "LanzadorEscape").start();
+	}
+
+	static {
+		// Si FDAF se cierra (o lo cierra el sistema) con Escape abierto, Escape no queda huerfano.
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			Process p = procesoEscape;
+			if (p != null && p.isAlive()) {
+				p.destroy();
+			}
+		}, "LanzadorEscape-cierre"));
 	}
 
 	private static void escribirTraspaso(Idioma idioma, int vidasFinales) {

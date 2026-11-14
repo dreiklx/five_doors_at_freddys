@@ -48,6 +48,8 @@ public class PruebaLogro {
     for (int n = 0; n < 2; n++) { PreferenciasJuego.nocheActual = Noche.values()[n]; final ControllerInterfaz[] ci = {null};
       edt(() -> { ci[0] = new ControllerInterfaz(); ci[0].init(vp, menu, cm); }); Thread.sleep(300);
       edt(() -> ci[0].alGanar()); Thread.sleep(400);
+      // el video de victoria se corta aqui: si terminara, el flujo real reinicia el proceso y cortaria la prueba (§1.81)
+      edt(() -> { Component v = vp.pnlContenido.getComponent(0); if (v instanceof PnlWin) ((PnlWin) v).detenerVideo(); });
       edt(() -> { try { ci[0].detenerSonidosJuego(); } catch (Exception e) { } }); }
     Properties p = cfg(); System.out.println("   config tras ganar 1 y 2: nochesSuperadas=" + p.getProperty("nochesSuperadas") + " nocheActual=" + p.getProperty("nocheActual"));
     ok("NOCHE_1,NOCHE_2".equals(p.getProperty("nochesSuperadas")) && "NOCHE_3".equals(p.getProperty("nocheActual")), "ganar Noche 1 y 2 las marca como superadas y avanza a la 3");

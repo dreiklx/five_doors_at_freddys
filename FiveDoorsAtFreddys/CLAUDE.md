@@ -25,7 +25,7 @@ Juego final para el curso IF3001 (UCR, Sede del Caribe), Grupo 1 (Derek, Naygell
 
 - **Java 8** (compliance 1.8 confirmado en `.settings/org.eclipse.jdt.core.prefs` — **NO es Java 18**, error de nomenclatura que se arrastró en parte de la conversación original hasta corregirse).
 - Swing/AWT puro para toda la UI.
-- JavaFX únicamente para el video de victoria (`PnlWin.reproducirVideo`, vía `JFXPanel`).
+- JavaFX únicamente para el video de victoria (`PnlWin.reproducirVideo`, vía `JFXPanel`). **[ACTUALIZADO 2026-11-13, §1.81, v2.18]:** el video ya no usa JavaFX: fotogramas JPG + WAV dibujados por `PnlWin.reproducirVideoVictoria`. El `JFXPanel` queda solo porque `EscalarVista` (congelada) lo dimensiona.
 - Proyecto Eclipse clásico, sin Gradle/Maven.
 
 ### 1.3 Arquitectura — MVC
@@ -91,7 +91,7 @@ NOCHE_5(2, 10)
 - **Navegación ESC:** un solo handler en `ControllerMenu.manejarEscape()`, compara por referencia el panel actualmente mostrado contra las pantallas conocidas.
 - **Atajos de debug (CTRL+G/P/S):** decisión consciente del usuario, **no eliminar**. G=forzar victoria, P=forzar derrota, S=saltar la "fase larga" actualmente activa (intro de 20s, la fase larga de Game Over, o el Warning inicial) — un solo dispatcher en `ControllerMenu` que revisa cuál fase está activa.
 - **Secuencia de Game Over:** `alPerder()` → gif+powerdown.wav (t1, 7s) → freddy_acechando.wav (t2, 13s) → `avanzarDespuesDelGifLargo()` → pasos_freddy.wav + jumpscare (t3, 5s) → estática (t4, 1s) → `mostrarPantallaFinalGameOver()` (t5, 5s, muestra botones). Los 4 timers y `pantallaGameOver` son **campos de instancia** (no locales), para que `saltarFaseLargaGameOver()` (CTRL+S) pueda detenerlos todos y saltar **directo a la pantalla final con botones**, sin importar en qué tramo se presione — decisión deliberada de "único destino posible" por limpieza arquitectónica, no por ahorro de esfuerzo.
-- **Secuencia de Victoria:** `alGanar()` avanza noche, llama `controllerMenuPadre.actualizarTextosIdioma()`, muestra `PnlWin`, reproduce `ganar_fdaf.mp4` (JavaFX), luego `circus.wav` en loop + botones.
+- **Secuencia de Victoria:** `alGanar()` avanza noche, llama `controllerMenuPadre.actualizarTextosIdioma()`, muestra `PnlWin`, reproduce `ganar_fdaf.mp4` (JavaFX), luego `circus.wav` en loop + botones. **[ACTUALIZADO, §1.11 y §1.81]:** sin botones desde §1.11; desde v2.18 el video son fotogramas + WAV (`videos/victory/`), sin JavaFX.
 - **Sonidos ambientales aleatorios:** `SonidosAmbientalesAleatorios`, un solo `Timer` autoreprogramado, pool ponderado documentado originalmente como 12 de 13 archivos de `sounds/random/` (**`robotvoice.wav` explícitamente excluido** por pedido del usuario), regla de no-repetir-el-inmediatamente-anterior, se pausa durante jumpscares reales (`ultimoFueAnimatronico`) y se reanuda correctamente solo en ese caso — **bug corregido en esta sesión:** antes se reanudaba en CADA `alLiberar()` (cualquier puerta revisada, no solo jumpscares), lo cual reiniciaba el timer constantemente durante juego activo normal y explicaba por qué casi no sonaban. **[ACTUALIZADO 2026-07-30, verificado contra código real]:** el `POOL` real tiene **11 entradas, no 12**. Además de `robotvoice.wav`, también está excluido `risa_niña.wav` (no documentado previamente). No hay evidencia de si esta segunda exclusión fue intencional o un descuido — el resto del mecanismo (pausa/reanudación en jumpscares, guard de "no repetir el anterior") sí se confirmó exactamente como se describe arriba.
 
 ### 1.6 Bug crítico corregido en esta sesión — guard de `juegoTerminado`
@@ -4210,6 +4210,56 @@ Todo entra con fundidos, porque la cinemática termina en negro. No cambian la m
 4. **Para reconstruirla:**
    - con `JAVA8_HOME` y `JAVA21_HOME` definidos, ejecutar `build-distribucion.bat` sin argumentos desde un worktree limpio;
    - después, `five_doors_escape\tools\dist\build-exe-escape.bat <dist-completa>\FiveDoorsEscape`.
+
+### 1.81 Video de victoria sin JavaFX, Escape lanzado sin `lwjgl3.bat`, registros en archivo y Graphify, sesión 2026-11-13 (v2.18)
+
+**Reporte de un probador (entrega v2.17 de §2.89):** (1) al ganar cualquier noche no aparecía el video de victoria; (2) al ganar la Noche 5 solo se veía el glitch y Escape no arrancaba; (3) lo mismo con el acceso directo (Noche personalizada → ESCAPE). Se investigaron por separado: (1) tenía una causa propia y (2)/(3) otra, compartida.
+
+**Estado recuperado antes de tocar nada:** los dos repos sincronizados con `origin/master` (FDAF `089cb1d` v2.17, Escape `fc88db1`). En FDAF seguía el trabajo ajeno ya conocido (FlatLaf en `Main.java` y `.classpath`, `src/libs/`, el gate `noche < 2` de `Juego.java`, una línea en blanco en `GeneradorArbol.java`, `NYDER.png` y los PNG sin seguimiento): no se tocó ni se publicó. La auditoría visual de §2.87 ya estaba implementada y publicada (§1.80, §2.88).
+
+**Causa 1 — video de victoria.** `PnlWin` lo reproducía con JavaFX Media, que en Windows decodifica H.264/AAC con los componentes del sistema (GStreamer de JavaFX + decodificadores de Windows). Ya fallaba aquí con `ERROR_MEDIA_INVALID` de forma intermitente (§1.28); reproducido de nuevo esta sesión con el runtime y el jar de la entrega: **1 de 8** arranques, error a los 0.56 s. En la PC del probador falló siempre: no se tuvo acceso a ella, así que no se sabe qué componente falta allí (Windows N sin Media Feature Pack, códecs desactivados u otra causa). El códec no es exótico (H.264 Main 4.1, 1920×1080, AAC LC).
+- **Solución:** el video ya no depende de ningún códec. Se extrajeron sus 289 fotogramas (1600×900, 30 fps, 3.6 MB) y su audio (`audio/cinematics/victory_video_audio.wav`, 9.66 s) con FFmpeg (`imageio-ffmpeg`), y `PnlWin.reproducirVideoVictoria` los dibuja con Java2D y `Sonido`, con el mismo patrón probado de la cinemática de Rendirse (§1.59): hilo daemon que decodifica 8 fotogramas por delante, `Timer` de 15 ms sincronizado con el reloj del audio, mismo fundido de entrada de 1 s. Mismas imágenes y mismo sonido; `videos/victory.mp4` se conserva como fuente.
+- Un único cierre (`terminarVideo`, `AtomicBoolean`): para el timer y el hilo, cierra el audio fuera del EDT y llama a `alTerminar` una sola vez; `reproducirVideoVictoria` ignora una segunda llamada (no hay transición doble). `detenerVideo()` corta sin continuar el flujo (lo usa el arnés).
+- `panelVideo` (`JFXPanel`) sigue existiendo solo porque `EscalarVista.adaptarWin` (congelada, §1.7) lo dimensiona; se oculta. JavaFX ya no reproduce nada en el juego.
+
+**Causa 2 — Escape no arrancaba (Noche 5 y acceso directo).** `LanzadorEscape` lanzaba la distribución con `cmd /c lwjgl3\bin\lwjgl3.bat`. Ese script de Gradle arma `set CLASSPATH=` con los **55 jars en ruta absoluta**; con la carpeta del juego en una ruta de más de ~110 caracteres, la línea pasa del límite de 8191 de `cmd` y falla: **"La línea escrita es demasiado larga. La sintaxis del comando no es correcta."** Escape nunca arrancaba, `waitFor()` volvía enseguida y el jugador veía el glitch y la pantalla de carga hasta el reinicio. Reproducido con la entrega v2.17: falla con ruta larga sin caracteres especiales (`...\scratchpad\plainlongpath_aaaaaaaaaa\`); arranca bien con ruta corta con espacios, paréntesis y acentos (`Temp\fd (1) é\`, recursos en 8.1 s). En el Escritorio de esta máquina la ruta era corta (63 caracteres) y por eso nunca se vio. Un probador que extrae un `.zip` en Descargas u OneDrive supera el límite con facilidad. `FiveDoorsEscape.exe` (launch4j) no tenía el problema: usa rutas relativas.
+- **Solución:** en la distribución, `LanzadorEscape` lanza directamente `FiveDoorsEscape\runtime\bin\javaw.exe -cp lib\* com.fivedoorsescape.lwjgl3.Lwjgl3Launcher` con directorio de trabajo `FiveDoorsEscape\lwjgl3`: la línea mide lo mismo en cualquier ruta, no pasa por `cmd` ni por el `.bat`, y Escape es hijo directo de FDAF (proceso en primer plano). `resolverDistribucionEmpaquetada` ahora exige `runtime\bin\java.exe` y `lwjgl3\lib\*.jar` en vez de `lwjgl3.bat`. El camino de desarrollo (`gradlew lwjgl3:run`) no cambia.
+- **Un solo Escape:** `AtomicBoolean escapeEnCurso`; una segunda llamada se ignora y se registra.
+- **Sin huérfanos:** un *shutdown hook* destruye el proceso de Escape si FDAF termina con Escape abierto (verificado: con `System.exit` de FDAF, Escape se cierra). Al terminar Escape se registra el código de salida y la duración.
+
+**Registros en archivo (nuevo `RegistroArchivo`).** Desde el `.exe` no había ningún mensaje que mirar. `Main` llama a `RegistroArchivo.instalar()`: `System.out/err` se copian a `~/.fivedoorsatfreddys/logs/fdaf.log` (se añade, porque el juego se relanza tras cada noche; rota a `.1` al pasar de 1 MB; cabecera con versión, Java, Windows y carpeta). La salida de Escape va a `logs/escape.log`. El `LEEME.txt` de la entrega pide estos dos archivos si algo falla.
+
+**Pruebas (todas con perfil aislado por `JAVA_TOOL_OPTIONS=-Duser.home=…`, que hereda Escape; el perfil real — `config.properties`/`handoff.json` del 12-11 y `.prefs/five_doors_escape` del 23-10 — no cambió):**
+- **Regresión completa** (`run_tests.sh`, ES y EN) sobre el worktree limpio de v2.18: 13 resúmenes `FALLOS: 0`, `AVISOS: 0`, salvo `PruebaDestelloNyder_ESPANOL` con 2 FALLO = **B11**, intermitente conocido del arnés (§2.79); repetida sola 3 veces: 3/3 `FALLOS: 0`.
+  - `PruebaLogro` se cortaba a mitad: el arnés llama a `alGanar()` real y dejaba correr el video; al terminar, el juego se reiniciaba (camino real) y cerraba la prueba. Con JavaFX la inicialización tardaba ~1 s más y la prueba llegaba a terminar antes. Ahora el arnés corta el video con `detenerVideo()`. En la primera corrida ese reinicio dejó un `java` relanzado con el perfil de pruebas; se cerró.
+- **Nuevo `tools/tests/PruebaFlujoVictoria` + `run_flujo_victoria.sh <distribución>`** (de extremo a extremo, con el jar y los runtimes de la entrega): `alGanar()` real de cada noche, captura del panel fuera de pantalla cada 0.7 s, progreso guardado, y el camino real posterior. Resultado sobre `Desktop\FiveDoors_TestBuild` (6/6 modos `FALLOS: 0`):
+
+| Prueba | Resultado |
+|---|---|
+| Victoria Noches 1-4 (ES/EN alternados) | Video dibujado en 10 de 11-12 muestras (las otras dos: fundido inicial); progreso a la noche siguiente; el juego se relanza (`--reinicio-interno`) a los ~11.3 s |
+| Victoria Noche 5 | Video → glitch → Escape hijo directo (`javaw` + `Lwjgl3Launcher`, sin `cmd`), "Nivel preparado" a los 34 s, `escape.log` sin excepciones; al cerrar Escape, FDAF vuelve por su reinicio real |
+| ESCAPE desde Noche personalizada | Glitch visible → Escape listo a los 19 s → regreso igual |
+| Ruta hostil (196 caracteres, espacios, paréntesis, `José`) | Los mismos escenarios 1-5 y personalizado pasan (antes: "La línea escrita es demasiado larga") |
+| `FiveDoorsAtFreddys.exe` y `FiveDoorsEscape.exe` desde esa ruta, con directorio de trabajo `C:\Windows` | Las dos ventanas abren y responden; `fdaf.log` con cabecera v2.18 en el perfil aislado |
+| Cierre de FDAF con Escape abierto | Escape se cierra con FDAF (sin huérfanos) |
+| Capturas | `noche1_video_4415.png`: "6 AM" del video, a 1920×1080 |
+
+- **No verificado:** el cierre de Escape se simuló terminando su proceso (como en §1.28): Robot no llega a las ventanas en este entorno, así que no se pulsó ESC/Salir dentro de Escape ni se jugó una noche a mano (los arneses llaman a `alGanar()` real). No hay una segunda PC: el fallo del video en la del probador se corrige quitando la dependencia, no reproduciendo su causa exacta.
+
+**Distribución:** `C:\Users\dfarl\Desktop\FiveDoors_TestBuild\` (1025 MB; la v2.17 quedó renombrada como `FiveDoors_TestBuild_v2.17_anterior`, se puede borrar). Construida con `build-distribucion.bat` (sin argumentos, `JAVA8_HOME`/`JAVA21_HOME`) desde worktrees limpios en `%TEMP%\fdwt\` + `five_doors_escape\tools\dist\build-exe-escape.bat`. Comprobado: jar con `MENOR = 18`, los 289 fotogramas y el WAV; ningún `.exe`/`.bat` contiene rutas de esta máquina; sin `config.properties`, `handoff.json`, señales ni registros. No hace falta instalar Java.
+
+**Graphify (skill `graphify`, CLI 0.9.102 en `~/.local/bin`):** grafo conjunto en `C:\Users\dfarl\git\five_doors_graph\` (fuera de los dos repos: no ensucia su `git status`).
+- `graphify extract <repo> --code-only --out five_doors_graph\<repo>`: AST de cada repo, sin LLM ni claves (FDAF 88 archivos, Escape 95).
+- `graphify merge-graphs` → `graphify-out/graph.json` (ids `repo::id`).
+- `puente/aplicar_puente.py`: 10 conceptos y 25 aristas entre juegos (archivos de `~/.fivedoorsatfreddys`, proceso, distribución, `PruebaFlujoVictoria`), tomados de `puente/contrato_integracion.md`. Una arista con un extremo inexistente se informa y no se agrega.
+- `graphify cluster-only --no-label` → `GRAPH_REPORT.md` y `graph.html`. Resultado: 2380 nodos, 7227 aristas, 111 comunidades (con nombres genéricos: el nombrado usa un LLM y no se activó).
+- **Actualizar tras cambiar código:** `sh C:\Users\dfarl\git\five_doors_graph\actualizar_grafo.sh` (incremental por la caché de AST). No se instaló `graphify hook install` ni `graphify claude install`: los dos escriben dentro de cada repo (`graphify-out/` y el `CLAUDE.md`), y este `CLAUDE.md` se mantiene a mano.
+- **Consultas:** `graphify query "…" --graph graphify-out/graph.json`, `graphify path <id> <id>` (con nombres ambiguos pide el id completo), `graphify explain "escape_victoria.flag"` (une `VictoriaEscape` de Escape con `LogroEscape` de FDAF).
+- **Limitación:** `merge-graphs` une los nodos de imports externos con la misma etiqueta (p. ej. `color`), así que un `path` no dirigido puede cruzar de un juego a otro por un import compartido en lugar de por el puente.
+
+**Skills revisadas (2026-11-13):** activas y cargadas: `graphify` (probada en esta sesión), `caveman`, `claude-seo`, `vercel`, `instagram-agent`, `youtube-agent`; para este proyecto solo es pertinente `graphify`. **Instaladas pero desactivadas** en `~/.claude/settings.json` (`enabledPlugins: false`): `ui-ux-pro-max`, `document-skills` y `example-skills`. El `CLAUDE.md` global pide usar `ui-ux-pro-max` siempre, pero no se carga en las sesiones; para activarla: `/plugin enable ui-ux-pro-max@ui-ux-pro-max-skill` y abrir una sesión nueva. No se cambió porque esta tarea no la necesitaba.
+
+**Archivos:** `PnlWin.java`, `ControllerInterfaz.java` (llamada), `LanzadorEscape.java`, `RegistroArchivo.java` (nuevo), `Main.java` (una línea), `Version.java` (v2.18), recursos `videos/victory/` y `audio/cinematics/victory_video_audio.wav`, `docs/catalogo_recursos.md` (y su copia en `FDAF assets`, con los recursos copiados a `FDAF assets/fdaf/`), `tools/tests/src/PruebaLogro.java`, `tools/tests/src/PruebaFlujoVictoria.java` y `tools/tests/run_flujo_victoria.sh` (nuevos). En Escape: solo el comentario de `tools/dist/build-exe-escape.bat`.
 
 ---
 

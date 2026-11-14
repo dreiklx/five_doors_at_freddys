@@ -177,7 +177,9 @@ Ruta relativa a `src/com/fdaf/resources/` y a `FDAF assets/fdaf/`. «Derivado» 
 | `audio/sfx/freddy_nose_honk.wav` | `sounds/varios/nariz_freddy.wav` | sfx | - | Easter egg de la nariz de Freddy | original |
 | `audio/sfx/heavy_breathing.wav` | `sounds/varios/respiracion_agitada.wav` | sfx | - | Respiracion tras sobrevivir un jumpscare | original |
 | `audio/music/escape_transition_les_toreadors_remix.wav` | `sounds/win/LesToreadorsRemix.wav` | musica | - | Musica de la transicion Noche 5 -> Escape | original |
-| `videos/victory.mp4` | `videos/ganar_fdaf.mp4` | video | - | Video de victoria (JavaFX) | original |
+| `videos/victory.mp4` | `videos/ganar_fdaf.mp4` | video | - | Fuente del video de victoria (H.264 1920×1080, 9.66 s). Desde v2.18 el juego no lo reproduce: usa los fotogramas y el audio de abajo (§1.81) | original |
+| `videos/victory/victory_0001.jpg` … `victory_0289.jpg` | (nuevo en v2.18) | video (secuencia) | - | Fotogramas del video de victoria, 1600×900 a 30 fps, dibujados por `PnlWin` sin JavaFX (§1.81) | derivado: `ffmpeg -i victory.mp4 -vf scale=1600:900:flags=lanczos -q:v 3 victory_%04d.jpg` |
+| `audio/cinematics/victory_video_audio.wav` | (nuevo en v2.18) | cinematica | - | Audio del video de victoria (9.66 s, 44.1 kHz estéreo) | derivado: `ffmpeg -i victory.mp4 -vn -ac 2 -ar 44100 -c:a pcm_s16le` |
 | `videos/surrender/surrender_0001.jpg` … `surrender_0160.jpg` | (nuevo en v2.9) | video (secuencia) | - | Fotogramas de la cinematica de Rendirse (§1.59; v2 en v2.11, §1.61: Bonnie y Chica mas presentes, giros de cabeza a tirones), panorama 1800×600 a 20 fps | derivado: render de Blender (`tools/cinematics/surrender/direct_surrender.py`, escena en `FDAF assets/source_files/cinematics/surrender/`); los v1 en `_archive/old_versions/surrender_v1/` |
 | `audio/cinematics/surrender_mix.wav` | (nuevo en v2.9) | cinematica | - | Banda sonora de la cinematica de Rendirse (12.6 s) | derivado: mezcla de `power_down`, `freddy_footsteps`, `static` y `heavy_breathing` + efectos sintetizados (`mix_surrender_audio.py`) |
 

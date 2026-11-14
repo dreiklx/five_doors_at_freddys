@@ -1378,7 +1378,7 @@ public class ControllerInterfaz implements JuegoListener {
 		pantalla.repaint();
 
 		// Etapa 1: video con sonido (~9s, termina solo cuando el video acaba)
-		pantalla.reproducirVideo("/videos/victory.mp4", () -> {
+		pantalla.reproducirVideoVictoria(() -> {
 
 			if (eraNoche5) {
 				iniciarTransicionAEscape(pantalla, vidasFinales);
