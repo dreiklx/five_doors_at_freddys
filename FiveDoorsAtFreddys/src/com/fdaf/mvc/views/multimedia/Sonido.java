@@ -125,6 +125,18 @@ public class Sonido {
 		return lineaStreaming != null;
 	}
 
+	/**
+	 * Posicion de reproduccion real en ms (la del dispositivo de audio), o -1 si no hay Clip abierto (archivo
+	 * ausente, streaming o ya cerrado). La usa el video de victoria como reloj para sincronizar la imagen (§1.82).
+	 */
+	public long getPosicionMs() {
+		Clip c = clip;
+		if (esStreaming() || c == null || !c.isOpen()) {
+			return -1;
+		}
+		return c.getMicrosecondPosition() / 1000;
+	}
+
 	public void play() {
 		if (esStreaming()) {
 			reproducirStreaming();

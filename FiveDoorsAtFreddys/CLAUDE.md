@@ -25,7 +25,7 @@ Juego final para el curso IF3001 (UCR, Sede del Caribe), Grupo 1 (Derek, Naygell
 
 - **Java 8** (compliance 1.8 confirmado en `.settings/org.eclipse.jdt.core.prefs` — **NO es Java 18**, error de nomenclatura que se arrastró en parte de la conversación original hasta corregirse).
 - Swing/AWT puro para toda la UI.
-- JavaFX únicamente para el video de victoria (`PnlWin.reproducirVideo`, vía `JFXPanel`). **[ACTUALIZADO 2026-11-13, §1.81, v2.18]:** el video ya no usa JavaFX: fotogramas JPG + WAV dibujados por `PnlWin.reproducirVideoVictoria`. El `JFXPanel` queda solo porque `EscalarVista` (congelada) lo dimensiona.
+- JavaFX únicamente para el video de victoria (`PnlWin.reproducirVideo`, vía `JFXPanel`). **[§1.82, v2.19]:** ahora `videos/victory.gif` + WAV con `ReproductorVideoGif`. **[ACTUALIZADO 2026-11-13, §1.81, v2.18]:** el video ya no usa JavaFX: fotogramas JPG + WAV dibujados por `PnlWin.reproducirVideoVictoria`. El `JFXPanel` queda solo porque `EscalarVista` (congelada) lo dimensiona.
 - Proyecto Eclipse clásico, sin Gradle/Maven.
 
 ### 1.3 Arquitectura — MVC
@@ -488,7 +488,7 @@ Dos intentos de corrección, solo el segundo funcionó -- ver memoria de Claude 
 
 **Hallazgo menor -- artefacto de metodología de prueba, no un bug del juego:** en pruebas headless sin mouse/teclado real, el jugador puede derivar lentamente en vez de quedarse perfectamente quieto (ya documentado en sesiones anteriores que el cursor capturado produce deltas de mouse espurios en este entorno). No afecta a un jugador real con entrada real -- solo hace que las pruebas "jugador inmóvil" en este entorno no sean 100% puras. No se investigó más a fondo porque no cambia la validez de los hallazgos (el atasco de Freddy era real y reproducible independientemente de esto).
 
-**Hallazgo #2 -- bug de regresión de progreso en Noche Personalizada (Proyecto 1, NO corregido, fuera del alcance de este bloque):** ver memoria de Claude `project-swing-custom-night-progress-regression`. `PreferenciasJuego.nocheActual` se usa a la vez como "progreso más alto alcanzado" y como "noche actualmente seleccionada en Noche Personalizada" -- rejugar una noche anterior tras haber avanzado más regresiona el indicador de progreso. Pre-existente, no introducido por la integración con Escape (aunque se descubrió auditando `alGanar()` por ese motivo). Queda documentado para que el usuario decida si/cuándo corregirlo -- Proyecto 1 se trata como congelado salvo instrucción explícita.
+**Hallazgo #2 -- bug de regresión de progreso en Noche Personalizada** **[CORREGIDO 2026-11-14, §1.82, `nocheMaxima`]:** ver memoria de Claude `project-swing-custom-night-progress-regression`. `PreferenciasJuego.nocheActual` se usa a la vez como "progreso más alto alcanzado" y como "noche actualmente seleccionada en Noche Personalizada" -- rejugar una noche anterior tras haber avanzado más regresiona el indicador de progreso. Pre-existente, no introducido por la integración con Escape (aunque se descubrió auditando `alGanar()` por ese motivo). Queda documentado para que el usuario decida si/cuándo corregirlo -- Proyecto 1 se trata como congelado salvo instrucción explícita.
 
 **Estado real del roadmap, contrastado contra el código (no solo contra la documentación):**
 - Items 1-9 del MVP original (Architecture.md §2.2): **verificados de nuevo, siguen sólidos.** Carga de mapa/Freddy, cámara FPS, colisión, IA Idle→Chase→Caught, transición a Game Over -- todos re-confirmados funcionando en esta misma sesión de auditoría (no solo se asumió que seguían bien desde sesiones anteriores).
@@ -1580,6 +1580,8 @@ Misma regla que §1.54 (inglés `snake_case`, carpetas por función, idioma `_en
 **Archivos:** `PnlWarning.java`, `ControllerMenu.java`.
 
 ### 1.32 Política de versiones -- REGLA PERMANENTE para todo commit publicado, sesión 2026-10-22
+
+> **[REEMPLAZADA 2026-11-14, §1.82, v2.19]:** la regla vigente es la nueva (x.20 → x.20.1 … x.20.5 → (x+1).0.0 … x.0.5 → x.1). Lo de abajo es la historia.
 
 **Fuente única de verdad:** `com.fdaf.util.Version` (`MAYOR`, `MENOR`, `texto()` → `"v 2.2"`, mismo formato que ya mostraba el menú). `PnlMenu.lblVersion` usa `Version.texto()`; no hay ninguna otra constante de versión en el repo (verificado con `git grep`).
 
@@ -4261,6 +4263,125 @@ Todo entra con fundidos, porque la cinemática termina en negro. No cambian la m
 
 **Archivos:** `PnlWin.java`, `ControllerInterfaz.java` (llamada), `LanzadorEscape.java`, `RegistroArchivo.java` (nuevo), `Main.java` (una línea), `Version.java` (v2.18), recursos `videos/victory/` y `audio/cinematics/victory_video_audio.wav`, `docs/catalogo_recursos.md` (y su copia en `FDAF assets`, con los recursos copiados a `FDAF assets/fdaf/`), `tools/tests/src/PruebaLogro.java`, `tools/tests/src/PruebaFlujoVictoria.java` y `tools/tests/run_flujo_victoria.sh` (nuevos). En Escape: solo el comentario de `tools/dist/build-exe-escape.bat`.
 
+### 1.82 Video de victoria en GIF + WAV, nueva regla de versiones, auditoría de noches y de `config.properties`, sesión 2026-11-14/16 (v2.19)
+
+**Estado recuperado:** FDAF `f14d9a7` (v2.18) y Escape `93cc96f`, sincronizados con `origin`. El trabajo ajeno de siempre sin tocar (FlatLaf en `Main.java`/`.classpath`, `src/libs/`, gate `noche < 2` de `Juego.java`, línea en blanco de `GeneradorArbol.java`, `NYDER.png`, PNG sin seguimiento). Se trabajó en el checkout y se probó, construyó y publicó desde un worktree limpio (`%TEMP%\fdwt2`).
+
+#### 1. Video de victoria: GIF + audio aparte
+
+**Pedido:** cambiar los 289 JPG de v2.18 por un GIF, con el audio en un archivo aparte, visualmente igual al video, sin JavaFX ni códecs externos y sincronizado.
+
+**Fidelidad medida antes de elegir** (contra los 289 fotogramas del video decodificados a RGB, 1920×1080):
+- El video tiene hasta 854 colores por fotograma (mediana 513), casi todos ruido oscuro de la compresión H.264; un GIF admite 256 por fotograma.
+- **GIF elegido:** 1920×1080 (resolución original), los 289 fotogramas, paleta propia por fotograma (`palettegen stats_mode=single` + `paletteuse new=1`), **sin tramado**, fotogramas completos sin transparencia (`-gifflags -offsetting-transdiff`). Resultado: **PSNR 55 dB, diferencia máxima 6/255 por canal, 0 % de píxeles con diferencia > 8**. Con tramado `sierra2_4a` sale lo mismo. 6.7 MB.
+- Para comparar, los JPG de v2.18 (1600×900, reescalados): PSNR 50-53 dB y diferencia máxima 76 en los bordes del texto. El GIF es más fiel que lo que había.
+- **Tiempo:** el GIF guarda retardos en centésimas; 30 fps se codifica alternando 30 y 40 ms: 9630 ms en total (el video dura 9633 ms). El audio (`victory_video_audio.wav`, sin cambios) dura 9664 ms.
+- El video ya trae su propio fundido de entrada (negro a blanco en ~1.5 s). El fundido de 1 s que añadía el juego (heredado de JavaFX) lo oscurecía más que el original: **se quitó**, para que se vea exactamente como el video.
+- Generación reproducible: `tools/cinematics/victory/make_victory_gif.sh` (FFmpeg 7 o el de `imageio-ffmpeg`). Los JPG se retiraron del repo; en `FDAF assets` quedaron en `_archive/old_versions/victory_jpg_v2.18/`.
+
+**Por qué no se anima con AWT, como los demás GIF (regla §1.7/§3.4):** AWT reproduce los GIF grandes con casi un segundo de retraso acumulado (medido en §1.64) y no deja elegir el fotograma, así que con un audio aparte se desincroniza. La regla 4 de §3 prohíbe sustituir la animación nativa de los GIF de la interfaz por un reproductor propio por calidad; aquí no hay pérdida de calidad (lo dibujado coincide píxel a píxel con el GIF, ver pruebas) y es la única forma de sincronizar. Los demás GIF del juego no cambian.
+
+**Implementación:**
+- `DecodificadorGif` (nuevo): lee el GIF a memoria y lo analiza. Si todos los fotogramas son completos y sin transparencia (el del video lo es), cualquier fotograma se decodifica por sí solo y varios lectores trabajan en paralelo; si no, los compone en orden (posición, transparencia, eliminación).
+  - Medido: secuencial 22 ms/fotograma, 2 hilos 11 ms, 3 hilos 8 ms (tiempo real: 33 ms).
+- `ReproductorVideoGif` (nuevo):
+  - 1-3 hilos daemon decodifican 6 fotogramas por delante; en memoria solo los cercanos al actual (~20 MB vivos tras terminar).
+  - **Reloj = posición real del audio** (`Sonido.getPosicionMs()`, nuevo, `Clip.getMicrosecondPosition()`), extrapolada desde la última lectura.
+  - Hasta que el audio empieza a sonar, el primer fotograma queda quieto: imagen y sonido arrancan juntos. Sin audio (archivo ausente o dispositivo que no arranca en 3 s), la imagen sigue con el reloj de pared.
+  - Una posición estancada más de 150 ms se trata como audio terminado (el Clip deja la posición fija hasta cerrarse).
+  - Un solo cierre: timer, hilos y audio (cerrado fuera del EDT) liberados; `alTerminar` una sola vez; una segunda llamada se ignora.
+- `PnlWin.reproducirVideoVictoria`/`detenerVideo` conservan su API; `getReproductor()` para las pruebas.
+
+**Hallazgos de la medición de sincronía (no supuestos):**
+- **`Clip.getMicrosecondPosition()` se bloquea mientras el dispositivo de audio arranca** (0.8-1.6 s la primera vez). La primera versión lo llamaba en el EDT: la pantalla se congelaba ese tiempo y, al volver, la imagen saltaba 30 fotogramas. Ahora se lee en el hilo `video-gif-reloj`; el EDT nunca espera.
+- **Cuándo suena de verdad el audio** (grabación de la salida del sistema por *loopback* WASAPI, entorno temporal de Python con `soundcard`, fuera del proyecto): con el dispositivo en frío, 1056-1134 ms después de `Clip.start()`; ya usado, 84-87 ms. La posición del Clip pasa de 0 entre 50 y 60 ms antes de que se oiga. Conclusión: la posición del Clip es un reloj fiable (la imagen va ~55 ms por delante del sonido audible en esta PC, menos de 2 fotogramas). El reloj de pared de v2.18 podía adelantar la imagen hasta ~1 s respecto al sonido con el dispositivo en frío.
+- En partida el dispositivo ya está en uso (sonidos de la noche), así que el caso real es el de ~85 ms.
+
+#### 2. Nueva regla de versiones (reemplaza §1.32)
+
+Elegida por el usuario (la variante de v3.0.x se le preguntó explícitamente):
+
+| Desde | Siguiente |
+|---|---|
+| `x.m` con m < 20 | `x.(m+1)` |
+| `x.20` | `x.20.1` |
+| `x.20.p` con p < 5 | `x.20.(p+1)` |
+| `x.20.5` | `(x+1).0.0` |
+| `x.0.p` con p < 5 | `x.0.(p+1)` |
+| `x.0.5` | `x.1` |
+
+Ejemplo: `v2.18 → v2.19 → v2.20 → v2.20.1 … v2.20.5 → v3.0.0 … v3.0.5 → v3.1 … v3.20 → v3.20.1 … v3.20.5 → v4.0.0`.
+- **Única fuente:** `com.fdaf.util.Version` (`MAYOR`, `MENOR`, `PARCHE`, -1 = sin tercer número). `siguiente()` calcula la regla; `java -cp FiveDoorsAtFreddys.jar com.fdaf.util.Version [siguiente]` la imprime.
+- **Dónde aparece:** menú (`texto()`, "v 2.19", mismo formato de siempre), "Acerca del proyecto" (nuevo, "Versión v2.19"), cabecera de `fdaf.log`, `VERSION.txt` de la distribución (nuevo, lo escribe `build-distribucion.bat` desde el jar construido) y la etiqueta de Git `v2.19` (`etiqueta()`, primera etiqueta del repo). No hay ninguna otra constante de versión.
+- **Cuándo sube:** una vez por publicación a `origin/master` (no por cada cambio interno), en el mismo commit que el trabajo, como hasta ahora.
+- `PruebaVersion`: secuencia desde v2.18, el ejemplo del usuario y 200 publicaciones seguidas sin repetir ni saltarse la regla.
+
+#### 3. Auditoría del sistema de noches
+
+FDAF no tiene horas ni temporizador de noche: se gana al recoger todos los coleccionables de la noche y se pierde al quedarse sin baterías (vidas); Freddy, Bonnie, Chica, Foxy y Golden Freddy aparecen detrás de las puertas (`TipoPuerta.ANIMATRONICO`). Revisado contra el código: inicio (`Juego.reiniciar` con las vidas y coleccionables de `Noche`), puertas y luces (`ControllerJuego`), revelación y liberación, victoria/derrota, baterías, llamadas e intros por noche e idioma (rutas verificadas por `VerificarRecursos`), atajos de depuración (protegidos por `hayPartidaJugable`), guardado y desbloqueos.
+
+**Errores reales encontrados y corregidos:**
+1. **Pérdida de progreso al repetir una noche** (ya anotado en §2.16, nunca corregido): `nocheActual` era a la vez el progreso y la noche elegida en Noche personalizada. Quien iba por la 4, elegía la 1 y la ganaba quedaba en la 2.
+   - Nuevo `PreferenciasJuego.nocheMaxima` (persistido como `nocheMaxima`): la noche más alta alcanzada; solo sube; "Nueva Partida" la vuelve a la 1.
+   - Ganar cualquier noche lleva a `max(siguiente, nocheMaxima)`.
+   - Noche personalizada permite elegir las superadas **y la del progreso** (`nocheDisponible`); antes la del progreso salía "(Bloqueada)" aunque "Continuar" la jugaba. Un jugador nuevo ve libre solo la Noche 1. **Cambio visible respecto a §1.66**, que bloqueaba las cinco para un jugador nuevo.
+2. **Coleccionable ya recogido que vuelve a salir:** al terminar una rama con un coleccionable todavía sin recoger, el árbol nuevo se genera con él (`Juego.verificarFinDeRama`); si el jugador lo recoge en esa hoja, el árbol nuevo conserva una puerta con un objeto que ya tiene. Simulación con las clases reales (20 000 partidas por noche): pasaba en el 9-13 % de las partidas. `ControllerJuego.evaluarRevelacion` ahora muestra esa puerta como vacía. Recogerlo ya no sumaba nada, así que **la dificultad no cambia** (no se tocó `Juego` ni las probabilidades).
+
+**Revisado sin errores:** no se puede ganar antes de tener todos (prueba con todos menos uno); una sola victoria aunque se haga clic dos veces; una sola derrota; baterías extra con tope en 4; una revelación a la vez; los atajos CTRL+G/P solo con una partida activa; las transiciones de fin de noche (ver §1.81, `PruebaFlujoVictoria`).
+
+#### 4. Auditoría de `config.properties` (y de los archivos de Escape)
+
+`config.properties` es el único archivo de configuración de FDAF (`~/.fivedoorsatfreddys/`, igual desde el IDE y desde el `.exe`: depende de `user.home`, no de la carpeta del juego). Escape usa `handoff.json` (ya tolera ausente/corrupto, §2.8), las preferencias de LibGDX `~/.prefs/five_doors_escape` (volumen y último consejo, con `try/catch`) y `assets/i18n/strings*.properties` (recursos: 56 claves en ES y EN, ninguna vacía, leídos en UTF-8).
+
+**Errores reales encontrados y corregidos (`PersistenciaJuego`):**
+1. **Un `config.properties` con una secuencia `\u` mal formada impedía abrir el juego:** `Properties.load` lanza `IllegalArgumentException`, que no se capturaba (reproducido con las clases de v2.18). Ahora el archivo dañado se aparta como `config.properties.corrupto` (no se borra) y se escribe uno válido con los valores por defecto.
+2. **Primera ejecución sin archivo:** no se creaba hasta el primer cambio. Ahora se crea al arrancar.
+3. `cargar()` parte siempre de los valores por defecto (`PreferenciasJuego.restablecerValoresPorDefecto`, nuevo): una clave ausente o inválida queda en su valor por defecto.
+4. Un `config.properties.tmp` de un guardado interrumpido se ignora y se borra al arrancar.
+5. Datos contradictorios (noche elegida que no está superada ni es el progreso) se corrigen a la noche del progreso.
+6. Si no se puede crear la carpeta del perfil, se avisa en el registro y el juego sigue con los valores por defecto.
+
+**Migración:** un perfil sin `nocheMaxima` (v2.18 y anteriores) la calcula como lo más alto entre `nocheActual` y la siguiente a la última superada. Perfil de v2.17 en la Noche 4 con 1-3 superadas → progreso en la 4, noches 1-4 disponibles. Perfil anterior a v2.12 (sin historial) en la Noche 3 → "Continuar" sigue en la 3.
+
+#### 5. Pruebas
+
+**Automáticas nuevas** (en `run_tests.sh`):
+- `PruebaVersion`.
+- `PruebaNoches`: las 5 noches con `ControllerJuego` real y un oyente que cuenta eventos.
+- `PruebaPerfil` A-I, un proceso por escenario con perfil aislado: A primera ejecución, B archivo vacío, C corrupto, D actualización, E partida nueva, F partida existente, G idioma (3 procesos: cambiar a inglés, reabrir, volver a español y reabrir), H sin permisos, I guardado interrumpido.
+- `PruebaVideoVictoria`: ventana real de 1920×1080, 2 reproducciones y un corte a mitad.
+- `PruebaFlujoVictoria` comprueba además la sincronía del video en el camino real.
+
+**Resultados (worktree limpio de v2.19; perfil siempre aislado):**
+
+| Prueba | Resultado |
+|---|---|
+| Regresión completa `run_tests.sh` (ES y EN, 46 ejecuciones) | Todo `FALLOS: 0` y `AVISOS: 0`, salvo lo de las dos filas siguientes |
+| `PruebaLogro` ES/EN y `PruebaHover` ES/EN | Fallaron por el cambio intencionado de la Noche 1 libre (punto 3). Expectativas actualizadas y repetidas: 4/4 `FALLOS: 0` (Hover 59/59) |
+| `PruebaDestelloNyder_INGLES` | 2 FALLO = **B11**, intermitente conocido del arnés (§2.79). Repetida 3 veces: 2 de 3 OK. NYDER no se tocó |
+| `PruebaVersion` / `PruebaNoches` | 4/4 y 40/40 |
+| `PruebaPerfil` A-I (11 procesos) | 42/42 OK |
+| `PruebaVideoVictoria` (2 reproducciones) | 289/289 fotogramas, retraso de imagen 0 ms, lo pintado a los ~5.2 s idéntico píxel a píxel al fotograma del GIF, un solo fin, hilos terminados, pintado medio 2.5 ms. Corte a mitad: sin fin. 20 MB vivos al terminar |
+| `SimulacionDificultad` (20 000 partidas por noche) | 53.2 / 38.6 / 33.5 / 30.6 / 26.9 %: igual que §1.79, dificultad sin cambios |
+| `run_flujo_victoria.sh` sobre `Desktop\FiveDoors_TestBuild` | 6/6 modos. Noches 1-4: video con 284-288 fotogramas, retraso 0 ms, audio sonando a los 23-35 ms. Noche 5 → Escape (nivel listo a los 32 s). Acceso directo → Escape (19 s) |
+| Misma prueba (Noche 5) desde una ruta de 196 caracteres con espacios, paréntesis y "José" | OK |
+| `FiveDoorsEscape.exe` con `~/.prefs/five_doors_escape` corrupto (XML cortado, volumen "abc") | La ventana abre y responde |
+| Procesos y perfil real | Sin huérfanos. `config.properties`/`handoff.json` del 12-11 y `.prefs` del 23-10 sin cambios |
+
+**No verificado:** ninguna noche se jugó a mano (los arneses llaman al `alGanar()` real). El video no se miró a ojo en pantalla completa: se comparó píxel a píxel. El retardo de la salida de audio (~55 ms) se midió en esta PC y puede variar con otra tarjeta de sonido.
+
+**Distribución:** `C:\Users\dfarl\Desktop\FiveDoors_TestBuild\` (1028 MB, `VERSION.txt` = v2.19).
+- La v2.18 quedó como `FiveDoors_TestBuild_v2.18_anterior` (sigue también `FiveDoors_TestBuild_v2.17_anterior`): se pueden borrar.
+- Construida con `build-distribucion.bat` (sin argumentos, con `JAVA8_HOME`/`JAVA21_HOME`) desde el worktree limpio, más `build-exe-escape.bat`.
+- El jar ya no lleva `videos/victory/*.jpg` y sí `victory.gif`. Sin rutas de esta máquina ni perfiles.
+
+**Pendiente (no corregido, documentado):**
+- B11 (prueba de NYDER intermitente).
+- Escape abierto directamente usa el idioma del último `handoff.json`, o español si no existe; no lee `config.properties` de FDAF.
+- Un volumen `NaN` escrito a mano en las preferencias de Escape no se filtra.
+
+**Archivos:** `DecodificadorGif.java` y `ReproductorVideoGif.java` (nuevos), `PnlWin.java`, `Sonido.java` (`getPosicionMs`), `Version.java`, `TextosInfo.java`, `PersistenciaJuego.java`, `PreferenciasJuego.java`, `ControllerInterfaz.java` (`alGanar`), `ControllerMenu.java` (Noche personalizada y Nueva Partida), `ControllerJuego.java` (`evaluarRevelacion`), `resources/videos/victory.gif` (nuevo; se retiran `videos/victory/*.jpg`), `build-distribucion.bat` (`VERSION.txt`), `docs/catalogo_recursos.md` (y su copia en `FDAF assets`), `tools/cinematics/victory/make_victory_gif.sh`, `tools/tests/run_tests.sh`, `tools/tests/src/` (`PruebaVersion`, `PruebaNoches`, `PruebaPerfil`, `PruebaVideoVictoria` nuevos; `PruebaFlujoVictoria`).
+
 ---
 
 ## 3. Reglas transversales — aplican a ambos proyectos
@@ -4273,7 +4394,7 @@ Todo entra con fundidos, porque la cinemática termina en negro. No cambian la m
 6. **Los atajos CTRL+G/P/S del Proyecto 1 son intencionales** — no proponer eliminarlos como "limpieza".
 7. **En el Proyecto 2, respetar `Architecture.md` v1.0 como contrato** — no introducir abstracciones nuevas sin que una necesidad real ya identificada las justifique (§3.1 del propio documento). No expandir el alcance del MVP (§2.2, lista de exclusiones) sin aprobación explícita del usuario.
 8. **El usuario prefiere iteración incremental con verificación en cada paso**, tanto en el Proyecto 1 (rondas de auditoría→propuesta→implementación→confirmación) como en el plan del Proyecto 2 (no avanzar de paso sin confirmar el anterior). Mantener ese ritmo — no adelantar varios pasos a la vez.
-9. **Versión (desde 2026-10-22, §1.32):** todo commit publicado de `five_doors_at_freddys` sube `MENOR` en `com.fdaf.util.Version` (v2.1→v2.2→…→v2.100→v3.1). Única fuente de verdad: esa clase.
+9. **Versión (regla nueva desde v2.19, §1.82; antes §1.32):** `x.m` sube a `x.(m+1)` hasta `x.20`; luego `x.20.1` … `x.20.5`, `(x+1).0.0` … `(x+1).0.5` y `(x+1).1`. Una subida por publicación, calculada por `Version.siguiente()`. Texto anterior: todo commit publicado de `five_doors_at_freddys` sube `MENOR` en `com.fdaf.util.Version` (v2.1→v2.2→…→v2.100→v3.1). Única fuente de verdad: esa clase.
 10. **Recursos (desde 2026-10-22, §1.54-§1.56):** todo archivo de imagen, audio, vídeo, gif o modelo de ambos juegos se nombra en inglés `snake_case` (`<sujeto>_<descripcion>[_<estado>][_<idioma>]`, idioma `_en`/`_es` al final, secuencias con 2 dígitos) y va en la carpeta de su FUNCIÓN (`audio/`, `backgrounds/`, `ui/...`, `models/`...), nunca por formato. Al añadir, renombrar o retirar un recurso: (1) actualizar `docs/catalogo_recursos.md` del repo (y su copia en `FDAF assets/CATALOGO_RECURSOS.md`); (2) dejar el archivo preparado para el juego con el MISMO nombre y ruta relativa en `FDAF assets/` y, si viene de un original distinto (recorte, perspectiva, normalización), conservar el original al lado con sufijo `_original`; (3) comprobar con una verificación de rutas que el código lo encuentra (también las rutas construidas por código). No mover ni renombrar lo interno de `FDAF assets/source_files/3d_models/` (los `.blend` enlazan texturas con rutas relativas) ni de `_reference/`.
 
 ---

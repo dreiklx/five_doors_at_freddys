@@ -32,8 +32,9 @@ public class PruebaLogro {
     PnlNochePersonalizada noches = (PnlNochePersonalizada) f(cm, ControllerMenu.class, "pantallaNochePersonalizada");
     edt(() -> vp.setContenido(noches)); Thread.sleep(300);
     String textos = ""; for (JButton b : noches.getBtnsNoche()) textos += b.getText() + " | "; System.out.println("   botones: " + textos);
-    boolean grises = true; for (JButton b : noches.getBtnsNoche()) grises &= b.getForeground().getRed() == 140;
-    ok(grises && textos.contains(idioma == Idioma.INGLES ? "(Locked)" : "(Bloqueada)"), "las 5 noches bloqueadas se ven en gris con el indicador");
+    // §1.82: la noche del progreso (la 1 para un jugador nuevo) se puede elegir; las otras 4, bloqueadas en gris
+    boolean grises = noches.getBtnsNoche()[0].getForeground().equals(Color.WHITE); for (int i = 1; i < 5; i++) grises &= noches.getBtnsNoche()[i].getForeground().getRed() == 140;
+    ok(grises && textos.contains(idioma == Idioma.INGLES ? "(Locked)" : "(Bloqueada)"), "jugador nuevo: la Noche 1 libre y las noches 2-5 bloqueadas en gris con el indicador");
     Noche antes = PreferenciasJuego.nocheActual;
     edt(() -> noches.getBtnsNoche()[2].doClick()); Thread.sleep(150);
     ok(PreferenciasJuego.nocheActual == antes && noches.getLblEscapeBloqueado().isVisible(), "clic en Noche 3 bloqueada: no la elige y muestra '" + noches.getLblEscapeBloqueado().getText().replaceAll("<[^>]+>", "") + "'");
@@ -55,7 +56,7 @@ public class PruebaLogro {
     ok("NOCHE_1,NOCHE_2".equals(p.getProperty("nochesSuperadas")) && "NOCHE_3".equals(p.getProperty("nocheActual")), "ganar Noche 1 y 2 las marca como superadas y avanza a la 3");
     edt(() -> { cm.actualizarTextosIdioma(); vp.setContenido(noches); }); Thread.sleep(200);
     edt(() -> noches.getBtnsNoche()[0].doClick()); Thread.sleep(100);
-    ok(PreferenciasJuego.nocheActual == Noche.NOCHE_1 && noches.getBtnsNoche()[0].getForeground().equals(Color.WHITE) && noches.getBtnsNoche()[2].getForeground().getRed() == 140, "Noche 1 superada se puede elegir; la 3 sigue bloqueada");
+    ok(PreferenciasJuego.nocheActual == Noche.NOCHE_1 && noches.getBtnsNoche()[0].getForeground().equals(Color.WHITE) && noches.getBtnsNoche()[2].getForeground().equals(Color.WHITE) && noches.getBtnsNoche()[3].getForeground().getRed() == 140, "Noche 1 superada se puede elegir, la 3 (progreso) tambien y la 4 sigue bloqueada");
     entrar(noches.getBtnsNoche()[1]); ok(noches.getLbl().isVisible(), "hover sobre una noche desbloqueada: con flecha (como antes)"); salir(noches.getBtnsNoche()[1]);
     cap(noches, "noches_1y2_" + idioma);
     // ---- 4. idioma y volumen no afectan el progreso

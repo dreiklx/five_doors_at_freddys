@@ -1347,9 +1347,16 @@ public class ControllerInterfaz implements JuegoListener {
 		PreferenciasJuego.nochesSuperadas[PreferenciasJuego.nocheActual.ordinal()] = true;
 		com.fdaf.util.PersistenciaJuego.guardar();
 
-		int siguienteOrdinal = PreferenciasJuego.nocheActual.ordinal() + 1;
-		if (siguienteOrdinal < com.fdaf.mvc.models.juego.Noche.values().length) {
-			PreferenciasJuego.nocheActual = com.fdaf.mvc.models.juego.Noche.values()[siguienteOrdinal];
+		// Avance (§1.82): a la siguiente noche, o al progreso si era más alto. Antes era
+		// siempre "la jugada + 1": repetir la Noche 1 yendo por la 4 dejaba al jugador en
+		// la 2. La Noche 5 sigue quedándose en la 5.
+		com.fdaf.mvc.models.juego.Noche[] noches = com.fdaf.mvc.models.juego.Noche.values();
+		com.fdaf.mvc.models.juego.Noche siguiente = noches[Math.min(PreferenciasJuego.nocheActual.ordinal() + 1, noches.length - 1)];
+		if (siguiente.ordinal() > PreferenciasJuego.nocheMaxima.ordinal()) {
+			PreferenciasJuego.nocheMaxima = siguiente;
+		}
+		if (PreferenciasJuego.nocheActual != PreferenciasJuego.nocheMaxima) {
+			PreferenciasJuego.nocheActual = PreferenciasJuego.nocheMaxima;
 			com.fdaf.util.PersistenciaJuego.guardar();
 		}
 

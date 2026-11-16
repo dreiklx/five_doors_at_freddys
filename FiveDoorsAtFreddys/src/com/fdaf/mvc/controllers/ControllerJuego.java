@@ -256,6 +256,20 @@ public class ControllerJuego {
 
 		ladoRevelandoActual = lado;
 
+		// Coleccionable ya recogido (CLAUDE.md §1.82): cuando una rama termina en una
+		// puerta con un coleccionable todavía sin recoger, el árbol nuevo se genera con
+		// él dentro (Juego.verificarFinDeRama); si el jugador lo recoge en la hoja, el
+		// árbol nuevo conserva una puerta con un objeto que ya tiene. Pasaba en ~10 % de
+		// las partidas (simulación de 20 000 por noche). Esa puerta queda vacía, como lo
+		// era en la práctica (recogerla no sumaba nada), sin tocar la dificultad.
+		if (puerta.getTipo() == TipoPuerta.COLECCIONABLE && puerta.getColeccionable() != null) {
+			com.fdaf.mvc.models.coleccionables.Coleccionable original =
+					juego.getInventario().buscar(puerta.getColeccionable().getId());
+			if (original != null && original.isEncontrado()) {
+				puerta.setTipo(TipoPuerta.NADA);
+			}
+		}
+
 		switch (puerta.getTipo()) {
 
 		case ANIMATRONICO:

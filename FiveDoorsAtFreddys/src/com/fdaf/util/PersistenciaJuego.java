@@ -28,8 +28,18 @@ public class PersistenciaJuego {
 	// deja el estado a medio cargar ni lanza una excepción hacia afuera.
 	public static void cargar() {
 
+		PreferenciasJuego.restablecerValoresPorDefecto();
+
+		// Un temporal que quedó de un guardado interrumpido (§1.66) no se lee nunca:
+		// config.properties sigue siendo el último guardado completo.
+		new File(CARPETA, "config.properties.tmp").delete();
+
 		File archivo = new File(ARCHIVO);
 		if (!archivo.exists()) {
+			// Primera ejecución (§1.82): se crea el archivo con los valores por
+			// defecto, así el perfil existe desde el primer arranque.
+			System.out.println("[PERSISTENCIA] Primera ejecución: se crea " + ARCHIVO);
+			guardar();
 			return;
 		}
 
@@ -37,8 +47,19 @@ public class PersistenciaJuego {
 
 		try (FileInputStream entrada = new FileInputStream(archivo)) {
 			props.load(entrada);
-		} catch (IOException e) {
-			System.out.println("[PERSISTENCIA] No se pudo leer el archivo: " + e.getMessage());
+		} catch (IOException | IllegalArgumentException e) {
+			// IllegalArgumentException: una secuencia de escape Unicode mal formada
+			// (archivo editado a mano o dañado). Antes no se capturaba y el juego no
+			// llegaba a abrir (§1.82). Se aparta el archivo dañado (no se borra) y se
+			// sigue con los valores por defecto.
+			System.out.println("[PERSISTENCIA] Archivo ilegible (" + e + "): se aparta como "
+					+ "config.properties.corrupto y se usan los valores por defecto.");
+			File apartado = new File(CARPETA, "config.properties.corrupto");
+			apartado.delete();
+			if (!archivo.renameTo(apartado)) {
+				System.out.println("[PERSISTENCIA] No se pudo apartar el archivo dañado.");
+			}
+			guardar();
 			return;
 		}
 
@@ -103,6 +124,34 @@ public class PersistenciaJuego {
 
 		// Ausente en archivos anteriores: todavía no completó Escape.
 		PreferenciasJuego.escapeCompletado = Boolean.parseBoolean(props.getProperty("escapeCompletado", "false"));
+
+		// Progreso (§1.82). Archivos anteriores a v2.19 no tienen la clave: el
+		// progreso es lo más alto entre la noche guardada (lo que "Continuar" ya
+		// jugaba) y la siguiente a la última superada. Nunca baja de ahí.
+		Noche maxima = Noche.NOCHE_1;
+		try {
+			String guardada = props.getProperty("nocheMaxima");
+			if (guardada != null) {
+				maxima = Noche.valueOf(guardada.trim());
+			}
+		} catch (IllegalArgumentException e) {
+			System.out.println("[PERSISTENCIA] Progreso inválido en el archivo, se recalcula.");
+		}
+		maxima = mayor(maxima, PreferenciasJuego.nocheActual);
+		for (Noche noche : Noche.values()) {
+			if (PreferenciasJuego.nocheSuperada(noche)) {
+				maxima = mayor(maxima, Noche.values()[Math.min(noche.ordinal() + 1, Noche.values().length - 1)]);
+			}
+		}
+		PreferenciasJuego.nocheMaxima = maxima;
+		// La noche elegida tiene que ser jugable: superada o la del progreso.
+		if (!PreferenciasJuego.nocheDisponible(PreferenciasJuego.nocheActual)) {
+			PreferenciasJuego.nocheActual = PreferenciasJuego.nocheMaxima;
+		}
+	}
+
+	private static Noche mayor(Noche a, Noche b) {
+		return a.ordinal() >= b.ordinal() ? a : b;
 	}
 
 	// Se llama cada vez que algo en PreferenciasJuego cambia y debe
@@ -123,10 +172,12 @@ public class PersistenciaJuego {
 		}
 		props.setProperty("nochesSuperadas", superadas.toString());
 		props.setProperty("escapeCompletado", String.valueOf(PreferenciasJuego.escapeCompletado));
+		props.setProperty("nocheMaxima", PreferenciasJuego.nocheMaxima.name());
 
 		File carpeta = new File(CARPETA);
-		if (!carpeta.exists()) {
-			carpeta.mkdirs();
+		if (!carpeta.exists() && !carpeta.mkdirs()) {
+			System.out.println("[PERSISTENCIA] No se pudo crear " + CARPETA + ": el progreso no se guardará.");
+			return;
 		}
 
 		// Se escribe a un temporal y se renombra encima (§1.66): un cierre o un

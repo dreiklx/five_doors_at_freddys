@@ -84,6 +84,9 @@ mkdir "%DIST_ROOT%\FiveDoorsEscape" >nul
 xcopy /e /i /q "%ESCAPE_DIR%\lwjgl3\build\install\lwjgl3" "%DIST_ROOT%\FiveDoorsEscape\lwjgl3\" >nul
 echo Copiando runtime JDK 21 ^(puede tardar, son varios cientos de MB^)...
 xcopy /e /i /q "%JDK21%\*" "%DIST_ROOT%\FiveDoorsEscape\runtime\" >nul
+REM Version de la entrega, de la misma fuente que el menu (com.fdaf.util.Version, CLAUDE.md 1.82)
+"%DIST_ROOT%\FiveDoorsAtFreddys\runtime\bin\java.exe" -cp "%DIST_ROOT%\FiveDoorsAtFreddys\FiveDoorsAtFreddys.jar" com.fdaf.util.Version > "%DIST_ROOT%\VERSION.txt"
+if errorlevel 1 echo ADVERTENCIA: no se pudo escribir VERSION.txt
 
 echo.
 echo Listo. Distribucion completa en: %DIST_ROOT%

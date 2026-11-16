@@ -40,7 +40,8 @@ CP="$(w "$BUILD")$SEP$(w "$OUT/bin")$LIBS"
 AVISOS=0
 run() {
     n=$1; shift
-    rm -rf "$OUT/home"; mkdir -p "$OUT/home"
+    # KEEP=1 conserva el perfil de la prueba anterior (escenario G de PruebaPerfil: cerrar y reabrir)
+    [ -z "$KEEP" ] && { rm -rf "$OUT/home"; mkdir -p "$OUT/home"; }
     echo "===== $n $*"
     "$JAVA" -Duser.home="$(w "$OUT/home")" -cp "$CP" "$@" > "$OUT/$n.log" 2>&1
     salida=$?
@@ -48,11 +49,20 @@ run() {
     # una prueba que se corta a medias no escribe "FALLO": avisar si termino mal o sin su resumen (CLAUDE.md §1.73)
     if [ "$salida" -ne 0 ]; then echo "AVISO: $n termino con codigo $salida"; AVISOS=$((AVISOS + 1)); fi
     case "$n" in
-        PruebaLogro*|PruebaLineasIntro*|PruebaDestelloNyder*|OverlayPuertas|PruebaHover*|VerificarRecursos|PruebaReinicio|FondoMenuBordes)
+        PruebaLogro*|PruebaLineasIntro*|PruebaDestelloNyder*|OverlayPuertas|PruebaHover*|VerificarRecursos|PruebaReinicio|FondoMenuBordes|PruebaVersion|PruebaNoches|PruebaPerfil*|PruebaVideoVictoria)
             grep -q "FALLOS:\|RESULTADO:" "$OUT/$n.log" || { echo "AVISO: $n no llego a escribir su resumen (prueba incompleta)"; AVISOS=$((AVISOS + 1)); } ;;
     esac
 }
 REG=$(w "$OUT/reg")
+# version, sistema de noches y perfil desde cero (CLAUDE.md §1.82)
+TAILN=6 run PruebaVersion PruebaVersion
+TAILN=8 run PruebaNoches PruebaNoches
+TAILN=20 run PruebaVideoVictoria PruebaVideoVictoria "$REG/video" 2
+for E in A B C D E F H I; do TAILN=12 run PruebaPerfil_$E PruebaPerfil $E; done
+TAILN=4 run PruebaPerfil_G1 PruebaPerfil G 1
+KEEP=1 TAILN=4 run PruebaPerfil_G2 PruebaPerfil G 2
+KEEP=1 TAILN=4 run PruebaPerfil_G3 PruebaPerfil G 3
+unset KEEP   # en sh una asignacion delante de una funcion puede quedar fijada
 run VerificarRecursos VerificarRecursos "$(w "$SRC")" "$(w "$SRC/com/fdaf/resources")"
 TAILN=25 run OverlayPuertas OverlayPuertas "$REG/ov"
 IDIOMAS="ESPANOL INGLES"; [ "$1" = "rapida" ] && IDIOMAS="ESPANOL"

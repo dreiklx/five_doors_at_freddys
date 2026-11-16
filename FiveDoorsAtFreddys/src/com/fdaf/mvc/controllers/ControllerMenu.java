@@ -694,7 +694,7 @@ public class ControllerMenu {
 		for (int i = 0; i < pantallaNochePersonalizada.getBtnsNoche().length; i++) {
 			Noche noche = nochesHover[i];
 			InteraccionBoton.aplicarHoverYSonido(pantallaNochePersonalizada.getBtnsNoche()[i], pantallaNochePersonalizada.getLbl(), 0,
-					null, () -> PreferenciasJuego.nocheSuperada(noche));
+					null, () -> PreferenciasJuego.nocheDisponible(noche));
 		}
 		InteraccionBoton.aplicarHoverYSonido(pantallaNochePersonalizada.getBtnAtras(), pantallaNochePersonalizada.getLbl(), 0);
 		InteraccionBoton.aplicarHoverYSonido(pantallaNochePersonalizada.getBtnEscape(), pantallaNochePersonalizada.getLbl(), 0);
@@ -747,7 +747,7 @@ public class ControllerMenu {
 		int ordinalNocheActual = PreferenciasJuego.nocheActual.ordinal();
 		Noche[] nochesTexto = Noche.values();
 		for (int i = 0; i < pantallaNochePersonalizada.getBtnsNoche().length; i++) {
-			boolean superada = PreferenciasJuego.nocheSuperada(nochesTexto[i]);
+			boolean superada = PreferenciasJuego.nocheDisponible(nochesTexto[i]); // superada o la del progreso (§1.82)
 			String etiqueta = superada ? (ingles ? "Night " : "Noche ") + (i + 1) : TextosInfo.nocheBloqueada(i + 1);
 			boolean esLaSeleccionada = (i == ordinalNocheActual);
 			JButton btn = pantallaNochePersonalizada.getBtnsNoche()[i];
@@ -815,7 +815,7 @@ public class ControllerMenu {
 		for (int i = 0; i < pantallaNochePersonalizada.getBtnsNoche().length; i++) {
 			Noche noche = noches[i];
 			pantallaNochePersonalizada.getBtnsNoche()[i].addActionListener(e -> {
-				if (!PreferenciasJuego.nocheSuperada(noche)) {
+				if (!PreferenciasJuego.nocheDisponible(noche)) {
 					new Sonido("sfx/button_error.wav").play();
 					mostrarMensajeBloqueado(TextosInfo.mensajeNocheBloqueada(noche.ordinal() + 1));
 					return;
@@ -841,6 +841,7 @@ public class ControllerMenu {
 
 			menu.getPnlConfirmacion().mostrar(mensaje, textoConfirmar, textoCancelar, () -> {
 				PreferenciasJuego.nocheActual = Noche.NOCHE_1;
+				PreferenciasJuego.nocheMaxima = Noche.NOCHE_1;   // el progreso también (§1.82)
 				// "Reiniciar TODO el progreso" incluye el desbloqueo de ESCAPE -- consistente
 				// con lo que el propio boton promete, no una excepcion oculta.
 				PreferenciasJuego.escapeDesbloqueado = false;

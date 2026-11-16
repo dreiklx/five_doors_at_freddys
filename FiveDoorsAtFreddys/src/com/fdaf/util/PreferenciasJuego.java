@@ -32,6 +32,33 @@ public class PreferenciasJuego {
 		return nochesSuperadas[noche.ordinal()];
 	}
 
+	// Progreso de la partida (CLAUDE.md §1.82): la noche más alta a la que llegó
+	// el jugador. Antes no existía y nocheActual hacía de progreso: repetir una
+	// noche ya superada desde Noche personalizada hacía retroceder el avance
+	// (ir por la 4, ganar la 1 -> quedaba en la 2). Ahora ganar cualquier noche
+	// lleva a max(siguiente, nocheMaxima), y Noche personalizada permite elegir
+	// las superadas y esta. Solo sube; "Nueva Partida" la vuelve a la Noche 1.
+	public static Noche nocheMaxima = Noche.NOCHE_1;
+
+	// Noches que se pueden jugar desde Noche personalizada: las superadas y la
+	// noche a la que llegó el progreso (que "Continuar" ya permitía jugar).
+	public static boolean nocheDisponible(Noche noche) {
+		return nocheSuperada(noche) || noche == nocheMaxima;
+	}
+
+	// Valores de un jugador nuevo. PersistenciaJuego.cargar() parte siempre de
+	// aquí (§1.82): una clave ausente o inválida queda en su valor por defecto,
+	// no en lo que hubiera en memoria.
+	public static void restablecerValoresPorDefecto() {
+		idiomaSeleccionado = Idioma.ESPANOL;
+		nocheActual = Noche.NOCHE_1;
+		nocheMaxima = Noche.NOCHE_1;
+		volumenGeneral = 10;
+		escapeDesbloqueado = false;
+		escapeCompletado = false;
+		java.util.Arrays.fill(nochesSuperadas, false);
+	}
+
 	// Estrella permanente del menú (CLAUDE.md §1.66): true desde la primera
 	// victoria real de Five Doors Escape (ver LogroEscape). A diferencia del
 	// resto del progreso, "Nueva Partida" NO la borra: es un logro, no una

@@ -278,6 +278,8 @@ public final class TextosInfo {
 				+ "<p>The whole game was programmed in <b>Java</b>, using the <b>Eclipse IDE</b>.</p><br>"
 				+ "<p>It is a fan-made project inspired by <i>Five Nights at Freddy's</i>, featuring a gameplay "
 				+ "experience that differs from the original title.</p><br>"
-				+ "<p>We recommend completing Night 5, even if it seems difficult, to discover a surprise.</p>");
+				+ "<p>We recommend completing Night 5, even if it seems difficult, to discover a surprise.</p>")
+				// la version, de la misma fuente que el menu (Version, CLAUDE.md §1.82)
+				+ "<br><p>" + t("Versión ", "Version ") + Version.etiqueta() + "</p>";
 	}
 }

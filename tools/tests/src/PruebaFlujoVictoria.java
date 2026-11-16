@@ -9,7 +9,7 @@ import com.fdaf.mvc.controllers.*; import com.fdaf.mvc.views.frames.VistaPrincip
 // Ejecutar con JAVA_TOOL_OPTIONS=-Duser.home=<aislado> (lo hereda Escape) y -Dprueba.reinicio=<marca>.
 // Args: modo(1-5|custom) idioma carpetaCapturas
 public class PruebaFlujoVictoria {
-  static VistaPrincipal vp; static ControllerMenu cm; static PnlMenu menu; static int fallos = 0; static long t0; static String out, modo;
+  static volatile ReproductorVideoGif video; static VistaPrincipal vp; static ControllerMenu cm; static PnlMenu menu; static int fallos = 0; static long t0; static String out, modo;
   static File dir() { return new File(System.getProperty("user.home"), ".fivedoorsatfreddys"); }
   static Object f(Object o, Class<?> c, String n) throws Exception { Field x = c.getDeclaredField(n); x.setAccessible(true); return x.get(o); }
   static void ok(boolean b, String s) { System.out.println((b ? "OK    " : "FALLO ") + s); if (!b) fallos++; }
@@ -32,7 +32,11 @@ public class PruebaFlujoVictoria {
     modo = a[0]; Idioma idioma = Idioma.valueOf(a[1]); out = a[2]; new File(out).mkdirs();
     String pid = java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
     System.out.println("[PRUEBA] modo=" + modo + " pid=" + pid + " user.dir=" + System.getProperty("user.dir") + " home=" + System.getProperty("user.home"));
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> System.out.println("[PRUEBA] el juego cerro este proceso a los " + ms() + " ms (camino real: reinicio). FALLOS: " + fallos)));
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      ReproductorVideoGif r = video;   // video GIF + audio (§1.82): sincronia y liberacion medidas en el camino real
+      if (r != null) { System.out.println("   video: " + r.getFotogramasMostrados() + " fotogramas mostrados, retraso max " + r.getMaxRetrasoMs() + " ms, audio a los " + r.getArranqueAudioMs() + " ms");
+        ok(r.isFinEntregado() && r.getMaxRetrasoMs() <= 40 && r.getFotogramasMostrados() >= 250 && !r.hilosVivos(), "video GIF completo y sincronizado, hilos terminados"); }
+      System.out.println("[PRUEBA] el juego cerro este proceso a los " + ms() + " ms (camino real: reinicio). FALLOS: " + fallos); }));
     dir().mkdirs(); int n = modo.equals("custom") ? 5 : Integer.parseInt(modo);
     Files.write(new File(dir(), "config.properties").toPath(), ("idioma=" + idioma + "\nnocheActual=NOCHE_" + n + "\nvolumen=3\nescapeDesbloqueado=true\nnochesSuperadas=" + String.join(",", Arrays.asList("NOCHE_1","NOCHE_2","NOCHE_3","NOCHE_4","NOCHE_5").subList(0, n - 1)) + "\n").getBytes());
     RegistroArchivo.instalar(); PersistenciaJuego.cargar();
@@ -49,7 +53,7 @@ public class PruebaFlujoVictoria {
       edt(() -> { ci[0] = new ControllerInterfaz(); ci[0].init(vp, menu, cm); }); Thread.sleep(300);
       t0 = System.currentTimeMillis();
       edt(() -> ci[0].alGanar());
-      Thread.sleep(200); Component c = actual(); ok(c instanceof PnlWin, "noche " + n + ": alGanar muestra PnlWin");
+      Thread.sleep(200); Component c = actual(); ok(c instanceof PnlWin, "noche " + n + ": alGanar muestra PnlWin"); if (c instanceof PnlWin) video = ((PnlWin) c).getReproductor();
       int max = 0; int muestras = 0, conImagen = 0;
       while (ms() < 9300) { Thread.sleep(700); int k = claros(c, muestras % 4 == 0 ? "noche" + n + "_video_" + ms() : null); muestras++; if (k > 50) conImagen++; max = Math.max(max, k); }
       System.out.println("   video: " + conImagen + "/" + muestras + " muestras con imagen (max " + max + " px claros)");

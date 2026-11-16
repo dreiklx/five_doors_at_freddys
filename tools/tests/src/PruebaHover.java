@@ -41,11 +41,12 @@ public class PruebaHover { static int ok = 0, fallos = 0; static Clip clip; stat
     esperar("Opciones > Atras", op.getBtnAtras(), true); esperar("Opciones > Salir", op.getBtnSalir(), true);
     esperar("Idioma > Espanol", id.getBtnEspanol(), true); esperar("Idioma > English", id.getBtnIngles(), true); esperar("Idioma > Atras", id.getBtnAtras(), true);
     esperar("Volumen > Subir", vol.getBtnSubir(), true); esperar("Volumen > Bajar", vol.getBtnBajar(), true); esperar("Volumen > Atras", vol.getBtnAtras(), true);
-    // jugador nuevo: las 5 noches bloqueadas no suenan (CLAUDE.md §1.66); al superar la Noche 1, la 1 vuelve a sonar
-    for (int i = 0; i < 5; i++) esperar("Noche personalizada > Noche " + (i + 1) + " (bloqueada)", np.getBtnsNoche()[i], false);
-    com.fdaf.util.PreferenciasJuego.nochesSuperadas[0] = true;
-    esperar("Noche personalizada > Noche 1 (superada)", np.getBtnsNoche()[0], true);
-    com.fdaf.util.PreferenciasJuego.nochesSuperadas[0] = false;
+    // jugador nuevo: la Noche 1 (progreso, §1.82) suena; las 2-5 bloqueadas no (§1.66); al superar la Noche 2, la 2 suena
+    esperar("Noche personalizada > Noche 1 (progreso)", np.getBtnsNoche()[0], true);
+    for (int i = 1; i < 5; i++) esperar("Noche personalizada > Noche " + (i + 1) + " (bloqueada)", np.getBtnsNoche()[i], false);
+    com.fdaf.util.PreferenciasJuego.nochesSuperadas[1] = true;
+    esperar("Noche personalizada > Noche 2 (superada)", np.getBtnsNoche()[1], true);
+    com.fdaf.util.PreferenciasJuego.nochesSuperadas[1] = false;
     esperar("Noche personalizada > Atras", np.getBtnAtras(), true); esperar("Noche personalizada > ESCAPE (bloqueado, responde con mensaje)", np.getBtnEscape(), true);
     System.out.println("== Cambio de idioma desde Opciones y controles despues");
     int antesNP = oyentes(menu.getBtnNuevaPartida());
